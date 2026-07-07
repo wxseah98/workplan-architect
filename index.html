@@ -884,7 +884,7 @@ Phase 3: Deliver, 4 weeks. Tasks: Rollout plan (Commercial)."></textarea>
 </div><!-- /app-shell -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundled.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 <script>
 // ============================================================
 // SUPABASE CONFIG
@@ -893,11 +893,18 @@ Phase 3: Deliver, 4 weeks. Tasks: Rollout plan (Commercial)."></textarea>
 // local-only mode (accounts/data stay in this browser).
 // Find these in Supabase: Project Settings -> API.
 // ============================================================
-const SUPABASE_URL = 'https://eafzwgwdmdvqlwlylruz.supabase.co'; // e.g. 'https://abcdefgh.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_qxpUdQH8bbcMb8ymliW0gA_5Vyv_Rec'; // e.g. 'eyJhbGciOi...'
+const SUPABASE_URL = 'https://eafzwgwdmdvqlwlylruz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_qxpUdQH8bbcMb8ymliW0gA_5Vyv_REc'; // sb_publishable_...
 let sb = null;
-const CLOUD = !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase);
+const CLOUD = !!(SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.indexOf('PASTE_')!==0 && window.supabase);
 if (CLOUD) { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+// Diagnostic: log what actually loaded so you can verify in the browser console (F12)
+try {
+  console.log('[Workplan] Supabase URL:', SUPABASE_URL || '(empty)');
+  console.log('[Workplan] Key length:', (SUPABASE_ANON_KEY||'').length, '| starts:', (SUPABASE_ANON_KEY||'').slice(0,16));
+  console.log('[Workplan] CLOUD mode:', CLOUD, '| SDK loaded:', !!window.supabase);
+} catch(e){}
+
 </script>
 <script>
 // ============================================================
