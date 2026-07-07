@@ -612,7 +612,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       </div>
       <div style="display:flex;gap:12px;margin-bottom:14px;">
         <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Start Date</label>
-          <input id="wp-start" class="fi" type="date"></div>
+          <input id="wp-start" class="fi" type="date" onchange="_refreshAllPhaseDates()"></div>
         <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">End Date</label>
           <input id="wp-end" class="fi" type="date"></div>
       </div>
@@ -817,12 +817,15 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
     </div>
     <div style="padding:18px 22px;">
       <div style="font-size:11px;color:var(--mid);margin-bottom:12px;">Starting <strong id="wpv-item-start" style="color:var(--ink);"></strong> · duration <strong id="wpv-item-dur" style="color:var(--ink);"></strong></div>
-      <div style="display:flex;gap:10px;margin-bottom:14px;">
-        <label style="flex:1;display:flex;align-items:center;gap:6px;border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;font-weight:600;">
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--border);border-radius:6px;padding:8px 6px;cursor:pointer;font-size:12px;font-weight:600;">
           <input type="radio" name="wpv-kind" id="wpv-kind-phase" value="phase" checked onchange="_wpvUpdateKindFields()" style="accent-color:var(--red);"> Phase
         </label>
-        <label style="flex:1;display:flex;align-items:center;gap:6px;border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;cursor:pointer;font-size:12px;font-weight:600;">
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--border);border-radius:6px;padding:8px 6px;cursor:pointer;font-size:12px;font-weight:600;">
           <input type="radio" name="wpv-kind" id="wpv-kind-task" value="task" onchange="_wpvUpdateKindFields()" style="accent-color:var(--red);"> Task
+        </label>
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--border);border-radius:6px;padding:8px 6px;cursor:pointer;font-size:12px;font-weight:600;">
+          <input type="radio" name="wpv-kind" id="wpv-kind-ws" value="ws" onchange="_wpvUpdateKindFields()" style="accent-color:var(--red);"> Workstream
         </label>
       </div>
       <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Name</label>
@@ -831,6 +834,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
         <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Workstream</label>
         <select id="wpv-item-ws" class="fs"></select>
       </div>
+      <div id="wpv-ws-note" style="display:none;font-size:11px;color:var(--mid);line-height:1.5;">This adds a new workstream to the workplan. It becomes available in every phase, so you can then add tasks under it.</div>
     </div>
     <div style="padding:12px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
       <button class="btn-ghost" onclick="closeWpvItem()">Cancel</button>
@@ -1206,17 +1210,35 @@ const DEFAULT_DATA = {
   fileStates: {}
 };
 
+// A completely blank canvas for brand-new users (no demo projects/team/tasks).
+const EMPTY_DATA = {
+  profile: { name: '', firstName: '' },
+  projects: [],
+  team: [],
+  meetings: [],
+  feed: [],
+  wpList: [],
+  files: [],
+  taskDoneState: {},
+  fileStates: {},
+  customTemplates: [],
+  dashLayout: null,
+  otherTasks: [],
+  versions: []
+};
+
 // ---- Load / save helpers ----
 function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const saved = JSON.parse(raw);
-      // Deep merge: saved overrides defaults but missing keys fall back
-      return Object.assign({}, DEFAULT_DATA, saved);
+      // Existing user: their saved data wins, blank canvas fills any gaps
+      return Object.assign({}, EMPTY_DATA, saved);
     }
   } catch(e) { console.warn('localStorage load failed', e); }
-  return JSON.parse(JSON.stringify(DEFAULT_DATA)); // deep clone defaults
+  // Brand-new user (no saved data yet): start from a blank canvas
+  return JSON.parse(JSON.stringify(EMPTY_DATA));
 }
 
 function saveData() {
@@ -3383,14 +3405,73 @@ function addPhaseRow(name, wks, startWk){
       <div style="width:16px;height:16px;border-radius:4px;background:${colour};flex-shrink:0;" data-colour="${colour}"></div>
       <input class="fi wp-phase-name" style="flex:2;min-width:80px;" placeholder="Phase name" value="${name||''}">
       <span style="font-size:11px;color:var(--mid);flex-shrink:0;">start wk</span>
-      <input class="fi wp-phase-start" style="width:56px;" type="number" min="1" placeholder="1" value="${startWk||''}" title="Start week (leave blank to follow previous phase)">
-      <input class="fi wp-phase-wks" style="width:56px;" type="number" min="1" placeholder="0" value="${wks||''}">
+      <input class="fi wp-phase-start" style="width:56px;" type="number" min="1" placeholder="1" value="${startWk||''}" title="Start week (leave blank to follow previous phase)" oninput="_phaseWkChanged(this)">
+      <input class="fi wp-phase-wks" style="width:56px;" type="number" min="1" placeholder="0" value="${wks||''}" oninput="_phaseWkChanged(this)">
       <span style="font-size:11px;color:var(--mid);flex-shrink:0;">wks</span>
       <button type="button" onclick="togglePhaseTasks(this)" class="btn-ghost" style="font-size:10px;padding:4px 8px;white-space:nowrap;">Tasks &#9662;</button>
       <button onclick="this.closest('.wp-phase-row').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;flex-shrink:0;">&#10005;</button>
     </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-left:24px;">
+      <span style="font-size:11px;color:var(--mid);flex-shrink:0;">start date</span>
+      <input class="fi wp-phase-start-date" type="date" style="width:150px;" title="Phase start date" onchange="_phaseDateChanged(this,'start')">
+      <span style="font-size:11px;color:var(--mid);flex-shrink:0;">end date</span>
+      <input class="fi wp-phase-end-date" type="date" style="width:150px;" title="Phase end date" onchange="_phaseDateChanged(this,'end')">
+      <span class="wp-phase-date-hint" style="font-size:10px;color:var(--muted);"></span>
+    </div>
     <div class="wp-phase-tasks" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"></div>`;
   document.getElementById('phase-rows').appendChild(row);
+  _syncPhaseDatesFromWeeks(row);
+}
+
+// The workplan start date drives week<->date conversion for phases
+function _wpFormStart(){
+  const v = document.getElementById('wp-start') ? document.getElementById('wp-start').value : '';
+  return v ? new Date(v) : null;
+}
+function _wpWkToISO(wk){
+  const s=_wpFormStart(); if(!s||!wk) return '';
+  const d=new Date(s); d.setDate(d.getDate()+(wk-1)*7);
+  return d.toISOString().slice(0,10);
+}
+function _wpDateToWk(iso){
+  const s=_wpFormStart(); if(!s||!iso) return null;
+  return Math.max(1, Math.round((new Date(iso)-s)/(7*24*60*60*1000))+1);
+}
+// Fill the date fields from the current start-wk / wks values
+function _syncPhaseDatesFromWeeks(row){
+  const startWk = parseInt(row.querySelector('.wp-phase-start').value);
+  const wks = parseInt(row.querySelector('.wp-phase-wks').value);
+  const sDate = row.querySelector('.wp-phase-start-date');
+  const eDate = row.querySelector('.wp-phase-end-date');
+  const hint = row.querySelector('.wp-phase-date-hint');
+  if(!_wpFormStart()){ if(hint) hint.textContent='(set the workplan start date to use dates)'; return; }
+  if(hint) hint.textContent='';
+  if(startWk){ sDate.value=_wpWkToISO(startWk); if(wks) eDate.value=_wpWkToISO(startWk+wks-1); }
+}
+// User edited a week field -> refresh the date fields for that row
+function _phaseWkChanged(el){
+  const row=el.closest('.wp-phase-row');
+  _syncPhaseDatesFromWeeks(row);
+}
+// Workplan start date changed -> refresh every phase row's date fields
+function _refreshAllPhaseDates(){
+  document.querySelectorAll('.wp-phase-row').forEach(r=>_syncPhaseDatesFromWeeks(r));
+}
+// User edited a date field -> update the week fields for that row
+function _phaseDateChanged(el, which){
+  const row=el.closest('.wp-phase-row');
+  const s=_wpFormStart();
+  const hint=row.querySelector('.wp-phase-date-hint');
+  if(!s){ if(hint) hint.textContent='Set the workplan start date first.'; return; }
+  const sDate=row.querySelector('.wp-phase-start-date').value;
+  const eDate=row.querySelector('.wp-phase-end-date').value;
+  if(which==='start' && sDate){
+    row.querySelector('.wp-phase-start').value=_wpDateToWk(sDate);
+  }
+  if(sDate && eDate){
+    const sw=_wpDateToWk(sDate), ew=_wpDateToWk(eDate);
+    row.querySelector('.wp-phase-wks').value=Math.max(1, ew-sw+1);
+  }
 }
 function togglePhaseTasks(btn){
   const row = btn.closest('.wp-phase-row');
@@ -4414,7 +4495,10 @@ function renderWpVisual(){
     emptyCells += `<div class="wpv-add-cell" data-wk="${w}" style="width:${WPV_WW}px;min-width:${WPV_WW}px;height:100%;border-right:1px solid #f5f5f5;cursor:pointer;"></div>`;
   }
   rowsHtml += `<div style="display:flex;height:36px;align-items:stretch;background:#FAFAFA;">
-    <div style="width:130px;min-width:130px;font-size:10px;color:var(--muted);display:flex;align-items:center;padding:0 8px;border-right:1px solid #e2e2e2;position:sticky;left:0;background:#FAFAFA;z-index:2;">+ click or drag</div>
+    <div style="width:130px;min-width:130px;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:0 8px;border-right:1px solid #e2e2e2;position:sticky;left:0;background:#FAFAFA;z-index:2;">
+      <button type="button" onclick="openWpvAddItem(1,1)" class="btn-red" style="font-size:11px;padding:3px 8px;line-height:1;">+ Add</button>
+      <span>or drag</span>
+    </div>
     <div style="display:flex;position:relative;" id="wpv-add-track">${emptyCells}<div id="wpv-sel" style="display:none;position:absolute;top:6px;bottom:6px;background:rgba(26,79,143,.3);border:1.5px solid #1A4F8F;border-radius:4px;pointer-events:none;"></div></div>
   </div>`;
 
@@ -4564,7 +4648,11 @@ function openWpvAddItem(startWk, durWeeks){
 let _wpvPending = null;
 function _wpvUpdateKindFields(){
   const isPhase = document.getElementById('wpv-kind-phase').checked;
-  document.getElementById('wpv-task-fields').style.display = isPhase ? 'none' : 'block';
+  const isWs = document.getElementById('wpv-kind-ws').checked;
+  document.getElementById('wpv-task-fields').style.display = (isPhase||isWs) ? 'none' : 'block';
+  document.getElementById('wpv-ws-note').style.display = isWs ? 'block' : 'none';
+  const nameInput = document.getElementById('wpv-item-name');
+  nameInput.placeholder = isPhase ? 'e.g. Diagnose' : isWs ? 'e.g. Commercial Diligence' : 'e.g. Draft analysis';
 }
 function closeWpvItem(){ document.getElementById('wpv-item-modal').style.display='none'; _wpvPending=null; }
 function saveWpvItem(){
@@ -4572,19 +4660,24 @@ function saveWpvItem(){
   const name = document.getElementById('wpv-item-name').value.trim();
   if(!name){ alert('Enter a name.'); return; }
   const isPhase = document.getElementById('wpv-kind-phase').checked;
+  const isWs = document.getElementById('wpv-kind-ws').checked;
   const {startWk, durWeeks} = _wpvPending;
 
-  if(isPhase){
+  if(isWs){
+    // Add a new workstream to the workplan (available across all phases)
+    const existing = getDefinedWorkstreams().map(w=>w.name.toLowerCase());
+    if(existing.includes(name.toLowerCase())){ alert('That workstream already exists.'); return; }
+    addWsRow(name, []);
+    if(typeof refreshPhaseWsHints==='function') refreshPhaseWsHints();
+  } else if(isPhase){
     // Add a phase row to the form at the dragged start week (allows overlaps)
     addPhaseRow(name, durWeeks, startWk);
   } else {
     // Add as a task under a phase that contains startWk (or first phase)
-    // We add it to the form's phase editor: find the phase row covering this week
     const m = _wpDraftModel();
     let target = m.phases.find(p=>startWk>=p.startWk && startWk<=p.endWk) || m.phases[0];
     const wsName = document.getElementById('wpv-item-ws').value;
     if(!target){ alert('Add a phase first, then add tasks within it.'); return; }
-    // Open that phase's inline task editor and inject the task
     const phaseRows=[...document.querySelectorAll('.wp-phase-row')];
     const idx = m.phases.indexOf(target);
     const row = phaseRows[idx];
