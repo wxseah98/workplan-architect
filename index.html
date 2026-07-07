@@ -231,26 +231,26 @@ main{max-width:1240px;margin:0 auto;padding:24px 28px 60px;}
 select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
 /* HIERARCHY */
 .level-project{margin-bottom:20px;}
-.project-header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--ink);border-radius:var(--radius);cursor:pointer;user-select:none;margin-bottom:8px;}
+.project-header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#6B6B6B;border-radius:var(--radius);cursor:pointer;user-select:none;margin-bottom:8px;}
 .proj-code{font-size:13px;font-weight:800;color:#fff;letter-spacing:.04em;}
-.proj-name{font-size:12px;color:rgba(255,255,255,.55);flex:1;}
-.proj-cadence{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);background:rgba(255,255,255,.1);padding:2px 10px;border-radius:10px;flex-shrink:0;}
-.proj-chev{color:rgba(255,255,255,.35);font-size:11px;transition:transform .2s;}
+.proj-name{font-size:12px;color:#fff;flex:1;}
+.proj-cadence{font-size:11px;font-weight:600;color:#fff;background:rgba(255,255,255,.18);padding:2px 10px;border-radius:10px;flex-shrink:0;}
+.proj-chev{color:rgba(255,255,255,.7);font-size:11px;transition:transform .2s;}
 .proj-chev.open{transform:rotate(90deg);}
 .proj-body{display:none;padding-left:14px;}.proj-body.open{display:block;}
-.level-phase{margin-bottom:10px;}
-.phase-header{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:6px;cursor:pointer;user-select:none;margin-bottom:5px;border:1px solid transparent;}
-.phase-bar{width:3px;height:16px;border-radius:2px;flex-shrink:0;}
-.phase-lbl{font-size:11px;font-weight:800;color:var(--slate);text-transform:uppercase;letter-spacing:.07em;flex:1;}
+.level-phase{margin-bottom:12px;}
+.phase-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:6px;cursor:pointer;user-select:none;margin-bottom:5px;border:1px solid var(--border);border-left-width:4px;background:#EFEFEF;}
+.phase-bar{width:0;height:0;flex-shrink:0;}
+.phase-lbl{font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;flex:1;}
 .phase-current-badge{font-size:9px;font-weight:700;color:#fff;padding:1px 7px;border-radius:10px;}
 .phase-meta{font-size:10px;color:var(--mid);}
 .phase-chev{color:var(--muted);font-size:10px;transition:transform .2s;}
 .phase-chev.open{transform:rotate(90deg);}
 .phase-body{display:none;padding-left:10px;}.phase-body.open{display:block;}
 .level-ws{margin-bottom:8px;}
-.ws-header{display:flex;align-items:center;gap:6px;padding:5px 0 5px 10px;border-left:2px solid var(--border);cursor:pointer;transition:border-color .15s;}
+.ws-header{display:flex;align-items:center;gap:6px;padding:6px 8px 6px 12px;border-left:3px solid var(--border);background:#F7F7F7;border-radius:0 4px 4px 0;cursor:pointer;transition:border-color .15s;}
 .ws-header:hover{border-left-color:var(--red);}
-.ws-lbl{font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.07em;flex:1;}
+.ws-lbl{font-size:10px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;flex:1;}
 .ws-count{font-size:10px;color:var(--muted);}
 .ws-chev{color:var(--muted);font-size:9px;transition:transform .15s;}
 .ws-chev.open{transform:rotate(90deg);}
@@ -708,6 +708,22 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
     <div style="padding:20px 24px;">
       <div style="margin-bottom:16px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Your Name</label>
         <input id="set-name" class="fi" placeholder="e.g. Wen Zhang"></div>
+
+      <!-- DISPLAY / ZOOM -->
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;margin-bottom:4px;">
+        <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Display</div>
+        <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:8px;">Zoom &mdash; <span id="zoom-val">100%</span></label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="btn-ghost" onclick="stepZoom(-10)" style="width:38px;height:38px;font-size:18px;flex-shrink:0;">&minus;</button>
+          <input id="zoom-slider" type="range" min="70" max="150" step="5" value="100" oninput="setZoom(this.value)" style="flex:1;accent-color:var(--red);height:38px;">
+          <button class="btn-ghost" onclick="stepZoom(10)" style="width:38px;height:38px;font-size:18px;flex-shrink:0;">+</button>
+        </div>
+        <p style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5;">Adjusts the size of everything on screen. Handy on smaller or larger displays.</p>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;font-size:12px;color:var(--slate);">
+          <input type="checkbox" id="hide-other-toggle" onchange="setHideOther(this.checked)" style="accent-color:var(--red);width:16px;height:16px;">
+          Hide the &ldquo;Other&rdquo; tasks section on the Tasks page
+        </label>
+      </div>
 
       <!-- ACCOUNT INFORMATION -->
       <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
@@ -1797,6 +1813,37 @@ function toggleTaskRow(id,el){
   renderDashboard();
 }
 
+// Add a workstream to every phase of a project (from the Tasks page case row)
+function addWorkstreamToProject(projId){
+  const p=_findProj(projId); if(!p) return;
+  const name=(prompt&&prompt('New workstream name (added to all phases):'))||'';
+  const nm=name.trim(); if(!nm) return;
+  if(!p.workstreamDefs) p.workstreamDefs=[];
+  if(!p.workstreamDefs.some(w=>w.name.toLowerCase()===nm.toLowerCase())) p.workstreamDefs.push({name:nm,members:[]});
+  p.phases.forEach(ph=>{
+    if(!ph.workstreams.some(w=>w.name.toLowerCase()===nm.toLowerCase())){
+      ph.workstreams.push({id:'ws'+Date.now()+Math.floor(Math.random()*999),name:nm,members:[],tasks:[]});
+    }
+  });
+  APP.projects=PROJECTS; saveData(); renderTasks();
+  if(typeof renderGantt==='function' && document.getElementById('page-timeline').classList.contains('active')) renderGantt();
+}
+// Add a new phase (seeded with the project's existing workstreams) from the case row
+function addPhaseToProject(projId){
+  const p=_findProj(projId); if(!p) return;
+  const name=(prompt&&prompt('New phase name:'))||'';
+  const nm=name.trim(); if(!nm) return;
+  const lastEnd=p.phases.length?Math.max(...p.phases.map(x=>x.endWk)):0;
+  const startWk=lastEnd+1, endWk=startWk+3;
+  const colour=PHASE_COLOURS[p.phases.length % PHASE_COLOURS.length];
+  const phId='ph'+Date.now();
+  const wsDefs=(p.workstreamDefs&&p.workstreamDefs.length)?p.workstreamDefs:[{name:'Workstream 1',members:[]}];
+  const workstreams=wsDefs.map((wd,wi)=>({id:'ws'+phId+'_'+wi,name:wd.name,members:[...(wd.members||[])],tasks:[]}));
+  p.phases.push({id:phId,name:nm,startWk,endWk,color:colour,workstreams});
+  APP.projects=PROJECTS; saveData(); renderTasks();
+  if(typeof renderGantt==='function' && document.getElementById('page-timeline').classList.contains('active')) renderGantt();
+}
+
 function renderTasks(){
   const pv=document.getElementById('proj-filter').value;
   const sv=document.getElementById('status-filter').value;
@@ -1859,7 +1906,7 @@ function renderTasks(){
       const phDone=allPT.filter(t=>taskDoneState[t.id]||t.done).length;
       const curBadge=isCur?`<span class="phase-current-badge" style="background:${ph.color}">Current</span>`:'';
       return `<div class="level-phase">
-        <div class="phase-header" style="background:${isCur?ph.color+'15':'#FAFAFA'};border:1px solid ${isCur?ph.color+'35':'var(--border)'};">
+        <div class="phase-header" style="background:${isCur?ph.color+'15':'#EFEFEF'};border-color:${isCur?ph.color+'55':'var(--border)'};border-left-color:${ph.color};">
           <div class="phase-bar" style="background:${ph.color}"></div>
           <span class="phase-lbl" onclick="tog('${ph.id}')" style="cursor:pointer;">${ph.name} Phase</span>
           ${curBadge}
@@ -1881,11 +1928,12 @@ function renderTasks(){
       <div class="project-header">
         <span class="proj-code" onclick="tog('${proj.id}')" style="cursor:pointer;">${proj.caseCode}</span>
         <span class="proj-name" onclick="tog('${proj.id}')" style="cursor:pointer;">${proj.name}</span>
-        <span style="font-size:10px;color:rgba(255,255,255,.45);margin-left:4px;">${fmtDateLong(projStart)} &rarr; ${fmtDateLong(projEndDate)}</span>
+        <span style="font-size:10px;color:#fff;margin-left:4px;">${fmtDateLong(projStart)} &rarr; ${fmtDateLong(projEndDate)}</span>
         <span class="proj-cadence">${cp.name} &middot; Wk ${wip}</span>
         <span class="proj-chev ${openState[proj.id]?'open':''}" id="chev-${proj.id}" onclick="tog('${proj.id}')" style="cursor:pointer;">&#9654;</span>
         <span class="row-actions">
-          <button class="add-btn" title="Add task to this project" onclick="event.stopPropagation();openAddTaskFor('${proj.id}','','')">+ Task</button>
+          <button class="add-btn" title="Add a workstream to every phase" onclick="event.stopPropagation();addWorkstreamToProject('${proj.id}')">+ Workstream</button>
+          <button class="add-btn" title="Add a new phase with the existing workstreams" onclick="event.stopPropagation();addPhaseToProject('${proj.id}')">+ Phase</button>
           <button class="edit-btn" title="Edit project" onclick="event.stopPropagation();openEditProject('${proj.id}')">&#9998;</button>
         </span>
       </div>
@@ -1896,7 +1944,8 @@ function renderTasks(){
   }).join('');
 
   // ---- OTHER TASKS bucket (permanent, non-casework) ----
-  const showOther = (pv==='all' || pv==='__other__');
+  const hideOther = localStorage.getItem('wa_hide_other')==='1';
+  const showOther = !hideOther && (pv==='all' || pv==='__other__');
   if(showOther){
     const others = (APP.otherTasks||[]).filter(t=>{
       if(sv!=='all'&&t.status!==sv)return false;
@@ -2028,25 +2077,50 @@ function collapseAllPhases(projId){
 
 // Click a task's Status chip in the Workplan to cycle through states
 function cycleGanttStatus(projId, phaseId, wsId, taskId){
+  // Kept for compatibility; now opens the picker instead of cycling.
+  openGanttStatusMenu(projId, phaseId, wsId, taskId);
+}
+function setGanttStatus(projId, phaseId, wsId, taskId, choice){
   const p = _findProj(projId); if(!p) return;
   const ph = p.phases.find(x=>x.id===phaseId); if(!ph) return;
   const ws = ph.workstreams.find(x=>x.id===wsId); if(!ws) return;
   const task = ws.tasks.find(t=>t.id===taskId); if(!task) return;
-  // Order: On Track -> At Risk -> Delayed -> Done -> On Track
-  const isDone = taskDoneState[task.id] || task.done;
-  let cur = isDone ? 'done' : task.status;
-  const order = ['on-track','at-risk','delayed','done'];
-  const next = order[(order.indexOf(cur)+1) % order.length];
-  if(next==='done'){
+  if(choice==='done'){
     task.done = true; taskDoneState[task.id] = true;
   } else {
     task.done = false; taskDoneState[task.id] = false;
-    task.status = next;
+    task.status = choice;
   }
   APP.projects = PROJECTS; APP.taskDoneState = taskDoneState;
   saveData();
+  _closeGanttStatusMenu();
   renderGantt();
   renderDashboardWidgets();
+}
+function _closeGanttStatusMenu(){ const m=document.getElementById('gantt-status-menu'); if(m) m.remove(); }
+function openGanttStatusMenu(projId, phaseId, wsId, taskId){
+  _closeGanttStatusMenu();
+  const anchor = event && event.currentTarget ? event.currentTarget : null;
+  const opts = [
+    {v:'on-track', label:'On Track', col:'#1A7F4E'},
+    {v:'at-risk', label:'At Risk', col:'#D69200'},
+    {v:'delayed', label:'Delayed', col:'#A52834'},
+    {v:'done', label:'Done', col:'#6B6B6B'}
+  ];
+  const menu=document.createElement('div');
+  menu.id='gantt-status-menu';
+  menu.style.cssText='position:fixed;z-index:400;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:5px;min-width:130px;';
+  menu.innerHTML=opts.map(o=>`<div onclick="event.stopPropagation();setGanttStatus('${projId}','${phaseId}','${wsId}','${taskId}','${o.v}')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12px;border-radius:5px;cursor:pointer;color:var(--slate);" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'"><span style="width:9px;height:9px;border-radius:50%;background:${o.col};display:inline-block;"></span>${o.label}</div>`).join('');
+  document.body.appendChild(menu);
+  if(anchor){
+    const r=anchor.getBoundingClientRect();
+    let top=r.bottom+4, left=r.left;
+    const mw=140, mh=menu.offsetHeight||160;
+    if(left+mw>window.innerWidth-8) left=window.innerWidth-mw-8;
+    if(top+mh>window.innerHeight-8) top=r.top-mh-4;
+    menu.style.top=top+'px'; menu.style.left=left+'px';
+  }
+  setTimeout(()=>document.addEventListener('click', _closeGanttStatusMenu, {once:true}),0);
 }
 
 function renderGantt(){
@@ -2155,8 +2229,8 @@ function renderGantt(){
   let tableRows = '';
   rows.forEach(row => {
     const rh = row.type==='project'?44:row.type==='phase'?36:row.type==='ws'?30:48;
-    const bgLabel = row.type==='project'?'#1A1A1A':row.type==='phase'?'#F5F5F5':row.type==='ws'?'#FAFAFA':'#FFFFFF';
-    const bgChart = row.type==='project'?'#1A1A1A':row.type==='phase'?'rgba(0,0,0,.01)':'#FFFFFF';
+    const bgLabel = row.type==='project'?'#6B6B6B':row.type==='phase'?'#F5F5F5':row.type==='ws'?'#FAFAFA':'#FFFFFF';
+    const bgChart = row.type==='project'?'#6B6B6B':row.type==='phase'?'rgba(0,0,0,.01)':'#FFFFFF';
 
     let labelInner='', progInner='';
 
@@ -2249,9 +2323,10 @@ function renderGantt(){
       const x1 = Math.round((s-gridStart)/(7*24*60*60*1000)*WW);
       const bw = Math.max(Math.round((e-s)/(7*24*60*60*1000)*WW),8);
       const phTipId = 'ph_' + ph.id;
-      window['tip_'+phTipId] = `<b>${ph.name} Phase</b> (${row.proj.caseCode})<br>${fmtDateLong(s)} &rarr; ${fmtDateLong(e)}<br>Wk ${ph.startWk}–${ph.endWk}<br><i>Double-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:20px;width:${bw}px;background:${ph.color};opacity:.88;border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:#fff;cursor:default;z-index:2;"
-        ondblclick="armBarDrag(this,event)"
+      window['tip_'+phTipId] = `<b>${ph.name} Phase</b> (${row.proj.caseCode})<br>${fmtDateLong(s)} &rarr; ${fmtDateLong(e)}<br>Wk ${ph.startWk}–${ph.endWk}<br><i>Double-click to edit · right-click to move/resize</i>`;
+      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:20px;width:${bw}px;background:${ph.color};opacity:.88;border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:#fff;cursor:pointer;z-index:2;"
+        ondblclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')"
+        oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${phTipId}'])"
         onmouseleave="hideTip()"><span style="overflow:hidden;text-overflow:ellipsis;pointer-events:none;">${bw>60?ph.name:''}</span>
         <span class="drag-handle-l" style="display:none;position:absolute;left:-3px;top:0;bottom:0;width:8px;cursor:ew-resize;"></span>
@@ -2270,9 +2345,10 @@ function renderGantt(){
       const safeName = task.name.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
       const safeStatus = task.status.replace('-',' ');
       const taskTipId = 'task_' + task.id;
-      window['tip_'+taskTipId] = `<b>${safeName}</b><br>${tipOwner}<br>${task.due} · ${fmtDateLong(dd)}<br>${safeStatus}<br>${row.proj.caseCode} › ${ph.name}<br><i>Double-click to move / resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:14px;width:${taskBarW}px;background:${bc};border-radius:3px;${outline}cursor:default;z-index:2;overflow:visible;"
-        ondblclick="armBarDrag(this,event)"
+      window['tip_'+taskTipId] = `<b>${safeName}</b><br>${tipOwner}<br>${task.due} · ${fmtDateLong(dd)}<br>${safeStatus}<br>${row.proj.caseCode} › ${ph.name}<br><i>Double-click to edit · right-click to move/resize</i>`;
+      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:14px;width:${taskBarW}px;background:${bc};border-radius:3px;${outline}cursor:pointer;z-index:2;overflow:visible;"
+        ondblclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')"
+        oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${taskTipId}'])"
         onmouseleave="hideTip()">
         <span class="drag-handle-l" style="display:none;position:absolute;left:-3px;top:0;bottom:0;width:8px;cursor:ew-resize;"></span>
@@ -2288,9 +2364,9 @@ function renderGantt(){
     }).join('');
 
     tableRows += `<tr>
-      <td style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;max-width:${LW-PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#333':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:0;z-index:4;">${labelInner}</td>
-      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#333':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;position:sticky;left:${LW-PROG_W}px;z-index:4;">${progInner}</td>
-      <td style="height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#333':'#eee'};padding:0;vertical-align:middle;position:relative;">
+      <td style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;max-width:${LW-PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#888':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:0;z-index:4;">${labelInner}</td>
+      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#888':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;position:sticky;left:${LW-PROG_W}px;z-index:4;">${progInner}</td>
+      <td style="height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#888':'#eee'};padding:0;vertical-align:middle;position:relative;">
         <div style="display:flex;height:100%;position:relative;">${gridCells}${barHTML}
           <div style="position:absolute;top:0;bottom:0;left:${todayOffset}px;width:2px;background:#CC0000;opacity:.7;pointer-events:none;z-index:3;"></div>
         </div>
@@ -2305,7 +2381,7 @@ function renderGantt(){
     let lbl = mg.label;
     if(groupW < 58) lbl = mg.label.split(' ')[0];      // drop year
     if(groupW < 26) lbl = mg.label.slice(0,1);          // just first letter
-    return `<th style="width:${groupW}px;min-width:${groupW}px;max-width:${groupW}px;padding:5px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#2D2D2D;border-right:1px solid #444;border-bottom:1px solid #444;white-space:nowrap;overflow:hidden;text-align:center;">${lbl}</th>`;
+    return `<th style="width:${groupW}px;min-width:${groupW}px;max-width:${groupW}px;padding:5px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#8A8A8A;border-right:1px solid #444;border-bottom:1px solid #444;white-space:nowrap;overflow:hidden;text-align:center;">${lbl}</th>`;
   }).join('');
   const weekHdr = weeks.map(wk=>{
     const isT = wk<=now&&now<new Date(wk.getTime()+7*24*60*60*1000);
@@ -2320,16 +2396,16 @@ function renderGantt(){
       <table style="border-collapse:collapse;table-layout:fixed;width:${LW+totalWeekW}px;max-width:${LW+totalWeekW}px;">
         <thead>
           <tr>
-            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#2D2D2D;border-right:1px solid #444;border-bottom:1px solid #444;position:sticky;left:0;z-index:6;text-align:left;">Project / Phase / Task</th>
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#2D2D2D;border-right:2px solid #555;border-bottom:1px solid #444;position:sticky;left:${LW-PROG_W}px;z-index:6;text-align:center;">Status</th>
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #444;background:#2D2D2D;">
+            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A8A8A;border-right:1px solid #444;border-bottom:1px solid #444;position:sticky;left:0;z-index:6;text-align:left;">Project / Phase / Task</th>
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A8A8A;border-right:2px solid #555;border-bottom:1px solid #444;position:sticky;left:${LW-PROG_W}px;z-index:6;text-align:center;">Status</th>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #444;background:#8A8A8A;">
               <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
             </th>
           </tr>
           <tr>
-            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#3A3A3A;border-right:1px solid #444;border-bottom:2px solid #555;position:sticky;left:0;z-index:6;"></th>
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#3A3A3A;border-right:2px solid #555;border-bottom:2px solid #555;position:sticky;left:${LW-PROG_W}px;z-index:6;"></th>
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#3A3A3A;border-bottom:2px solid #555;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
+            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#9A9A9A;border-right:1px solid #444;border-bottom:2px solid #555;position:sticky;left:0;z-index:6;"></th>
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#9A9A9A;border-right:2px solid #555;border-bottom:2px solid #555;position:sticky;left:${LW-PROG_W}px;z-index:6;"></th>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#9A9A9A;border-bottom:2px solid #555;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
             </th>
           </tr>
         </thead>
@@ -2930,6 +3006,36 @@ async function changeLoginPassword(){
   document.getElementById('acct-new-pw').value='';
   document.getElementById('acct-new-pw2').value='';
 }
+// ---- Zoom (scales the whole app; persisted per browser) ----
+const ZOOM_KEY='wa_zoom';
+function applyZoom(z){
+  z=Math.max(70,Math.min(150,parseInt(z)||100));
+  const shell=document.getElementById('app-shell');
+  if(shell){ shell.style.transformOrigin='top left'; }
+  // Use CSS zoom where supported (keeps layout width correct); fallback to transform
+  if('zoom' in document.documentElement.style){
+    document.body.style.zoom = (z/100);
+  } else {
+    document.body.style.transform = z===100?'':'scale('+(z/100)+')';
+    document.body.style.transformOrigin='top left';
+    document.body.style.width = z===100?'':(10000/z*100)+'%';
+  }
+  const v=document.getElementById('zoom-val'); if(v) v.textContent=z+'%';
+  const s=document.getElementById('zoom-slider'); if(s) s.value=z;
+}
+function setZoom(z){ applyZoom(z); try{ localStorage.setItem(ZOOM_KEY, String(parseInt(z)||100)); }catch(e){} }
+function stepZoom(delta){
+  const cur=parseInt(localStorage.getItem(ZOOM_KEY)||'100')||100;
+  setZoom(cur+delta);
+}
+// Hide/show the "Other" tasks section on the Tasks page
+function setHideOther(hide){
+  try{ localStorage.setItem('wa_hide_other', hide?'1':'0'); }catch(e){}
+  if(typeof renderTasks==='function' && document.getElementById('page-tasks') && document.getElementById('page-tasks').classList.contains('active')) renderTasks();
+}
+// Restore saved zoom on load
+try{ const _z=localStorage.getItem(ZOOM_KEY); if(_z) applyZoom(_z); }catch(e){}
+
 function openSettingsModal(){
   document.getElementById('settings-modal-overlay').style.display='flex';
   document.getElementById('set-name').value = APP.profile.name || '';
@@ -2941,6 +3047,9 @@ function openSettingsModal(){
   document.getElementById('acct-name').textContent = nm;
   document.getElementById('acct-email').textContent = email;
   document.getElementById('set-email').value = APP.profile.email || email;
+  // Zoom
+  try{ const _z=parseInt(localStorage.getItem(ZOOM_KEY)||'100')||100; const zs=document.getElementById('zoom-slider'); if(zs) zs.value=_z; const zv=document.getElementById('zoom-val'); if(zv) zv.textContent=_z+'%'; }catch(e){}
+  try{ const ho=document.getElementById('hide-other-toggle'); if(ho) ho.checked = localStorage.getItem('wa_hide_other')==='1'; }catch(e){}
   // Privacy
   const priv = APP.profile.privacy || 'full';
   document.querySelectorAll('input[name="privacy"]').forEach(r=>{ r.checked = (r.value===priv); });
@@ -3478,7 +3587,7 @@ function addPhaseRow(name, wks, startWk){
   row.style.cssText = 'border:1px solid var(--border);border-radius:6px;padding:10px;';
   row.innerHTML = `
     <div style="display:flex;gap:8px;align-items:center;">
-      <div style="width:16px;height:16px;border-radius:4px;background:${colour};flex-shrink:0;" data-colour="${colour}"></div>
+      <div class="wp-phase-swatch" onclick="_toggleWpPhasePalette(this)" style="width:20px;height:20px;border-radius:4px;background:${colour};flex-shrink:0;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--border);position:relative;" data-colour="${colour}" title="Click to change colour"></div>
       <input class="fi wp-phase-name" style="flex:2;min-width:80px;" placeholder="Phase name" value="${name||''}">
       <span style="font-size:11px;color:var(--mid);flex-shrink:0;">start wk</span>
       <input class="fi wp-phase-start" style="width:56px;" type="number" min="1" placeholder="1" value="${startWk||''}" title="Start week (leave blank to follow previous phase)" oninput="_phaseWkChanged(this)">
@@ -3497,6 +3606,23 @@ function addPhaseRow(name, wks, startWk){
     <div class="wp-phase-tasks" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"></div>`;
   document.getElementById('phase-rows').appendChild(row);
   _syncPhaseDatesFromWeeks(row);
+}
+// Colour palette popover for a phase row swatch in the New Workplan form
+function _toggleWpPhasePalette(swatch){
+  const existing = swatch.querySelector('.wp-palette');
+  document.querySelectorAll('.wp-palette').forEach(p=>p.remove());
+  if(existing) return;
+  const pal = document.createElement('div');
+  pal.className='wp-palette';
+  pal.style.cssText='position:absolute;top:26px;left:0;z-index:60;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);padding:8px;display:grid;grid-template-columns:repeat(4,24px);gap:6px;';
+  PHASE_COLOURS.forEach(col=>{
+    const c=document.createElement('div');
+    c.style.cssText=`width:24px;height:24px;border-radius:5px;background:${col};cursor:pointer;border:2px solid ${col===swatch.dataset.colour?'var(--ink)':'transparent'};`;
+    c.onclick=(e)=>{ e.stopPropagation(); swatch.style.background=col; swatch.dataset.colour=col; pal.remove(); };
+    pal.appendChild(c);
+  });
+  swatch.appendChild(pal);
+  setTimeout(()=>document.addEventListener('click', function _close(){ pal.remove(); document.removeEventListener('click',_close); },{once:true}),0);
 }
 
 // The workplan start date drives week<->date conversion for phases
