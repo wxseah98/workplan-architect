@@ -15,7 +15,7 @@
   --radius:8px;--shadow:0 1px 3px rgba(0,0,0,0.06),0 3px 12px rgba(0,0,0,0.05);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:Arial,sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;}
+body{font-family:Arial,sans-serif;font-size:15px;background:var(--surface);color:var(--ink);min-height:100vh;}
 nav{background:#fff;border-bottom:2px solid var(--red);display:flex;align-items:center;padding:0 28px;height:52px;gap:20px;position:sticky;top:0;z-index:100;}
 .nav-logo{font-size:13px;font-weight:800;letter-spacing:.12em;color:var(--red);text-transform:uppercase;margin-right:12px;}
 .nav-tab{font-size:12px;font-weight:600;color:var(--mid);cursor:pointer;padding:16px 0;border-bottom:2px solid transparent;letter-spacing:.04em;text-transform:uppercase;transition:all .15s;}
@@ -1555,27 +1555,37 @@ function buildTeamPulse(){
 
 function buildWpProgress(){
   if(!PROJECTS.length){
-    return '<div style="font-size:12px;color:var(--muted);padding:10px 0;text-align:center;">No workplans yet. Create one to see progress here.</div>';
+    return '<div style="font-size:13px;color:var(--muted);padding:10px 0;text-align:center;">No workplans yet. Create one to see progress here.</div>';
   }
   return PROJECTS.map(proj=>{
     const allTasks = proj.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks));
     const done = allTasks.filter(t=>taskDoneState[t.id]||t.done).length;
-    const progress = allTasks.length ? Math.round(done/allTasks.length*100) : 0;
-    const {phase:cp} = currentPhase(proj);
-    const col=progress>=70?'#1A7F4E':progress>=40?'#D69200':'#A52834';
-    const sn=proj.name.length>44?proj.name.slice(0,44)+'&hellip;':proj.name;
-    return `<div class="wp-item">
-      <div class="wp-top">
-        <span class="wp-badge" style="background:${cp.color}22;color:${cp.color};border:1px solid ${cp.color}44;">${cp.name}</span>
-        <span class="wp-name">${sn}</span>
-        <span class="wp-pct" style="color:${col}">${progress}%</span>
-      </div>
-      <div class="wp-bar-track"><div class="wp-bar-fill" style="width:${progress}%;background:${col}"></div></div>
-      <div class="wp-phase-label">
-        <span style="width:7px;height:7px;border-radius:50%;background:${cp.color};display:inline-block;flex-shrink:0;"></span>
-        ${cp.name} phase &middot; ${proj.caseCode}
-      </div>
-    </div>`;
+    const overall = allTasks.length ? Math.round(done/allTasks.length*100) : 0;
+    const ocol = overall>=70?'#1A7F4E':overall>=40?'#D69200':'#A52834';
+    // Case header
+    let html = `<div class="wp-case-group" style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:800;color:#fff;background:${proj.color||'#A52834'};padding:2px 8px;border-radius:10px;">${proj.caseCode}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${proj.name}</span>
+        <span style="font-size:13px;font-weight:800;color:${ocol};">${overall}%</span>
+      </div>`;
+    // Per-phase progress
+    html += proj.phases.map(ph=>{
+      const pTasks = ph.workstreams.flatMap(ws=>ws.tasks);
+      const pDone = pTasks.filter(t=>taskDoneState[t.id]||t.done).length;
+      const pProg = pTasks.length ? Math.round(pDone/pTasks.length*100) : 0;
+      const col=pProg>=70?'#1A7F4E':pProg>=40?'#D69200':'#A52834';
+      return `<div style="padding-left:6px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+          <span style="width:8px;height:8px;border-radius:2px;background:${ph.color};display:inline-block;flex-shrink:0;"></span>
+          <span style="font-size:12px;font-weight:600;color:var(--slate);flex:1;">${ph.name}</span>
+          <span style="font-size:11px;font-weight:700;color:${col};">${pProg}%</span>
+        </div>
+        <div class="wp-bar-track"><div class="wp-bar-fill" style="width:${pProg}%;background:${col}"></div></div>
+      </div>`;
+    }).join('');
+    html += `</div>`;
+    return html;
   }).join('');
 }
 
@@ -2297,7 +2307,7 @@ function renderGantt(){
     if(viewMode==='months'){
       return `<th style="width:${WW}px;min-width:${WW}px;padding:3px 0;background:${isT?'rgba(204,0,0,.25)':'#3A3A3A'};border-right:1px solid #3f3f3f;border-bottom:2px solid #555;"></th>`;
     }
-    return `<th style="width:${WW}px;min-width:${WW}px;padding:3px 2px;font-size:9px;font-weight:600;color:${isT?'#FF8888':'#ccc'};background:${isT?'rgba(204,0,0,.25)':'#3A3A3A'};border-right:1px solid #444;border-bottom:2px solid #555;text-align:center;">${fmtDate(wk)}</th>`;
+    return `<th style="width:${WW}px;min-width:${WW}px;padding:4px 2px;font-size:11px;font-weight:700;color:${isT?'#FFAAAA':'#f0f0f0'};background:${isT?'rgba(204,0,0,.3)':'#3A3A3A'};border-right:1px solid #444;border-bottom:2px solid #555;text-align:center;">${fmtDate(wk)}</th>`;
   }).join('');
 
   document.getElementById('gantt-container').innerHTML=`
@@ -2364,8 +2374,10 @@ window.addEventListener('resize', ()=>{
 // ============================================================
 // PPT EXPORT via pptxgenjs
 // ============================================================
-function exportToExcel(){
-  if(typeof XLSX==='undefined'){ alert('Excel library is still loading, please try again in a moment.'); return; }
+async function exportToExcel(){
+  try { await ensureXlsxLib(); }
+  catch(e){ alert('Could not load the Excel library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
+  if(typeof XLSX==='undefined'){ alert('Excel library unavailable. Please try again.'); return; }
   const projVal = document.getElementById('gantt-proj-filter').value;
   const projects = projVal==='all' ? PROJECTS : PROJECTS.filter(p=>p.id===projVal);
   if(!projects.length){ alert('No workplans to export.'); return; }
@@ -2460,8 +2472,42 @@ function exportToExcel(){
   } catch(err){ console.error(err); alert('Export to Excel failed: '+(err&&err.message?err.message:'unknown error')); }
 }
 
+// Load an external script on demand (used for export libs that may be blocked
+// or not yet loaded). Tries same-origin lib/ first, then a CDN fallback.
+function _loadScriptOnce(check, urls){
+  return new Promise((resolve, reject)=>{
+    if(check()){ resolve(); return; }
+    let i=0;
+    const tryNext=()=>{
+      if(check()){ resolve(); return; }
+      if(i>=urls.length){ reject(new Error('load failed')); return; }
+      const s=document.createElement('script');
+      s.src=urls[i++];
+      s.onload=()=>{ if(check()) resolve(); else tryNext(); };
+      s.onerror=tryNext;
+      document.head.appendChild(s);
+    };
+    tryNext();
+  });
+}
+async function ensurePptxLib(){
+  await _loadScriptOnce(()=>typeof PptxGenJS!=='undefined', [
+    'lib/pptxgen.bundle.js',
+    'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundled.js'
+  ]);
+}
+async function ensureXlsxLib(){
+  await _loadScriptOnce(()=>typeof XLSX!=='undefined', [
+    'lib/xlsx.bundle.js',
+    'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js'
+  ]);
+}
+
 async function exportToPPT(){
-  if(typeof PptxGenJS==='undefined'){alert('PPT library not loaded. Please check your internet connection.');return;}
+  try { await ensurePptxLib(); }
+  catch(e){ alert('Could not load the PowerPoint library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
+  if(typeof PptxGenJS==='undefined'){ alert('PowerPoint library unavailable. Please try again.'); return; }
   const projVal=document.getElementById('gantt-proj-filter').value;
   const projects=projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal);
   if(!projects.length){ alert('No workplans to export.'); return; }
@@ -3825,6 +3871,7 @@ function openEditPhase(projId, phaseId){
       <div style="flex:1;"><label style="${_lbl}">End date</label><input id="edit-f3d" class="fi" type="date" value="${eDate.toISOString().slice(0,10)}" onchange="_phaseDateToWk('end')"></div>
     </div>
     <div style="margin-bottom:14px;"><label style="${_lbl}">Colour</label><div style="display:flex;gap:8px;flex-wrap:wrap;" id="edit-colour-row">${colourOpts}</div><input type="hidden" id="edit-f4" value="${ph.color}"></div>
+    <div id="phase-proj-share" style="font-size:11px;color:var(--mid);margin-bottom:14px;"></div>
     <div style="border-top:1px dashed var(--border);padding-top:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="_toggleDownstream()">
         <span style="${_lbl}margin-bottom:0;">Tasks in this phase</span>
@@ -3833,6 +3880,18 @@ function openEditPhase(projId, phaseId){
       <div id="downstream-box" style="display:none;margin-top:10px;"></div>
     </div>`;
   document.getElementById('edit-modal').style.display='flex';
+  _updatePhaseProjShare();
+}
+function _updatePhaseProjShare(){
+  const el=document.getElementById('phase-proj-share'); if(!el||!editCtx) return;
+  const p=_findProj(editCtx.projId); if(!p) return;
+  const sw=parseInt(document.getElementById('edit-f2').value)||1;
+  const ew=parseInt(document.getElementById('edit-f3').value)||sw;
+  const span=Math.max(1, ew-sw+1);
+  // Total project length = span from week 1 to the latest phase end week
+  const projLen=Math.max(span, ...p.phases.map(x=>x.endWk), 1);
+  const pct=Math.round(span/projLen*100);
+  el.textContent=`This phase spans ${span} week${span>1?'s':''} — about ${pct}% of the entire project (${projLen} week${projLen>1?'s':''}).`;
 }
 function _phaseWkToDate(which){
   const p=_findProj(editCtx.projId); if(!p) return;
@@ -3840,12 +3899,14 @@ function _phaseWkToDate(which){
   if(!wk) return;
   const d=wkToDate(p.startDate,wk);
   document.getElementById(which==='start'?'edit-f2d':'edit-f3d').value=d.toISOString().slice(0,10);
+  _updatePhaseProjShare();
 }
 function _phaseDateToWk(which){
   const p=_findProj(editCtx.projId); if(!p) return;
   const dv=document.getElementById(which==='start'?'edit-f2d':'edit-f3d').value; if(!dv) return;
   const wk=Math.max(1, Math.round((new Date(dv)-new Date(p.startDate))/(7*24*60*60*1000))+1);
   document.getElementById(which==='start'?'edit-f2':'edit-f3').value=wk;
+  _updatePhaseProjShare();
 }
 function _toggleDownstream(){
   const box=document.getElementById('downstream-box');
@@ -4027,19 +4088,58 @@ function openEditTask(projId, phaseId, wsId, taskId){
     startISO = r.startISO; endISO = r.endISO;
   }
   document.getElementById('edit-modal-title').textContent='Edit Task';
+  const _sw = (!isOther && p) ? dateToWk(new Date(p.startDate), startISO) : '';
+  const _ew = (!isOther && p) ? dateToWk(new Date(p.startDate), endISO) : '';
+  const _phLen = ph ? (ph.endWk-ph.startWk+1) : 0;
   document.getElementById('edit-modal-body').innerHTML=`
     <div style="margin-bottom:14px;"><label style="${_lbl}">Task Name</label><input id="edit-f1" class="fi" value="${(task.name||'').replace(/"/g,'&quot;')}"></div>
     <div style="margin-bottom:14px;"><label style="${_lbl}">Owner</label><select id="edit-f2" class="fs">${ownerOpts}</select></div>
-    <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-end;">
-      <div style="flex:1;"><label style="${_lbl}">Start date</label><input id="edit-f3s" class="fi" type="date" value="${startISO}"></div>
-      <div style="flex:1;"><label style="${_lbl}">End date</label><input id="edit-f3e" class="fi" type="date" value="${endISO}"></div>
+    <div style="display:flex;gap:10px;margin-bottom:6px;align-items:flex-end;">
+      <div style="flex:1;"><label style="${_lbl}">Start date</label><input id="edit-f3s" class="fi" type="date" value="${startISO}" onchange="_taskEditDateToWk('start')"></div>
+      ${isOther?'':`<div style="width:70px;"><label style="${_lbl}">Start wk</label><input id="edit-f3sw" class="fi" type="number" min="1" value="${_sw}" oninput="_taskEditWkToDate('start')"></div>`}
     </div>
+    <div style="display:flex;gap:10px;margin-bottom:6px;align-items:flex-end;">
+      <div style="flex:1;"><label style="${_lbl}">End date</label><input id="edit-f3e" class="fi" type="date" value="${endISO}" onchange="_taskEditDateToWk('end')"></div>
+      ${isOther?'':`<div style="width:70px;"><label style="${_lbl}">End wk</label><input id="edit-f3ew" class="fi" type="number" min="1" value="${_ew}" oninput="_taskEditWkToDate('end')"></div>`}
+    </div>
+    ${isOther?'':`<div id="task-phase-share" style="font-size:11px;color:var(--mid);margin-bottom:14px;"></div>`}
     <div><label style="${_lbl}">Status</label><select id="edit-f4" class="fs">
       <option value="on-track" ${task.status==='on-track'?'selected':''}>On Track</option>
       <option value="at-risk" ${task.status==='at-risk'?'selected':''}>At Risk</option>
       <option value="delayed" ${task.status==='delayed'?'selected':''}>Delayed</option>
     </select></div>`;
   document.getElementById('edit-modal').style.display='flex';
+  if(!isOther){ _taskEditPhaseCtx={ projStart:p.startDate, phStartWk:ph?ph.startWk:1, phEndWk:ph?ph.endWk:1, phLen:_phLen }; _updateTaskPhaseShare(); }
+}
+// Two-way week/date sync + phase-share note for the task edit form
+let _taskEditPhaseCtx=null;
+function _taskEditWkToDate(which){
+  if(!_taskEditPhaseCtx) return;
+  const ps=new Date(_taskEditPhaseCtx.projStart);
+  const wkEl=document.getElementById(which==='start'?'edit-f3sw':'edit-f3ew');
+  const dEl=document.getElementById(which==='start'?'edit-f3s':'edit-f3e');
+  const wk=parseInt(wkEl.value); if(!wk) return;
+  dEl.value=wkToISO(ps,wk);
+  _updateTaskPhaseShare();
+}
+function _taskEditDateToWk(which){
+  if(!_taskEditPhaseCtx) return;
+  const ps=new Date(_taskEditPhaseCtx.projStart);
+  const dEl=document.getElementById(which==='start'?'edit-f3s':'edit-f3e');
+  const wkEl=document.getElementById(which==='start'?'edit-f3sw':'edit-f3ew');
+  if(!dEl.value) return;
+  wkEl.value=dateToWk(ps,dEl.value);
+  _updateTaskPhaseShare();
+}
+function _updateTaskPhaseShare(){
+  const el=document.getElementById('task-phase-share');
+  if(!el||!_taskEditPhaseCtx) return;
+  const sw=parseInt(document.getElementById('edit-f3sw').value)||_taskEditPhaseCtx.phStartWk;
+  const ew=parseInt(document.getElementById('edit-f3ew').value)||sw;
+  const span=Math.max(1, ew-sw+1);
+  const phLen=_taskEditPhaseCtx.phLen||1;
+  const pct=Math.round(span/phLen*100);
+  el.textContent=`This task spans ${span} week${span>1?'s':''} — about ${pct}% of its phase (${phLen} week${phLen>1?'s':''}).`;
 }
 function _taskWkToDate(){
   const p=_findProj(editCtx.projId); if(!p) return;
@@ -4116,7 +4216,11 @@ function editModalSave(){
       task.startDate=sISO; task.endDate=eISO; task.dueDate=eISO;
     } else {
       const ps=new Date(p.startDate);
-      const startWk=dateToWk(ps,sISO), endWk=dateToWk(ps,eISO);
+      // Prefer explicit week fields when provided
+      const swEl=document.getElementById('edit-f3sw'), ewEl=document.getElementById('edit-f3ew');
+      let startWk = (swEl && swEl.value) ? Math.max(1,parseInt(swEl.value)) : dateToWk(ps,sISO);
+      let endWk = (ewEl && ewEl.value) ? Math.max(1,parseInt(ewEl.value)) : dateToWk(ps,eISO);
+      if(endWk<startWk) endWk=startWk;
       task.due='Wk '+startWk;
       task.durWk=Math.max(1,endWk-startWk+1);
     }
