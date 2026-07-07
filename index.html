@@ -497,8 +497,13 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <option value="months">Month view</option>
     </select>
     <button class="btn-sm" onclick="openAddTaskFor(ganttDefaultProj(),'','')" style="border-color:var(--ink);color:var(--ink);font-weight:700;">+ Add phase / task</button>
-    <button class="btn-sm" onclick="exportToPPT()" style="border-color:var(--red);color:var(--red);font-weight:700;">Export to PPT</button>
-    <button class="btn-sm" onclick="exportToExcel()" style="border-color:var(--green);color:var(--green);font-weight:700;">Export to Excel</button>
+    <div style="position:relative;display:inline-block;">
+      <button class="btn-sm" onclick="toggleExportMenu(event)" style="border-color:var(--red);color:var(--red);font-weight:700;">Export &#9662;</button>
+      <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:180px;">
+        <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to PowerPoint</div>
+        <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel</div>
+      </div>
+    </div>
   </div>
   <div class="gantt-outer" id="gantt-outer" style="font-size:12px;">
     <div id="gantt-container"></div>
@@ -2312,19 +2317,19 @@ function renderGantt(){
 
   document.getElementById('gantt-container').innerHTML=`
     <div style="overflow-x:auto;overflow-y:visible;position:relative;">
-      <table style="border-collapse:collapse;table-layout:fixed;width:${LW+totalWeekW}px;">
+      <table style="border-collapse:collapse;table-layout:fixed;width:${LW+totalWeekW}px;max-width:${LW+totalWeekW}px;">
         <thead>
           <tr>
             <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#2D2D2D;border-right:1px solid #444;border-bottom:1px solid #444;position:sticky;left:0;z-index:6;text-align:left;">Project / Phase / Task</th>
             <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#2D2D2D;border-right:2px solid #555;border-bottom:1px solid #444;position:sticky;left:${LW-PROG_W}px;z-index:6;text-align:center;">Status</th>
-            <th style="padding:0;border-bottom:1px solid #444;background:#2D2D2D;">
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #444;background:#2D2D2D;">
               <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
             </th>
           </tr>
           <tr>
             <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#3A3A3A;border-right:1px solid #444;border-bottom:2px solid #555;position:sticky;left:0;z-index:6;"></th>
             <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#3A3A3A;border-right:2px solid #555;border-bottom:2px solid #555;position:sticky;left:${LW-PROG_W}px;z-index:6;"></th>
-            <th style="padding:0;background:#3A3A3A;border-bottom:2px solid #555;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#3A3A3A;border-bottom:2px solid #555;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
             </th>
           </tr>
         </thead>
@@ -2374,6 +2379,21 @@ window.addEventListener('resize', ()=>{
 // ============================================================
 // PPT EXPORT via pptxgenjs
 // ============================================================
+// ---- Export dropdown menu ----
+function toggleExportMenu(e){
+  e.stopPropagation();
+  const m=document.getElementById('export-menu');
+  const open = m.style.display!=='none';
+  m.style.display = open?'none':'block';
+  if(!open) setTimeout(()=>document.addEventListener('click',_closeExportMenuOnce,{once:true}),0);
+}
+function _closeExportMenuOnce(){ const m=document.getElementById('export-menu'); if(m) m.style.display='none'; }
+function _exportChoice(kind){
+  _closeExportMenuOnce();
+  if(kind==='ppt') exportToPPT();
+  else if(kind==='excel') exportToExcel();
+}
+
 async function exportToExcel(){
   try { await ensureXlsxLib(); }
   catch(e){ alert('Could not load the Excel library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
@@ -2530,93 +2550,103 @@ async function exportToPPT(){
 
   projects.forEach(proj=>{
     const slide=pptx.addSlide();
-    // bg
-    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:SW,h:SH,fill:{color:'F4F4F4'},line:{color:'F4F4F4'}});
-    // title bar
-    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:SW,h:0.55,fill:{color:'1A1A1A'},line:{color:'1A1A1A'}});
-    slide.addText(`${proj.caseCode}  ·  ${proj.name}  —  Gantt Chart`,{x:LM,y:0.08,w:SW-2.5,h:0.4,fontSize:13,bold:true,color:'FFFFFF',fontFace:'Arial'});
-    slide.addText(`Generated ${fmtDateLong(now)}`,{x:SW-2.3,y:0.15,w:2.1,h:0.28,fontSize:8,color:'888888',fontFace:'Arial',align:'right'});
+    slide.background={color:'FFFFFF'};
+    // Title bar
+    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:SW,h:0.55,fill:{color:'1A1A1A'},line:{type:'none'}});
+    slide.addText(`${proj.caseCode}  ·  ${proj.name}  —  Gantt Chart`,{x:LM,y:0.08,w:SW-2.5,h:0.4,fontSize:14,bold:true,color:'FFFFFF',fontFace:'Arial'});
+    slide.addText(`Generated ${fmtDateLong(now)}`,{x:SW-2.3,y:0.16,w:2.1,h:0.28,fontSize:8,color:'AAAAAA',fontFace:'Arial',align:'right'});
 
-    let cy=0.65;
-    // Month header
+    const rows=buildGanttRows([proj]);
+    const gridTop=0.65;              // where the header band starts
+    const monthH=0.26, weekH=0.24;   // header band heights
+    const bodyTop=gridTop+monthH+weekH;
+    // Fit all rows on the slide
+    const bottomLimit=SH-0.5;
+    const rh=Math.min(RH, Math.max(0.16,(bottomLimit-bodyTop)/Math.max(rows.length,1)));
+    const gridBottom=bodyTop+rows.length*rh;
+    const chartRight=LCOL+LM+weeks.length*WKW;
+
+    // ---- HEADER: label corner + month band + week band ----
+    slide.addShape(pptx.ShapeType.rect,{x:LM,y:gridTop,w:LCOL-0.05,h:monthH+weekH,fill:{color:'2D2D2D'},line:{color:'888888',width:0.5}});
+    slide.addText('Project / Phase / Workstream / Task',{x:LM+0.06,y:gridTop+0.04,w:LCOL-0.14,h:monthH+weekH-0.08,fontSize:8,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
     let mxOff=0;
     monthGroups2.forEach(mg=>{
       const mw=mg.count*WKW;
-      slide.addShape(pptx.ShapeType.rect,{x:LCOL+LM+mxOff,y:cy,w:mw,h:0.25,fill:{color:'E8E8E8'},line:{color:'CCCCCC'}});
-      slide.addText(mg.label,{x:LCOL+LM+mxOff+0.04,y:cy+0.03,w:mw-0.08,h:0.2,fontSize:7,bold:true,color:'333333',fontFace:'Arial'});
+      slide.addShape(pptx.ShapeType.rect,{x:LCOL+LM+mxOff,y:gridTop,w:mw,h:monthH,fill:{color:'3A3A3A'},line:{color:'555555',width:0.5}});
+      slide.addText(mg.label,{x:LCOL+LM+mxOff+0.04,y:gridTop+0.03,w:mw-0.08,h:monthH-0.06,fontSize:8,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
       mxOff+=mw;
     });
-    cy+=0.25;
-    // Week header
     weeks.forEach((wk,wi)=>{
       const wx=LCOL+LM+wi*WKW;
       const isT=wk<=now&&now<new Date(wk.getTime()+7*24*60*60*1000);
-      slide.addShape(pptx.ShapeType.rect,{x:wx,y:cy,w:WKW,h:0.22,fill:{color:isT?'FFE5E5':'F0F0F0'},line:{color:'DDDDDD'}});
-      slide.addText(fmtDate(wk),{x:wx+0.01,y:cy+0.02,w:WKW-0.02,h:0.18,fontSize:6,color:isT?'CC0000':'888888',fontFace:'Arial',align:'center'});
+      slide.addShape(pptx.ShapeType.rect,{x:wx,y:gridTop+monthH,w:WKW,h:weekH,fill:{color:isT?'5A2222':'3A3A3A'},line:{color:'555555',width:0.5}});
+      slide.addText(fmtDate(wk),{x:wx,y:gridTop+monthH+0.02,w:WKW,h:weekH-0.04,fontSize:7,bold:true,color:isT?'FFBBBB':'EEEEEE',fontFace:'Arial',align:'center',valign:'middle'});
     });
-    cy+=0.22;
-    // Today line
-    const tx2=LCOL+LM+((now-range.start)/(7*24*60*60*1000))*WKW;
-    slide.addShape(pptx.ShapeType.line,{x:tx2,y:0.55,w:0,h:SH-0.7,line:{color:'CC0000',width:1.2,dashType:'dash'}});
 
-    // Header label col
-    slide.addShape(pptx.ShapeType.rect,{x:LM,y:0.65,w:LCOL-0.05,h:0.47,fill:{color:'EEEEEE'},line:{color:'CCCCCC'}});
-    slide.addText('Project / Phase / Workstream / Task',{x:LM+0.06,y:0.68,w:LCOL-0.14,h:0.38,fontSize:7,bold:true,color:'666666',fontFace:'Arial'});
+    // ---- BODY ROWS ----
+    rows.forEach((row,ri)=>{
+      const cy=bodyTop+ri*rh;
+      const lblBg=row.type==='project'?'1A1A1A':row.type==='phase'?'EFEFEF':row.type==='ws'?'F7F7F7':'FFFFFF';
+      // Label cell (with border)
+      slide.addShape(pptx.ShapeType.rect,{x:LM,y:cy,w:LCOL-0.05,h:rh,fill:{color:lblBg},line:{color:'CCCCCC',width:0.5}});
+      // Chart cell background (white, bordered) so every row reads as a table row
+      slide.addShape(pptx.ShapeType.rect,{x:LCOL+LM,y:cy,w:weeks.length*WKW,h:rh,fill:{color:row.type==='ws'?'FBFBFB':'FFFFFF'},line:{color:'E6E6E6',width:0.5}});
 
-    const rows=buildGanttRows([proj]);
-    rows.forEach(row=>{
-      if(cy>SH-0.35) return;
-      const rh=row.type==='project'?RH*1.3:row.type==='phase'?RH*1.1:row.type==='ws'?RH*0.9:RH;
-      const lblBg=row.type==='project'?'1A1A1A':row.type==='phase'?'F0F0F0':row.type==='ws'?'FAFAFA':'FFFFFF';
-      slide.addShape(pptx.ShapeType.rect,{x:LM,y:cy,w:LCOL-0.05,h:rh,fill:{color:lblBg},line:{color:'EEEEEE'}});
-
+      // Label text
       if(row.type==='project'){
-        slide.addText(row.proj.caseCode,{x:LM+0.08,y:cy+0.02,w:LCOL-0.18,h:rh*0.55,fontSize:9,bold:true,color:'FFFFFF',fontFace:'Arial'});
-        slide.addText(row.proj.name,{x:LM+0.08,y:cy+rh*0.52,w:LCOL-0.18,h:rh*0.43,fontSize:7,color:'999999',fontFace:'Arial'});
+        slide.addText(row.proj.caseCode+'  —  '+row.proj.name,{x:LM+0.08,y:cy,w:LCOL-0.18,h:rh,fontSize:8.5,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
       }else if(row.type==='phase'){
         const pc=row.ph.color.replace('#','');
-        slide.addShape(pptx.ShapeType.rect,{x:LM+0.07,y:cy+rh*0.18,w:0.04,h:rh*0.64,fill:{color:pc},line:{color:pc}});
-        slide.addText(`${row.ph.name} Phase  ${fmtDate(wkToDate(row.proj.startDate,row.ph.startWk))}–${fmtDate(wkToDate(row.proj.startDate,row.ph.endWk))}`,{x:LM+0.15,y:cy+0.02,w:LCOL-0.22,h:rh-0.04,fontSize:8,bold:true,color:'333333',fontFace:'Arial'});
+        slide.addShape(pptx.ShapeType.rect,{x:LM+0.06,y:cy+rh*0.2,w:0.05,h:rh*0.6,fill:{color:pc},line:{type:'none'}});
+        slide.addText(`${row.ph.name}  (${fmtDate(wkToDate(row.proj.startDate,row.ph.startWk))}–${fmtDate(wkToDate(row.proj.startDate,row.ph.endWk))})`,{x:LM+0.15,y:cy,w:LCOL-0.24,h:rh,fontSize:8,bold:true,color:'222222',fontFace:'Arial',valign:'middle'});
       }else if(row.type==='ws'){
-        slide.addText(row.ws.name.toUpperCase(),{x:LM+0.25,y:cy+0.01,w:LCOL-0.32,h:rh-0.02,fontSize:6.5,bold:true,color:'888888',fontFace:'Arial'});
+        slide.addText(row.ws.name.toUpperCase(),{x:LM+0.24,y:cy,w:LCOL-0.32,h:rh,fontSize:7,bold:true,color:'888888',fontFace:'Arial',valign:'middle'});
       }else{
-        const si=row.task.done?'[done] ':row.task.status==='delayed'?'[!] ':row.task.status==='at-risk'?'[~] ':'';
-        slide.addText(si+(row.task.name.length>38?row.task.name.slice(0,38)+'...':row.task.name),{x:LM+0.35,y:cy+0.01,w:LCOL-0.55,h:rh-0.02,fontSize:7,color:row.task.done?'AAAAAA':'444444',fontFace:'Arial'});
-        const oc=row.task.done?'AAAAAA':row.task.status==='delayed'?'CC0000':row.task.status==='at-risk'?'B87000':'1A7F4E';
-        slide.addShape(pptx.ShapeType.roundRect,{x:LCOL-0.22,y:cy+rh*0.18,w:0.19,h:rh*0.64,fill:{color:oc},line:{color:oc},rectRadius:0.03});
-        slide.addText((row.task.owner||'').split(',')[0].trim(),{x:LCOL-0.22,y:cy+rh*0.18,w:0.19,h:rh*0.64,fontSize:5.5,bold:true,color:'FFFFFF',fontFace:'Arial',align:'center',valign:'middle'});
+        const nm=(row.task.name.length>40?row.task.name.slice(0,40)+'…':row.task.name);
+        slide.addText(nm,{x:LM+0.34,y:cy,w:LCOL-0.56,h:rh,fontSize:7.5,color:row.task.done?'AAAAAA':'333333',italic:!!row.task.done,fontFace:'Arial',valign:'middle'});
+        const oc=row.task.done?'AAAAAA':row.task.status==='delayed'?'A52834':row.task.status==='at-risk'?'D69200':'1A7F4E';
+        slide.addShape(pptx.ShapeType.rect,{x:LCOL-0.24,y:cy+rh*0.2,w:0.2,h:rh*0.6,fill:{color:oc},line:{type:'none'}});
+        slide.addText((row.task.owner||'').split(',')[0].trim(),{x:LCOL-0.24,y:cy+rh*0.2,w:0.2,h:rh*0.6,fontSize:5.5,bold:true,color:'FFFFFF',fontFace:'Arial',align:'center',valign:'middle'});
       }
 
-      // Chart background row
-      weeks.forEach((wk,wi)=>{
-        const isT=wk<=now&&now<new Date(wk.getTime()+7*24*60*60*1000);
-        if(isT) slide.addShape(pptx.ShapeType.rect,{x:LCOL+LM+wi*WKW,y:cy,w:WKW,h:rh,fill:{color:'FFE8E8',transparency:50},line:{color:'FFDDDD',transparency:50}});
-      });
-
+      // Bars sit inside the ruled chart cell
       if(row.type==='phase'){
         const s=wkToDate(row.proj.startDate,row.ph.startWk);
         const e=wkToDate(row.proj.startDate,row.ph.endWk+1);
         const bx=LCOL+LM+((s-range.start)/(7*24*60*60*1000))*WKW;
-        const bw2=Math.max(((e-s)/(7*24*60*60*1000))*WKW,0.05);
+        const bw2=Math.max(((e-s)/(7*24*60*60*1000))*WKW,0.08);
         const pc=row.ph.color.replace('#','');
-        slide.addShape(pptx.ShapeType.roundRect,{x:bx,y:cy+rh*0.18,w:bw2,h:rh*0.64,fill:{color:pc,transparency:10},line:{color:pc},rectRadius:0.03});
-        if(bw2>0.35) slide.addText(row.ph.name,{x:bx+0.04,y:cy+rh*0.2,w:bw2-0.08,h:rh*0.6,fontSize:7,bold:true,color:'FFFFFF',fontFace:'Arial'});
+        slide.addShape(pptx.ShapeType.roundRect,{x:bx,y:cy+rh*0.22,w:bw2,h:rh*0.56,fill:{color:pc},line:{color:pc},rectRadius:0.02});
+        if(bw2>0.4) slide.addText(row.ph.name,{x:bx+0.04,y:cy+rh*0.22,w:bw2-0.08,h:rh*0.56,fontSize:6.5,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
       }else if(row.type==='task'){
         const dw=parseWkDue(row.task.due);
+        const dur=Math.max(1,row.task.durWk||1);
         const ts=wkToDate(row.proj.startDate,dw);
+        const te=wkToDate(row.proj.startDate,dw+dur);
         const tbx=LCOL+LM+((ts-range.start)/(7*24*60*60*1000))*WKW;
-        const tc=row.task.done?'AAAAAA':row.task.status==='delayed'?'CC0000':row.task.status==='at-risk'?'B87000':'1A7F4E';
-        slide.addShape(pptx.ShapeType.roundRect,{x:tbx+0.01,y:cy+rh*0.25,w:WKW*0.82,h:rh*0.5,fill:{color:tc},line:{color:tc},rectRadius:0.02});
+        const tbw=Math.max(((te-ts)/(7*24*60*60*1000))*WKW,0.12);
+        const tc=row.task.done?'AAAAAA':row.task.status==='delayed'?'A52834':row.task.status==='at-risk'?'D69200':'1A7F4E';
+        slide.addShape(pptx.ShapeType.roundRect,{x:tbx+0.02,y:cy+rh*0.28,w:tbw-0.04,h:rh*0.44,fill:{color:tc},line:{color:tc},rectRadius:0.02});
       }
-      cy+=rh;
     });
 
-    // Legend
-    slide.addShape(pptx.ShapeType.rect,{x:0,y:SH-0.35,w:SW,h:0.35,fill:{color:'EEEEEE'},line:{color:'DDDDDD'}});
-    [{color:'1A7F4E',label:'On Track'},{color:'B87000',label:'At Risk'},{color:'CC0000',label:'Delayed'},{color:'AAAAAA',label:'Completed'}].forEach((li,i)=>{
-      const lx=0.3+i*1.8;
-      slide.addShape(pptx.ShapeType.roundRect,{x:lx,y:SH-0.26,w:0.14,h:0.14,fill:{color:li.color},line:{color:li.color},rectRadius:0.02});
-      slide.addText(li.label,{x:lx+0.17,y:SH-0.27,w:1.5,h:0.18,fontSize:8,color:'555555',fontFace:'Arial'});
+    // ---- Vertical week gridlines spanning the whole body ----
+    for(let wi=0; wi<=weeks.length; wi++){
+      const gx=LCOL+LM+wi*WKW;
+      slide.addShape(pptx.ShapeType.line,{x:gx,y:bodyTop,w:0,h:gridBottom-bodyTop,line:{color:'E6E6E6',width:0.5}});
+    }
+    // Today line on top
+    const tx2=LCOL+LM+((now-range.start)/(7*24*60*60*1000))*WKW;
+    if(tx2>=LCOL+LM && tx2<=chartRight){
+      slide.addShape(pptx.ShapeType.line,{x:tx2,y:gridTop,w:0,h:gridBottom-gridTop,line:{color:'CC0000',width:1.25,dashType:'dash'}});
+    }
+
+    // ---- Legend ----
+    const ly=gridBottom+0.12;
+    [{color:'1A7F4E',label:'On Track'},{color:'D69200',label:'At Risk'},{color:'A52834',label:'Delayed'},{color:'AAAAAA',label:'Completed'}].forEach((li,i)=>{
+      const lx=LM+i*1.7;
+      slide.addShape(pptx.ShapeType.rect,{x:lx,y:ly,w:0.14,h:0.14,fill:{color:li.color},line:{type:'none'}});
+      slide.addText(li.label,{x:lx+0.18,y:ly-0.03,w:1.4,h:0.2,fontSize:8,color:'555555',fontFace:'Arial',valign:'middle'});
     });
   });
 
