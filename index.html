@@ -327,8 +327,8 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 .gbar.phase-bar{height:20px;border-radius:4px;opacity:.9;}
 .gbar.task-bar{height:14px;}
 .gbar.done-bar{opacity:.45;}
-.gbar.at-risk-bar{outline:2px solid var(--warn);}
-.gbar.delayed-bar{outline:2px solid var(--danger);}
+.gbar.at-risk-bar{}
+.gbar.delayed-bar{}
 /* today line */
 .today-line{position:absolute;top:0;bottom:0;width:2px;background:var(--red);opacity:.6;z-index:8;pointer-events:none;}
 .today-label{position:absolute;top:2px;font-size:9px;font-weight:700;color:var(--red);background:#fff;border:1px solid var(--red);border-radius:3px;padding:1px 4px;z-index:9;white-space:nowrap;transform:translateX(-50%);}
@@ -1433,7 +1433,7 @@ allFlatTasks().forEach(t=>{
 const taskDoneState = APP.taskDoneState;
 
 function renderFocus(){ renderDashboard(); }
-function toggleFocus(id){taskDoneState[id]=!taskDoneState[id];APP.taskDoneState=taskDoneState;saveData();renderDashboard();}
+function toggleFocus(id){taskDoneState[id]=!taskDoneState[id];APP.taskDoneState=taskDoneState;const _t=allFlatTasks().find(x=>x.id===id);pushFeed(`${taskDoneState[id]?'Completed':'Reopened'}: ${_t?_t.name:'A task'}`, taskDoneState[id]?'#1A7F4E':'#D69200');saveData();renderDashboard();}
 
 // ============================================================
 // CONFIGURABLE DASHBOARD
@@ -1791,14 +1791,34 @@ if(CLOUD){
   renderDashboard();
 }
 
-// ---- DRAWER ----
+// ---- DRAWER + RECENT ACTIVITY FEED ----
 let drawerOpen=false;
-document.getElementById('drawer-body').innerHTML=FEED.map(f=>`
-  <div class="feed-row">
-    <div class="feed-dot" style="background:${f.dot}"></div>
-    <div class="feed-text">${f.text}</div>
-    <div class="feed-time">${f.time}</div>
-  </div>`).join('');
+function _relTime(ts){
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<60) return 'just now';
+  if(s<3600) return Math.floor(s/60)+'m ago';
+  if(s<86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+function renderFeed(){
+  const el=document.getElementById('drawer-body');
+  if(!el) return;
+  if(!FEED || !FEED.length){ el.innerHTML='<div style="padding:14px;font-size:12px;color:var(--muted);">No recent activity yet. Completing tasks or changing statuses will show up here.</div>'; return; }
+  el.innerHTML=FEED.map(f=>`
+    <div class="feed-row">
+      <div class="feed-dot" style="background:${f.dot}"></div>
+      <div class="feed-text">${f.text}</div>
+      <div class="feed-time">${f.ts?_relTime(f.ts):(f.time||'')}</div>
+    </div>`).join('');
+}
+function pushFeed(text, dot){
+  if(!Array.isArray(FEED)) FEED=[];
+  FEED.unshift({ text, dot:dot||'#1A7F4E', ts:Date.now() });
+  FEED = FEED.slice(0,40); // keep the most recent 40
+  APP.feed = FEED;
+  renderFeed();
+}
+renderFeed();
 function toggleDrawer(){
   drawerOpen=!drawerOpen;
   document.getElementById('drawer-body').classList.toggle('open',drawerOpen);
@@ -1827,6 +1847,8 @@ function toggleTaskRow(id,el){
   el.innerHTML=taskDoneState[id]?'&#10003;':'';
   const nr=el.closest('.t-row').querySelector('.t-name');
   if(nr)nr.classList.toggle('done',taskDoneState[id]);
+  const nm=nr?nr.textContent.trim():'A task';
+  pushFeed(`${taskDoneState[id]?'Completed':'Reopened'}: ${nm}`, taskDoneState[id]?'#1A7F4E':'#D69200');
   saveData();
   renderDashboard();
 }
@@ -2110,6 +2132,9 @@ function setGanttStatus(projId, phaseId, wsId, taskId, choice){
     task.done = false; taskDoneState[task.id] = false;
     task.status = choice;
   }
+  const _lbl = choice==='done'?'Completed':choice==='delayed'?'marked Delayed':choice==='at-risk'?'marked At Risk':'marked On Track';
+  const _dot = choice==='done'?'#1A7F4E':choice==='delayed'?'#A52834':choice==='at-risk'?'#D69200':'#1A7F4E';
+  pushFeed(`${task.name} — ${_lbl}`, _dot);
   APP.projects = PROJECTS; APP.taskDoneState = taskDoneState;
   saveData();
   _closeGanttStatusMenu();
@@ -2264,17 +2289,17 @@ function renderGantt(){
       }
       labelInner=`<div style="padding:8px 14px;display:flex;align-items:center;gap:8px;">
         <div style="flex:1;min-width:0;cursor:pointer;" onclick="collapseAllPhases('${row.proj.id}')" title="Click to collapse/expand all phases">
-          <div style="font-size:12px;font-weight:800;color:#fff;letter-spacing:.04em;">${row.proj.caseCode}${_dr?` <span style="font-weight:600;color:#fff;font-size:10px;letter-spacing:0;">· ${_dr}${_wks?` · ${_wks} wk${_wks>1?'s':''}`:''}</span>`:''}</div>
-          <div style="font-size:10px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">${row.proj.name}</div>
+          <div style="font-size:12px;font-weight:800;color:#1A1A1A;letter-spacing:.04em;">${row.proj.caseCode}${_dr?` <span style="font-weight:600;color:#333;font-size:10px;letter-spacing:0;">· ${_dr}${_wks?` · ${_wks} wk${_wks>1?'s':''}`:''}</span>`:''}</div>
+          <div style="font-size:10px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">${row.proj.name}</div>
         </div>
-        <button class="edit-btn" title="Edit project" style="color:#fff;" onclick="event.stopPropagation();openEditProject('${row.proj.id}')">&#9998;</button>
+        <button class="edit-btn" title="Edit project" style="color:#333;" onclick="event.stopPropagation();openEditProject('${row.proj.id}')">&#9998;</button>
       </div>`;
       const allProjTasks = row.proj.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks));
       const projDone = allProjTasks.filter(t=>taskDoneState[t.id]||t.done).length;
       const projPct  = allProjTasks.length ? Math.round(projDone/allProjTasks.length*100) : 0;
       const projCol  = projPct>=70?'#1A7F4E':projPct>=40?'#D69200':'#A52834';
       progInner = `<div style="padding:0 8px;display:flex;align-items:center;gap:4px;">
-        <div style="flex:1;height:3px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden;">
+        <div style="flex:1;height:3px;background:rgba(0,0,0,.12);border-radius:2px;overflow:hidden;">
           <div style="width:${projPct}%;height:100%;background:${projCol};border-radius:3px;"></div>
         </div>
         <span style="font-size:10px;font-weight:800;color:${projCol};min-width:28px;text-align:right;">${projPct}%</span>
@@ -2362,7 +2387,7 @@ function renderGantt(){
       const taskDur = Math.max(1, task.durWk||1);
       const taskBarW = Math.max(taskDur*WW - 8, 12);
       const bc = task.done?'rgba(26,26,26,.25)':task.status==='delayed'?'#A52834':task.status==='at-risk'?'#D69200':'#1A7F4E';
-      const outline = task.status==='at-risk'?'outline:2px solid #D69200;outline-offset:1px;':task.status==='delayed'?'outline:2px solid #A52834;outline-offset:1px;':'';
+      const outline = '';
       const member = TEAM.find(m=>m.initials===task.owner);
       const tipOwner = member ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${member.color};margin-right:3px;"></span>${member.name}` : task.owner;
       const safeName = task.name.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -2381,15 +2406,15 @@ function renderGantt(){
     const isProjectRow = row.type==='project';
     const gridCells = weeks.map(wk=>{
       const isT = wk<=now&&now<new Date(wk.getTime()+7*24*60*60*1000);
-      const cellBorder = isProjectRow ? '1px solid #333' : `1px solid ${isT?'rgba(204,0,0,.15)':'#f0f0f0'}`;
+      const cellBorder = isProjectRow ? '1px solid #cfcfcf' : `1px solid ${isT?'rgba(204,0,0,.15)':'#f0f0f0'}`;
       const cellBg = isProjectRow ? (isT?'rgba(204,0,0,.15)':'transparent') : (isT?'rgba(204,0,0,.03)':'transparent');
       return `<div style="width:${WW}px;min-width:${WW}px;height:100%;border-right:${cellBorder};background:${cellBg};"></div>`;
     }).join('');
 
     tableRows += `<tr>
-      <td style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;max-width:${LW-PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#888':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:0;z-index:4;">${labelInner}</td>
-      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#888':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;position:sticky;left:${LW-PROG_W}px;z-index:4;">${progInner}</td>
-      <td style="height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#888':'#eee'};padding:0;vertical-align:middle;position:relative;">
+      <td style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;max-width:${LW-PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:0;z-index:4;">${labelInner}</td>
+      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;position:sticky;left:${LW-PROG_W}px;z-index:4;">${progInner}</td>
+      <td style="height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};padding:0;vertical-align:middle;position:relative;">
         <div style="display:flex;height:100%;position:relative;">${gridCells}${barHTML}
           <div style="position:absolute;top:0;bottom:0;left:${todayOffset}px;width:2px;background:#CC0000;opacity:.7;pointer-events:none;z-index:3;"></div>
         </div>
@@ -2404,31 +2429,31 @@ function renderGantt(){
     let lbl = mg.label;
     if(groupW < 58) lbl = mg.label.split(' ')[0];      // drop year
     if(groupW < 26) lbl = mg.label.slice(0,1);          // just first letter
-    return `<th style="width:${groupW}px;min-width:${groupW}px;max-width:${groupW}px;padding:5px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#1A1A1A;border-right:1px solid #444;border-bottom:1px solid #444;white-space:nowrap;overflow:hidden;text-align:center;">${lbl}</th>`;
+    return `<th style="width:${groupW}px;min-width:${groupW}px;max-width:${groupW}px;padding:5px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;white-space:nowrap;overflow:hidden;text-align:center;">${lbl}</th>`;
   }).join('');
   const weekHdr = weeks.map(wk=>{
     const isT = wk<=now&&now<new Date(wk.getTime()+7*24*60*60*1000);
     if(viewMode==='months'){
-      return `<th style="width:${WW}px;min-width:${WW}px;padding:3px 0;background:${isT?'rgba(204,0,0,.25)':'#3A3A3A'};border-right:1px solid #3f3f3f;border-bottom:2px solid #555;"></th>`;
+      return `<th style="width:${WW}px;min-width:${WW}px;padding:3px 0;background:${isT?'#7A1515':'#A32222'};border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;"></th>`;
     }
-    return `<th style="width:${WW}px;min-width:${WW}px;padding:4px 2px;font-size:11px;font-weight:700;color:${isT?'#FFAAAA':'#f0f0f0'};background:${isT?'rgba(204,0,0,.3)':'#3A3A3A'};border-right:1px solid #444;border-bottom:2px solid #555;text-align:center;">${fmtDate(wk)}</th>`;
+    return `<th style="width:${WW}px;min-width:${WW}px;padding:4px 2px;font-size:11px;font-weight:700;color:${isT?'#FFD9D9':'#FBE9EB'};background:${isT?'#7A1515':'#A32222'};border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;text-align:center;">${fmtDate(wk)}</th>`;
   }).join('');
 
   document.getElementById('gantt-container').innerHTML=`
-    <div style="overflow-x:auto;overflow-y:visible;position:relative;">
-      <table style="border-collapse:collapse;table-layout:fixed;width:${LW+totalWeekW}px;max-width:${LW+totalWeekW}px;">
+    <div id="gantt-scroll" style="overflow-x:auto;overflow-y:visible;position:relative;max-width:100%;">
+      <table style="border-collapse:collapse;table-layout:fixed;width:${LW+totalWeekW}px;max-width:${LW+totalWeekW}px;margin:0;">
         <thead>
           <tr>
-            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#1A1A1A;border-right:1px solid #444;border-bottom:1px solid #444;position:sticky;left:0;z-index:6;text-align:left;">Project / Phase / Task</th>
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#1A1A1A;border-right:2px solid #555;border-bottom:1px solid #444;position:sticky;left:${LW-PROG_W}px;z-index:6;text-align:center;">Status</th>
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #444;background:#1A1A1A;">
+            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;left:0;z-index:6;text-align:left;">Project / Phase / Task</th>
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;left:${LW-PROG_W}px;z-index:6;text-align:center;">Status</th>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;">
               <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
             </th>
           </tr>
           <tr>
-            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#2D2D2D;border-right:1px solid #444;border-bottom:2px solid #555;position:sticky;left:0;z-index:6;"></th>
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#2D2D2D;border-right:2px solid #555;border-bottom:2px solid #555;position:sticky;left:${LW-PROG_W}px;z-index:6;"></th>
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#2D2D2D;border-bottom:2px solid #555;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
+            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;left:0;z-index:6;"></th>
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;left:${LW-PROG_W}px;z-index:6;"></th>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
             </th>
           </tr>
         </thead>
@@ -2437,8 +2462,8 @@ function renderGantt(){
     </div>`;
 
   setTimeout(()=>{
-    const outer = document.getElementById('gantt-outer');
-    if (outer) outer.scrollLeft = Math.max(0, todayOffset - outer.clientWidth/2 + LW);
+    const sc = document.getElementById('gantt-scroll');
+    if (sc) sc.scrollLeft = Math.max(0, todayOffset - sc.clientWidth/2 + LW);
   }, 80);
 }
 
@@ -2466,11 +2491,13 @@ function moveTip(e){tooltip.style.left=(e.clientX+14)+'px';tooltip.style.top=(e.
 document.addEventListener('mousemove',e=>{if(tooltip.classList.contains('visible'))moveTip(e);});
 
 // ============================================================
-// LINKED DATE-RANGE PAIRS
-// Visually join each start/end date pair with a dash and link them so
-// choosing a start constrains the end (and vice-versa). Each field still
-// opens the browser's own calendar and is separately selectable.
-// Pairs are matched by known id/class prefixes.
+// SHARED RANGE CALENDAR
+// Each start/end pair renders as two read-only boxes joined by a dash.
+// Clicking either box opens ONE custom calendar: click a day to set the
+// start, drag (or click a second day) to set the end. Cancel / OK commit.
+// No date library needed. On OK we write the ISO values back into the
+// underlying inputs and fire their existing change handlers so all the
+// week-sync logic keeps working.
 // ============================================================
 const _DATE_PAIRS = [
   ['task-start-date','task-end-date'],
@@ -2479,24 +2506,113 @@ const _DATE_PAIRS = [
   ['edit-f3s','edit-f3e'],   // edit task
   ['edit-f3','edit-f4']      // edit project (start/end)
 ];
+let _rcState=null; // {startISO,endISO,view:Date,dragging,startEl,endEl}
+function _fireChange(el){ if(el) el.dispatchEvent(new Event('change',{bubbles:true})); }
+function _isoOf(d){ return d.toISOString().slice(0,10); }
+function _parseISO(s){ if(!s) return null; const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+
 function _linkDatePair(startEl, endEl){
-  if(!startEl||!endEl||startEl.dataset.linked) return;
-  startEl.dataset.linked='1';
-  const sync=()=>{ if(startEl.value) endEl.min=startEl.value; if(endEl.value) startEl.max=endEl.value; };
-  startEl.addEventListener('change', ()=>{ if(startEl.value && (!endEl.value || endEl.value<startEl.value)) { /* leave end for user */ } sync(); });
-  endEl.addEventListener('change', sync);
-  sync();
-  // Wrap the two inputs with a dash separator if they share a parent row
-  if(startEl.parentElement && endEl.parentElement && !startEl.dataset.dashed){
-    startEl.dataset.dashed='1';
+  if(!startEl||!endEl||startEl.dataset.rc) return;
+  startEl.dataset.rc='1'; endEl.dataset.rc='1';
+  // Hide the native inputs; show a joined display in their place
+  startEl.type='hidden'; endEl.type='hidden';
+  const disp=document.createElement('div');
+  disp.className='rc-display';
+  disp.style.cssText='display:flex;align-items:center;gap:6px;';
+  disp.innerHTML=`
+    <span class="rc-box rc-start" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--ink);cursor:pointer;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+    <span style="color:var(--muted);font-weight:700;">&ndash;</span>
+    <span class="rc-box rc-end" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--ink);cursor:pointer;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
+  if(endEl.parentNode && typeof endEl.parentNode.insertBefore==='function'){
+    endEl.parentNode.insertBefore(disp, endEl.nextSibling);
+  } else { return; }
+  const refresh=()=>{
+    const s=_parseISO(startEl.value), e=_parseISO(endEl.value);
+    disp.querySelector('.rc-start').textContent = s?fmtDateLong(s):'Start date';
+    disp.querySelector('.rc-end').textContent   = e?fmtDateLong(e):'End date';
+    disp.querySelector('.rc-start').style.color = s?'var(--ink)':'var(--muted)';
+    disp.querySelector('.rc-end').style.color   = e?'var(--ink)':'var(--muted)';
+  };
+  disp.querySelector('.rc-start').onclick=()=>_openRangeCalendar(startEl,endEl,disp,refresh);
+  disp.querySelector('.rc-end').onclick  =()=>_openRangeCalendar(startEl,endEl,disp,refresh);
+  startEl._rcRefresh=refresh; endEl._rcRefresh=refresh;
+  refresh();
+}
+function _openRangeCalendar(startEl,endEl,disp,refresh){
+  _closeRangeCalendar();
+  const s=_parseISO(startEl.value), e=_parseISO(endEl.value);
+  _rcState={ startISO:startEl.value||'', endISO:endEl.value||'', view:(s||new Date()), dragging:false, startEl, endEl, disp, refresh };
+  const pop=document.createElement('div');
+  pop.id='rc-pop';
+  pop.style.cssText='position:fixed;z-index:500;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.2);padding:12px;width:280px;user-select:none;';
+  document.body.appendChild(pop);
+  const r=disp.getBoundingClientRect();
+  let top=r.bottom+6, left=r.left;
+  if(left+290>window.innerWidth) left=window.innerWidth-290;
+  if(top+340>window.innerHeight) top=Math.max(8,r.top-340);
+  pop.style.top=top+'px'; pop.style.left=left+'px';
+  _renderRangeCalendar();
+  setTimeout(()=>document.addEventListener('mousedown', _rcOutside),0);
+}
+function _rcOutside(e){ const p=document.getElementById('rc-pop'); if(p && !p.contains(e.target)) _closeRangeCalendar(); }
+function _closeRangeCalendar(){ const p=document.getElementById('rc-pop'); if(p) p.remove(); document.removeEventListener('mousedown', _rcOutside); _rcState=null; }
+function _rcMonthLabel(d){ return d.toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
+function _renderRangeCalendar(){
+  const st=_rcState; if(!st) return;
+  const pop=document.getElementById('rc-pop'); if(!pop) return;
+  const view=st.view;
+  const year=view.getFullYear(), month=view.getMonth();
+  const first=new Date(year,month,1);
+  const startDow=(first.getDay()+6)%7; // Mon=0
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const sIso=st.startISO, eIso=st.endISO;
+  let cells='';
+  for(let i=0;i<startDow;i++) cells+='<div></div>';
+  for(let d=1; d<=daysInMonth; d++){
+    const iso=_isoOf(new Date(year,month,d));
+    const inRange = sIso && eIso && iso>=sIso && iso<=eIso;
+    const isEnd = iso===sIso || iso===eIso;
+    const bg = isEnd?'var(--red)':inRange?'rgba(204,0,0,.12)':'transparent';
+    const col = isEnd?'#fff':'var(--ink)';
+    cells+=`<div class="rc-day" data-iso="${iso}" style="text-align:center;padding:7px 0;font-size:12px;border-radius:6px;cursor:pointer;background:${bg};color:${col};">${d}</div>`;
   }
+  pop.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <button type="button" onclick="_rcNav(-1)" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--slate);padding:2px 8px;">&#8249;</button>
+      <div style="font-size:13px;font-weight:700;color:var(--ink);">${_rcMonthLabel(view)}</div>
+      <button type="button" onclick="_rcNav(1)" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--slate);padding:2px 8px;">&#8250;</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;">
+      ${['M','T','W','T','F','S','S'].map(d=>`<div style="text-align:center;font-size:9px;font-weight:700;color:var(--muted);padding:2px 0;">${d}</div>`).join('')}
+    </div>
+    <div class="rc-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">${cells}</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center;">Click a day to set the start, then click (or drag to) the end.</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+      <button type="button" class="btn-ghost" style="font-size:12px;padding:6px 14px;" onclick="_closeRangeCalendar()">Cancel</button>
+      <button type="button" class="btn-red" style="font-size:12px;padding:6px 16px;" onclick="_rcCommit()">OK</button>
+    </div>`;
+  // wire day interactions (click to set start; drag to set end)
+  pop.querySelectorAll('.rc-day').forEach(cell=>{
+    cell.addEventListener('mousedown',e=>{ e.preventDefault(); st.startISO=cell.dataset.iso; st.endISO=cell.dataset.iso; st.dragging=true; _renderRangeCalendar(); });
+    cell.addEventListener('mouseenter',()=>{ if(st.dragging){ const iso=cell.dataset.iso; if(iso>=st.startISO){ st.endISO=iso; } else { st.endISO=st.startISO; st.startISO=iso; } _renderRangeCalendar(); } });
+    cell.addEventListener('mouseup',()=>{ st.dragging=false; });
+  });
+}
+function _rcNav(delta){ if(!_rcState) return; _rcState.view=new Date(_rcState.view.getFullYear(), _rcState.view.getMonth()+delta, 1); _renderRangeCalendar(); }
+document.addEventListener('mouseup',()=>{ if(_rcState) _rcState.dragging=false; });
+function _rcCommit(){
+  const st=_rcState; if(!st) return;
+  if(st.startISO){ st.startEl.value=st.startISO; }
+  if(st.endISO){ st.endEl.value=st.endISO; }
+  _fireChange(st.startEl); _fireChange(st.endEl);
+  if(st.refresh) st.refresh();
+  _closeRangeCalendar();
 }
 function linkAllDatePairs(){
   _DATE_PAIRS.forEach(([a,b])=>{
     const ea=document.getElementById(a), eb=document.getElementById(b);
     if(ea&&eb) _linkDatePair(ea,eb);
   });
-  // class-based pairs (repeatable rows)
   document.querySelectorAll('.ds-task').forEach(r=>_linkDatePair(r.querySelector('.ds-start'),r.querySelector('.ds-end')));
   document.querySelectorAll('.wsds-task').forEach(r=>_linkDatePair(r.querySelector('.wsds-start'),r.querySelector('.wsds-end')));
   document.querySelectorAll('.wp-phase-row').forEach(r=>_linkDatePair(r.querySelector('.wp-phase-start-date'),r.querySelector('.wp-phase-end-date')));
@@ -2670,122 +2786,127 @@ async function exportToPPT(){
   const projVal=document.getElementById('gantt-proj-filter').value;
   const projects=projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal);
   if(!projects.length){ alert('No workplans to export.'); return; }
-  const range=computeDateRange(projects);
-  const weeks=buildWeeks(range.start,range.end);
 
   const pptx=new PptxGenJS();
   pptx.layout='LAYOUT_WIDE';
-  const SW=13.33,SH=7.5,LM=0.2,LCOL=2.9,CHART_W=SW-LCOL-LM-0.1;
-  const WKW=CHART_W/weeks.length;
-  const RH=0.25;
-
-  const monthGroups2=[];
-  weeks.forEach((wk,i)=>{
-    const key=`${wk.getFullYear()}-${wk.getMonth()}`;
-    if(!monthGroups2.length||monthGroups2[monthGroups2.length-1].key!==key)
-      monthGroups2.push({key,label:`${MON_SHORT[wk.getMonth()]} ${wk.getFullYear()}`,count:1,startIdx:i});
-    else monthGroups2[monthGroups2.length-1].count++;
-  });
+  const SW=13.33, SH=7.5, MX=0.3;
+  // Bain theme
+  const MAROON='8A1A1A', MAROON_DK='6E1212', RED='CC0000';
+  const ST={ 'on-track':'1A7F4E', 'at-risk':'D69200', 'delayed':'A52834', 'done':'8A8A8A' };
 
   projects.forEach(proj=>{
+    const range=computeDateRange([proj]);
+    const weeks=buildWeeks(range.start,range.end);
+    const rows=buildGanttRows([proj]);
+
     const slide=pptx.addSlide();
     slide.background={color:'FFFFFF'};
-    // Title bar
-    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:SW,h:0.55,fill:{color:'1A1A1A'},line:{type:'none'}});
-    slide.addText(`${proj.caseCode}  ·  ${proj.name}  —  Gantt Chart`,{x:LM,y:0.08,w:SW-2.5,h:0.4,fontSize:14,bold:true,color:'FFFFFF',fontFace:'Arial'});
-    slide.addText(`Generated ${fmtDateLong(now)}`,{x:SW-2.3,y:0.16,w:2.1,h:0.28,fontSize:8,color:'AAAAAA',fontFace:'Arial',align:'right'});
+    // Title band (Bain maroon)
+    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:SW,h:0.6,fill:{color:MAROON},line:{type:'none'}});
+    slide.addText(`${proj.caseCode}  ·  ${proj.name}`,{x:MX,y:0.1,w:SW-3,h:0.4,fontSize:16,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
+    slide.addText(`Gantt Chart · Generated ${fmtDateLong(now)}`,{x:SW-3.3,y:0.14,w:3,h:0.32,fontSize:9,color:'FBD9DB',fontFace:'Arial',align:'right',valign:'middle'});
 
-    const rows=buildGanttRows([proj]);
-    const gridTop=0.65;              // where the header band starts
-    const monthH=0.26, weekH=0.24;   // header band heights
-    const bodyTop=gridTop+monthH+weekH;
-    // Fit all rows on the slide
-    const bottomLimit=SH-0.5;
-    const rh=Math.min(RH, Math.max(0.16,(bottomLimit-bodyTop)/Math.max(rows.length,1)));
-    const gridBottom=bodyTop+rows.length*rh;
-    const chartRight=LCOL+LM+weeks.length*WKW;
+    // Column layout: label col + one column per week
+    const LABEL_W=2.7, STATUS_W=0.9;
+    const gridW=SW-2*MX-LABEL_W-STATUS_W;
+    const WCW=gridW/weeks.length;
+    const colW=[LABEL_W, STATUS_W, ...weeks.map(()=>WCW)];
 
-    // ---- HEADER: label corner + month band + week band ----
-    slide.addShape(pptx.ShapeType.rect,{x:LM,y:gridTop,w:LCOL-0.05,h:monthH+weekH,fill:{color:'2D2D2D'},line:{color:'888888',width:0.5}});
-    slide.addText('Project / Phase / Workstream / Task',{x:LM+0.06,y:gridTop+0.04,w:LCOL-0.14,h:monthH+weekH-0.08,fontSize:8,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
-    let mxOff=0;
-    monthGroups2.forEach(mg=>{
-      const mw=mg.count*WKW;
-      slide.addShape(pptx.ShapeType.rect,{x:LCOL+LM+mxOff,y:gridTop,w:mw,h:monthH,fill:{color:'3A3A3A'},line:{color:'555555',width:0.5}});
-      slide.addText(mg.label,{x:LCOL+LM+mxOff+0.04,y:gridTop+0.03,w:mw-0.08,h:monthH-0.06,fontSize:8,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
-      mxOff+=mw;
+    // Month header row (merged-look via one label cell then grouped week labels)
+    const monthGroups=[];
+    weeks.forEach((wk,i)=>{
+      const key=`${wk.getFullYear()}-${wk.getMonth()}`;
+      if(!monthGroups.length||monthGroups[monthGroups.length-1].key!==key)
+        monthGroups.push({key,label:`${MON_SHORT[wk.getMonth()]} ${wk.getFullYear()}`,count:1});
+      else monthGroups[monthGroups.length-1].count++;
     });
-    weeks.forEach((wk,wi)=>{
-      const wx=LCOL+LM+wi*WKW;
+
+    const hdrCell=(text,opts)=>Object.assign({text,options:Object.assign({fill:{color:MAROON},color:'FFFFFF',bold:true,fontFace:'Arial',fontSize:8,align:'center',valign:'middle',border:{type:'solid',color:MAROON_DK,pt:0.5}},opts||{})});
+
+    // Row 1: month band
+    const monthRow=[
+      hdrCell('Project / Phase / Task',{align:'left',fontSize:9}),
+      hdrCell('Status')
+    ];
+    monthGroups.forEach(mg=>{
+      monthRow.push(hdrCell(mg.label,{colspan:mg.count,fontSize:8}));
+    });
+    // Row 2: week band
+    const weekRow=[
+      hdrCell(''),
+      hdrCell('')
+    ];
+    weeks.forEach(wk=>{
       const isT=wk<=now&&now<new Date(wk.getTime()+7*24*60*60*1000);
-      slide.addShape(pptx.ShapeType.rect,{x:wx,y:gridTop+monthH,w:WKW,h:weekH,fill:{color:isT?'5A2222':'3A3A3A'},line:{color:'555555',width:0.5}});
-      slide.addText(fmtDate(wk),{x:wx,y:gridTop+monthH+0.02,w:WKW,h:weekH-0.04,fontSize:7,bold:true,color:isT?'FFBBBB':'EEEEEE',fontFace:'Arial',align:'center',valign:'middle'});
+      weekRow.push(hdrCell(fmtDate(wk),{fill:{color:isT?MAROON_DK:MAROON},fontSize:6,color:isT?'FFD9D9':'FBE9EB'}));
     });
 
-    // ---- BODY ROWS ----
-    rows.forEach((row,ri)=>{
-      const cy=bodyTop+ri*rh;
-      const lblBg=row.type==='project'?'1A1A1A':row.type==='phase'?'EFEFEF':row.type==='ws'?'F7F7F7':'FFFFFF';
-      // Label cell (with border)
-      slide.addShape(pptx.ShapeType.rect,{x:LM,y:cy,w:LCOL-0.05,h:rh,fill:{color:lblBg},line:{color:'CCCCCC',width:0.5}});
-      // Chart cell background (white, bordered) so every row reads as a table row
-      slide.addShape(pptx.ShapeType.rect,{x:LCOL+LM,y:cy,w:weeks.length*WKW,h:rh,fill:{color:row.type==='ws'?'FBFBFB':'FFFFFF'},line:{color:'E6E6E6',width:0.5}});
+    const tblRows=[monthRow, weekRow];
 
-      // Label text
+    // Body rows
+    rows.forEach(row=>{
+      let labelText='', labelOpts={fontFace:'Arial',fontSize:8,valign:'middle',border:{type:'solid',color:'E0E0E0',pt:0.5}};
+      let statusText='', statusOpts={fontFace:'Arial',fontSize:7,bold:true,align:'center',valign:'middle',border:{type:'solid',color:'E0E0E0',pt:0.5}};
+      let barStart=-1, barLen=0, barColor='CCCCCC';
+
       if(row.type==='project'){
-        slide.addText(row.proj.caseCode+'  —  '+row.proj.name,{x:LM+0.08,y:cy,w:LCOL-0.18,h:rh,fontSize:8.5,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
-      }else if(row.type==='phase'){
-        const pc=row.ph.color.replace('#','');
-        slide.addShape(pptx.ShapeType.rect,{x:LM+0.06,y:cy+rh*0.2,w:0.05,h:rh*0.6,fill:{color:pc},line:{type:'none'}});
-        slide.addText(`${row.ph.name}  (${fmtDate(wkToDate(row.proj.startDate,row.ph.startWk))}–${fmtDate(wkToDate(row.proj.startDate,row.ph.endWk))})`,{x:LM+0.15,y:cy,w:LCOL-0.24,h:rh,fontSize:8,bold:true,color:'222222',fontFace:'Arial',valign:'middle'});
-      }else if(row.type==='ws'){
-        slide.addText(row.ws.name.toUpperCase(),{x:LM+0.24,y:cy,w:LCOL-0.32,h:rh,fontSize:7,bold:true,color:'888888',fontFace:'Arial',valign:'middle'});
-      }else{
-        const nm=(row.task.name.length>40?row.task.name.slice(0,40)+'…':row.task.name);
-        slide.addText(nm,{x:LM+0.34,y:cy,w:LCOL-0.56,h:rh,fontSize:7.5,color:row.task.done?'AAAAAA':'333333',italic:!!row.task.done,fontFace:'Arial',valign:'middle'});
-        const oc=row.task.done?'AAAAAA':row.task.status==='delayed'?'A52834':row.task.status==='at-risk'?'D69200':'1A7F4E';
-        slide.addShape(pptx.ShapeType.rect,{x:LCOL-0.24,y:cy+rh*0.2,w:0.2,h:rh*0.6,fill:{color:oc},line:{type:'none'}});
-        slide.addText((row.task.owner||'').split(',')[0].trim(),{x:LCOL-0.24,y:cy+rh*0.2,w:0.2,h:rh*0.6,fontSize:5.5,bold:true,color:'FFFFFF',fontFace:'Arial',align:'center',valign:'middle'});
+        labelText=`${row.proj.caseCode}  —  ${row.proj.name}`;
+        labelOpts.fill={color:'D8D8D8'}; labelOpts.bold=true; labelOpts.color='1A1A1A'; labelOpts.fontSize=9;
+        statusOpts.fill={color:'D8D8D8'};
+      } else if(row.type==='phase'){
+        labelText=`  ${row.ph.name}  (${fmtDate(wkToDate(row.proj.startDate,row.ph.startWk))}–${fmtDate(wkToDate(row.proj.startDate,row.ph.endWk))})`;
+        labelOpts.fill={color:'EFEFEF'}; labelOpts.bold=true; labelOpts.color='222222';
+        statusOpts.fill={color:'EFEFEF'};
+        barStart=row.ph.startWk; barLen=row.ph.endWk-row.ph.startWk+1; barColor=row.ph.color.replace('#','');
+      } else if(row.type==='ws'){
+        labelText=`    ${row.ws.name.toUpperCase()}`;
+        labelOpts.fill={color:'F7F7F7'}; labelOpts.color='888888'; labelOpts.fontSize=7; labelOpts.bold=true;
+        statusOpts.fill={color:'F7F7F7'};
+      } else {
+        const t=row.task, done=taskDoneState[t.id]||t.done;
+        labelText=`      ${done?'✓ ':''}${t.name}`;
+        labelOpts.color=done?'AAAAAA':'333333'; labelOpts.italic=!!done; labelOpts.fontSize=7.5;
+        const stKey=done?'done':(t.status||'on-track');
+        statusText=done?'Done':(t.status==='delayed'?'Delayed':t.status==='at-risk'?'At Risk':'On Track');
+        statusOpts.color=ST[stKey]; 
+        const dw=parseWkDue(t.due), dur=Math.max(1,t.durWk||1);
+        barStart=dw; barLen=dur; barColor=ST[stKey];
       }
 
-      // Bars sit inside the ruled chart cell
-      if(row.type==='phase'){
-        const s=wkToDate(row.proj.startDate,row.ph.startWk);
-        const e=wkToDate(row.proj.startDate,row.ph.endWk+1);
-        const bx=LCOL+LM+((s-range.start)/(7*24*60*60*1000))*WKW;
-        const bw2=Math.max(((e-s)/(7*24*60*60*1000))*WKW,0.08);
-        const pc=row.ph.color.replace('#','');
-        slide.addShape(pptx.ShapeType.roundRect,{x:bx,y:cy+rh*0.22,w:bw2,h:rh*0.56,fill:{color:pc},line:{color:pc},rectRadius:0.02});
-        if(bw2>0.4) slide.addText(row.ph.name,{x:bx+0.04,y:cy+rh*0.22,w:bw2-0.08,h:rh*0.56,fontSize:6.5,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
-      }else if(row.type==='task'){
-        const dw=parseWkDue(row.task.due);
-        const dur=Math.max(1,row.task.durWk||1);
-        const ts=wkToDate(row.proj.startDate,dw);
-        const te=wkToDate(row.proj.startDate,dw+dur);
-        const tbx=LCOL+LM+((ts-range.start)/(7*24*60*60*1000))*WKW;
-        const tbw=Math.max(((te-ts)/(7*24*60*60*1000))*WKW,0.12);
-        const tc=row.task.done?'AAAAAA':row.task.status==='delayed'?'A52834':row.task.status==='at-risk'?'D69200':'1A7F4E';
-        slide.addShape(pptx.ShapeType.roundRect,{x:tbx+0.02,y:cy+rh*0.28,w:tbw-0.04,h:rh*0.44,fill:{color:tc},line:{color:tc},rectRadius:0.02});
-      }
+      const rowCells=[ {text:labelText,options:labelOpts}, {text:statusText,options:statusOpts} ];
+      // Week cells: fill the ones the bar spans
+      weeks.forEach((wk,wi)=>{
+        const wkNum=wi+1; // week index (1-based) relative to grid start
+        // Convert bar's project-week to grid-week index
+        let filled=false;
+        if(barStart>0){
+          // barStart/barLen are in project weeks; translate to grid position
+          const barStartDate=wkToDate(row.proj.startDate,barStart);
+          const gi=Math.round((barStartDate-range.start)/(7*24*60*60*1000)); // 0-based grid index
+          if(wi>=gi && wi<gi+barLen) filled=true;
+        }
+        const isT=wk<=now&&now<new Date(wk.getTime()+7*24*60*60*1000);
+        rowCells.push({text:'',options:{fill:{color:filled?barColor:(isT?'FBE9EB':'FFFFFF')},border:{type:'solid',color:'EEEEEE',pt:0.25}}});
+      });
+      tblRows.push(rowCells);
     });
 
-    // ---- Vertical week gridlines spanning the whole body ----
-    for(let wi=0; wi<=weeks.length; wi++){
-      const gx=LCOL+LM+wi*WKW;
-      slide.addShape(pptx.ShapeType.line,{x:gx,y:bodyTop,w:0,h:gridBottom-bodyTop,line:{color:'E6E6E6',width:0.5}});
-    }
-    // Today line on top
-    const tx2=LCOL+LM+((now-range.start)/(7*24*60*60*1000))*WKW;
-    if(tx2>=LCOL+LM && tx2<=chartRight){
-      slide.addShape(pptx.ShapeType.line,{x:tx2,y:gridTop,w:0,h:gridBottom-gridTop,line:{color:'CC0000',width:1.25,dashType:'dash'}});
-    }
+    const rowH=Math.min(0.28, Math.max(0.14, (SH-1.4)/tblRows.length));
+    slide.addTable(tblRows, {
+      x:MX, y:0.75, w:SW-2*MX,
+      colW:colW,
+      rowH:rowH,
+      border:{type:'solid',color:'E0E0E0',pt:0.5},
+      autoPage:false,
+      valign:'middle'
+    });
 
-    // ---- Legend ----
-    const ly=gridBottom+0.12;
-    [{color:'1A7F4E',label:'On Track'},{color:'D69200',label:'At Risk'},{color:'A52834',label:'Delayed'},{color:'AAAAAA',label:'Completed'}].forEach((li,i)=>{
-      const lx=LM+i*1.7;
-      slide.addShape(pptx.ShapeType.rect,{x:lx,y:ly,w:0.14,h:0.14,fill:{color:li.color},line:{type:'none'}});
-      slide.addText(li.label,{x:lx+0.18,y:ly-0.03,w:1.4,h:0.2,fontSize:8,color:'555555',fontFace:'Arial',valign:'middle'});
+    // Legend (Bain colours)
+    const ly=Math.min(SH-0.35, 0.75+tblRows.length*rowH+0.12);
+    [{c:ST['on-track'],l:'On Track'},{c:ST['at-risk'],l:'At Risk'},{c:ST['delayed'],l:'Delayed'},{c:ST['done'],l:'Completed'}].forEach((li,i)=>{
+      const lx=MX+i*1.7;
+      slide.addShape(pptx.ShapeType.rect,{x:lx,y:ly,w:0.14,h:0.14,fill:{color:li.c},line:{type:'none'}});
+      slide.addText(li.l,{x:lx+0.18,y:ly-0.03,w:1.4,h:0.2,fontSize:8,color:'555555',fontFace:'Arial',valign:'middle'});
     });
   });
 
@@ -3582,7 +3703,6 @@ function mountOwnerField(containerId, initial){
 }
 function _renderOwnerField(box){
   const owners = JSON.parse(box.dataset.owners||'[]');
-  const memberOpts = TEAM.map(m=>`<option value="${m.initials}">${m.name} (${m.initials})</option>`).join('');
   const chips = owners.map(o=>{
     const m = TEAM.find(x=>x.initials===o || x.name===o);
     const col = m?m.color:'#888';
@@ -3591,18 +3711,51 @@ function _renderOwnerField(box){
   }).join('');
   box.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;" class="owner-chips">${chips||'<span style="font-size:11px;color:var(--muted);">No members added yet.</span>'}</div>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <input class="fi owner-text" list="_teamlist" placeholder="Type a name or pick a member" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();_ownerAddFromInput(this);}">
-      <button type="button" class="btn-ghost owner-add" style="font-size:16px;padding:4px 12px;line-height:1;" onclick="_ownerAddFromInput(this)">+</button>
-    </div>
-    <datalist id="_teamlist">${memberOpts}</datalist>`;
+    <div style="position:relative;display:flex;gap:6px;align-items:center;">
+      <div style="position:relative;flex:1;">
+        <input class="fi owner-text" autocomplete="off" placeholder="Type a name or pick a member" style="width:100%;"
+          onfocus="_ownerShowList(this)" oninput="_ownerFilterList(this)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();_ownerAddFromInput(this);}">
+        <div class="owner-list" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:70;background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;box-shadow:0 6px 20px rgba(0,0,0,.12);max-height:190px;overflow-y:auto;"></div>
+      </div>
+      <button type="button" class="btn-ghost owner-add" style="font-size:16px;padding:4px 12px;line-height:1;flex-shrink:0;" onclick="_ownerAddFromInput(this)">+</button>
+    </div>`;
+}
+function _ownerListItems(box, filter){
+  const owners = JSON.parse(box.dataset.owners||'[]');
+  const f=(filter||'').toLowerCase();
+  const avail = TEAM.filter(m=>!owners.includes(m.initials) &&
+    (!f || m.name.toLowerCase().includes(f) || m.initials.toLowerCase().includes(f)));
+  if(!avail.length) return `<div style="padding:9px 12px;font-size:11px;color:var(--muted);">${f?'No matching members — press + to add as a non-member.':'All team members added. Type a name to add a non-member.'}</div>`;
+  return avail.map(m=>`<div onmousedown="event.preventDefault();_ownerPick(this,'${m.initials}')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+    <span style="width:22px;height:22px;border-radius:50%;background:${m.color};color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${m.initials}</span>
+    <span style="font-size:12px;color:var(--slate);">${m.name} <span style="color:var(--muted);">(${m.initials})</span></span>
+  </div>`).join('');
+}
+function _ownerShowList(input){
+  const box=input.closest('.owner-field');
+  const list=box.querySelector('.owner-list');
+  list.innerHTML=_ownerListItems(box, input.value);
+  list.style.display='block';
+  setTimeout(()=>document.addEventListener('click', function _c(e){ if(!box.contains(e.target)){ list.style.display='none'; document.removeEventListener('click',_c); } }),0);
+}
+function _ownerFilterList(input){
+  const box=input.closest('.owner-field');
+  const list=box.querySelector('.owner-list');
+  list.innerHTML=_ownerListItems(box, input.value);
+  list.style.display='block';
+}
+function _ownerPick(el, initials){
+  const box=el.closest('.owner-field');
+  const owners=JSON.parse(box.dataset.owners||'[]');
+  if(!owners.includes(initials)){ owners.push(initials); box.dataset.owners=JSON.stringify(owners); }
+  _renderOwnerField(box);
 }
 function _ownerAddFromInput(el){
   const box = el.closest('.owner-field');
   const input = box.querySelector('.owner-text');
   let val = (input.value||'').trim();
   if(!val) return;
-  // If they typed a member name, normalise to initials
   const m = TEAM.find(x=>x.name.toLowerCase()===val.toLowerCase() || x.initials.toLowerCase()===val.toLowerCase() || (`${x.name} (${x.initials})`).toLowerCase()===val.toLowerCase());
   const store = m ? m.initials : val;
   const owners = JSON.parse(box.dataset.owners||'[]');
@@ -3631,12 +3784,14 @@ function addWsRow(name, memberList){
   row.className = 'wp-ws-row';
   row.style.cssText = 'border:1px solid var(--border);border-radius:6px;padding:10px;background:var(--surface);display:flex;gap:10px;align-items:flex-start;';
   row.innerHTML = `
-    <div style="flex:1;min-width:120px;">
+    <div style="flex:1.5;min-width:130px;">
       <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Workstream name</div>
       <input class="fi wp-ws-name" style="width:100%;background:#fff;" placeholder="e.g. Demand" value="${name||''}">
     </div>
-    <div style="flex:1.4;min-width:160px;">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Members</div>
+    <div style="flex:1;min-width:150px;">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
+        <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Members</span>
+      </div>
       <div class="wp-ws-owner"></div>
     </div>
     <button onclick="this.closest('.wp-ws-row').remove();refreshPhaseWsHints()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;margin-top:16px;flex-shrink:0;">&#10005;</button>`;
