@@ -2451,7 +2451,7 @@ function renderGantt(){
       const bw = Math.max(Math.round((e-s)/(7*24*60*60*1000)*WW),8);
       const phTipId = 'ph_' + ph.id;
       window['tip_'+phTipId] = `<b>${ph.name} Phase</b> (${row.proj.caseCode})<br>${fmtDateLong(s)} &rarr; ${fmtDateLong(e)}<br>Wk ${ph.startWk}–${ph.endWk}<br><i>Double-click to edit · right-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:4px;bottom:4px;width:${bw}px;background:${ph.color}26;border:1px solid ${ph.color}55;border-radius:6px;display:flex;align-items:center;padding:0 8px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:${ph.color};cursor:pointer;z-index:2;"
+      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:4px;bottom:4px;width:${bw}px;background:${ph.color}3D;border:1px solid ${ph.color}77;border-radius:6px;display:flex;align-items:center;padding:0 8px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:${ph.color};cursor:pointer;z-index:2;"
         ondblclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')"
         oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${phTipId}'])"
@@ -2473,7 +2473,7 @@ function renderGantt(){
       const safeStatus = task.status.replace('-',' ');
       const taskTipId = 'task_' + task.id;
       window['tip_'+taskTipId] = `<b>${safeName}</b><br>${tipOwner}<br>${task.due} · ${fmtDateLong(dd)}<br>${safeStatus}<br>${row.proj.caseCode} › ${ph.name}<br><i>Double-click to edit · right-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:8px;bottom:8px;width:${taskBarW}px;background:${bc}22;border:1px solid ${bc}55;border-left:3px solid ${bc};border-radius:5px;${outline}cursor:pointer;z-index:2;overflow:visible;"
+      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:8px;bottom:8px;width:${taskBarW}px;background:${bc}38;border:1px solid ${bc}77;border-left:3px solid ${bc};border-radius:5px;${outline}cursor:pointer;z-index:2;overflow:visible;"
         ondblclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')"
         oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${taskTipId}'])"
