@@ -25,7 +25,9 @@ nav{background:#fff;border-bottom:2px solid var(--red);display:flex;align-items:
 .nav-tab:hover{color:var(--ink);}
 .nav-spacer{flex:1;}
 .btn-sm{background:none;border:1px solid var(--border);color:var(--mid);padding:6px 13px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;}
-.btn-sm:hover{border-color:var(--ink);color:var(--ink);}
+.btn-sm:hover{border-color:var(--ink);color:var(--ink);background:var(--surface);}
+.btn-sm.red-outline{border-color:var(--red);color:var(--red);font-weight:700;}
+.btn-sm.red-outline:hover{background:var(--red-lt);border-color:var(--red);color:var(--red);}
 .btn-red{background:var(--red);color:#fff;border:none;padding:7px 15px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
 .btn-red:hover{background:var(--red-dark);}
 .btn-ghost{background:none;border:1px solid var(--border);color:var(--slate);padding:7px 15px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
@@ -231,6 +233,15 @@ main{max-width:1240px;margin:0 auto;padding:24px 28px 60px;}
 .tasks-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
 .tasks-title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.02em;flex:1;}
 select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
+/* Filter dropdown buttons (multi-select triggers) */
+button.fsel{border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);transition:all .15s;}
+button.fsel:hover{background:var(--surface);border-color:var(--mid);}
+select.fsel:hover{border-color:var(--mid);}
+/* Dropdown menu rows (export items + filter checkbox rows) hover in a light shade */
+#export-menu > div:hover{background:var(--red-lt);color:var(--red);}
+#import-menu > div:hover{background:var(--red-lt);color:var(--red);}
+.filter-menu label:hover{background:var(--surface);border-radius:5px;}
+.filter-menu > div:hover{background:var(--red-lt);border-radius:5px;}
 /* HIERARCHY */
 .level-project{margin-bottom:20px;}
 .project-header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#6B6B6B;border-radius:var(--radius);cursor:pointer;user-select:none;margin-bottom:8px;}
@@ -457,28 +468,24 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 <div id="page-tasks" class="page">
   <div class="tasks-toolbar" style="position:sticky;top:52px;background:var(--surface);z-index:50;padding:12px 0;margin-bottom:10px;">
     <div class="tasks-title">Tasks</div>
-    <select class="fsel" id="proj-filter" onchange="renderTasks()"><option value="all">All Projects</option></select>
+    <div style="position:relative;display:inline-block;">
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('task-proj-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="task-proj-set-label">All Projects</span> &#9662;</button>
+      <div class="filter-menu" id="task-proj-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
+      <span id="task-proj-set" data-sel="[]" style="display:none;"></span>
+    </div>
+    <div style="position:relative;display:inline-block;">
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('task-ws-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="task-ws-set-label">All Workstreams</span> &#9662;</button>
+      <div class="filter-menu" id="task-ws-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
+      <span id="task-ws-set" data-sel="[]" style="display:none;"></span>
+    </div>
     <div style="position:relative;display:inline-block;">
       <button class="fsel" type="button" onclick="_toggleFilterMenu('status-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="status-filter-set-label">All Statuses</span> &#9662;</button>
-      <div class="filter-menu" id="status-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:160px;" onclick="event.stopPropagation();">
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="on-track" onchange="_toggleFilterVal('status-filter-set','on-track',renderTasks)" style="accent-color:#2C9BC4;"><span style="width:10px;height:10px;border-radius:50%;background:#2C9BC4;flex-shrink:0;"></span> On Track</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="at-risk" onchange="_toggleFilterVal('status-filter-set','at-risk',renderTasks)" style="accent-color:#D19A2E;"><span style="width:10px;height:10px;border-radius:50%;background:#D19A2E;flex-shrink:0;"></span> At Risk</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="delayed" onchange="_toggleFilterVal('status-filter-set','delayed',renderTasks)" style="accent-color:#D9535F;"><span style="width:10px;height:10px;border-radius:50%;background:#D9535F;flex-shrink:0;"></span> Delayed</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="done" onchange="_toggleFilterVal('status-filter-set','done',renderTasks)" style="accent-color:#3E9C5F;"><span style="width:10px;height:10px;border-radius:50%;background:#3E9C5F;flex-shrink:0;"></span> Done</label>
-        <div onclick="_clearFilterSet('status-filter-set',renderTasks);document.querySelectorAll('#status-menu input').forEach(c=>c.checked=false);" style="padding:6px 8px;font-size:11px;color:var(--red);cursor:pointer;border-top:1px solid var(--border);margin-top:4px;">Clear</div>
-      </div>
+      <div class="filter-menu" id="status-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:160px;" onclick="event.stopPropagation();"></div>
       <span id="status-filter-set" data-sel="[]" style="display:none;"></span>
     </div>
-    <select class="fsel" id="task-ws-filter" onchange="renderTasks()">
-      <option value="all">All Workstreams</option>
-    </select>
-    <select class="fsel" id="task-group" onchange="renderTasks()">
-      <option value="phase">Group: Phase</option>
-      <option value="ws">Group: Workstream</option>
-    </select>
     <div style="position:relative;display:inline-block;">
       <button class="fsel" type="button" onclick="_toggleFilterMenu('owner-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="owner-filter-set-label">All Owners</span> &#9662;</button>
-      <div class="filter-menu" id="owner-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:180px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
+      <div class="filter-menu" id="owner-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
       <span id="owner-filter-set" data-sel="[]" style="display:none;"></span>
     </div>
     <button class="btn-ghost btn-sm" onclick="clearTaskFilters()" title="Reset all filters" style="margin-left:6px;">Clear filters</button>
@@ -523,10 +530,10 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
         <option value="months">Month view</option>
       </select>
       <div style="position:relative;display:inline-block;">
-        <button class="btn-sm" onclick="toggleExportMenu(event)" style="border-color:var(--red);color:var(--red);font-weight:700;">Export &#9662;</button>
+        <button class="btn-sm red-outline" onclick="toggleExportMenu(event)">Export &#9662;</button>
         <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:220px;">
-          <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to PowerPoint (full + simple)</div>
-          <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel (full + simple)</div>
+          <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to PowerPoint</div>
+          <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel</div>
         </div>
       </div>
     </div>
@@ -534,22 +541,25 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
   <div class="gantt-toolbar" style="justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap;">
     <div class="gantt-legend" id="gantt-legend"></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-    <select class="fsel" id="gantt-proj-filter" onchange="renderGantt()">
-      <option value="all">All Projects</option>
-    </select>
-    <select class="fsel" id="gantt-ws-filter" onchange="renderGantt()">
-      <option value="all">All Workstreams</option>
-    </select>
+    <div style="position:relative;display:inline-block;">
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-proj-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-proj-set-label">All Projects</span> &#9662;</button>
+      <div class="filter-menu" id="gantt-proj-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
+      <span id="gantt-proj-set" data-sel="[]" style="display:none;"></span>
+    </div>
+    <div style="position:relative;display:inline-block;">
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-ws-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-ws-set-label">All Workstreams</span> &#9662;</button>
+      <div class="filter-menu" id="gantt-ws-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
+      <span id="gantt-ws-set" data-sel="[]" style="display:none;"></span>
+    </div>
     <div style="position:relative;display:inline-block;">
       <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-status-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-status-set-label">All Statuses</span> &#9662;</button>
-      <div class="filter-menu" id="gantt-status-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:160px;" onclick="event.stopPropagation();">
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="on-track" onchange="_toggleFilterVal('gantt-status-set','on-track',renderGantt)" style="accent-color:#2C9BC4;"><span style="width:10px;height:10px;border-radius:50%;background:#2C9BC4;flex-shrink:0;"></span> On Track</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="at-risk" onchange="_toggleFilterVal('gantt-status-set','at-risk',renderGantt)" style="accent-color:#D19A2E;"><span style="width:10px;height:10px;border-radius:50%;background:#D19A2E;flex-shrink:0;"></span> At Risk</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="delayed" onchange="_toggleFilterVal('gantt-status-set','delayed',renderGantt)" style="accent-color:#D9535F;"><span style="width:10px;height:10px;border-radius:50%;background:#D9535F;flex-shrink:0;"></span> Delayed</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="done" onchange="_toggleFilterVal('gantt-status-set','done',renderGantt)" style="accent-color:#3E9C5F;"><span style="width:10px;height:10px;border-radius:50%;background:#3E9C5F;flex-shrink:0;"></span> Done</label>
-        <div onclick="_clearFilterSet('gantt-status-set',renderGantt);document.querySelectorAll('#gantt-status-menu input').forEach(c=>c.checked=false);" style="padding:6px 8px;font-size:11px;color:var(--red);cursor:pointer;border-top:1px solid var(--border);margin-top:4px;">Clear</div>
-      </div>
+      <div class="filter-menu" id="gantt-status-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:160px;" onclick="event.stopPropagation();"></div>
       <span id="gantt-status-set" data-sel="[]" style="display:none;"></span>
+    </div>
+    <div style="position:relative;display:inline-block;">
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-owner-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-owner-set-label">All Owners</span> &#9662;</button>
+      <div class="filter-menu" id="gantt-owner-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
+      <span id="gantt-owner-set" data-sel="[]" style="display:none;"></span>
     </div>
     <button class="btn-ghost btn-sm" onclick="clearGanttFilters()" title="Reset all filters">Clear filters</button>
     </div>
@@ -2002,11 +2012,6 @@ function toggleDrawer(){
 }
 
 // ---- TASKS PAGE ----
-PROJECTS.forEach(p=>{
-  const o=document.createElement('option');
-  o.value=p.id;o.textContent=`${p.caseCode} \u2014 ${p.name}`;
-  document.getElementById('proj-filter').appendChild(o);
-});
 
 const openState={};
 function tog(id){
@@ -2109,32 +2114,27 @@ function _closeMiniModal(){ const m=document.getElementById('mini-modal'); if(m)
 function _miniModalOk(){ if(_miniOk && _miniOk()!==false) _closeMiniModal(); }
 
 function renderTasks(){
-  const pfEl=document.getElementById('proj-filter');
-  let pv=pfEl?pfEl.value:'all';
-  // Guard against a stale/empty filter value (e.g. selected id no longer in the list)
-  if(pv!=='all' && pv!=='__other__' && !PROJECTS.some(p=>p.id===pv)){ pv='all'; if(pfEl) pfEl.value='all'; }
+  const projSet=_getFilterSet('task-proj-set');
   const sv=_getFilterSet('status-filter-set');
   const ov=_getFilterSet('owner-filter-set');
-  if(typeof _populateOwnerMenu==='function') _populateOwnerMenu();
-  const wvEl=document.getElementById('task-ws-filter'); const wv=wvEl?wvEl.value:'all';
-  const gmEl=document.getElementById('task-group'); const gm=gmEl?gmEl.value:'phase';
-  const projs=(pv==='all'?PROJECTS:PROJECTS.filter(p=>p.id===pv)).filter(p=>!p.archived);
+  const wvSet=_getFilterSet('task-ws-set');
+  const gm='phase'; // always group by phase (workstreams shown as labels)
+  const projs=(projSet.length?PROJECTS.filter(p=>projSet.includes(p.id)):PROJECTS).filter(p=>!p.archived);
   const el=document.getElementById('tasks-content');
 
-  // Refresh the workstream filter options from all visible projects
-  if(wvEl){
-    const names=[]; projs.forEach(p=>{ (p.workstreamDefs||[]).forEach(w=>{ if(!names.includes(w.name)) names.push(w.name); }); p.phases.forEach(ph=>ph.workstreams.forEach(w=>{ if(!names.includes(w.name)) names.push(w.name); })); });
-    const cur=wvEl.value;
-    wvEl.innerHTML='<option value="all">All Workstreams</option>'+names.map(n=>`<option value="${n}" ${cur===n?'selected':''}>${n}</option>`).join('');
-  }
+  // Populate the four filter menus from live data
+  _fillFilterMenu('task-proj-menu','task-proj-set', PROJECTS.filter(p=>!p.archived).map(p=>({val:p.id,label:p.caseCode+' — '+p.name,dot:p.color})), 'renderTasks');
+  _fillFilterMenu('task-ws-menu','task-ws-set', _allWorkstreamNames(projs).map(n=>({val:n,label:n})), 'renderTasks');
+  _fillFilterMenu('status-menu','status-filter-set', _STATUS_OPTS, 'renderTasks');
+  _fillFilterMenu('owner-menu','owner-filter-set', TEAM.map(m=>({val:m.initials,label:m.name,dot:m.color,round:true})), 'renderTasks');
 
-  // Shared filter for a task (multi-status, multi-owner=workstream members, workstream)
+  // Shared filter for a task (multi-status, multi-owner=workstream members, multi-workstream)
   const taskPass=(proj,ph,ws,t)=>{
     const isDone=taskDoneState[t.id]||t.done;
     const st = isDone?'done':(t.status||'on-track');
     if(sv.length && !sv.includes(st)) return false;
     if(ov.length){ const mem=_taskOwners(proj,ws,t); if(!ov.some(o=>mem.includes(o))) return false; }
-    if(wv!=='all'&&!taskWsNames(ws,t).includes(wv))return false;
+    if(wvSet.length && !taskWsNames(ws,t).some(n=>wvSet.includes(n))) return false;
     return true;
   };
   // One task row (with workstream bubbles + owner avatars = workstream members)
@@ -2165,34 +2165,8 @@ function renderTasks(){
       if(!(ph.id in openState))openState[ph.id]=isCur;
 
       let bodyInner='';
-      if(gm==='ws'){
-        // Grouped by workstream (legacy hierarchy)
-        bodyInner = ph.workstreams.map(ws=>{
-          const tasks=ws.tasks.filter(t=>taskPass(proj,ph,ws,t)).sort((a,b)=>parseWkDue(a.due)-parseWkDue(b.due));
-          const wsKey=`${proj.id}-${ph.id}-${ws.id}`;
-          if(!(wsKey in openState))openState[wsKey]=true;
-          const done=tasks.filter(t=>taskDoneState[t.id]||t.done).length;
-          if(wv!=='all' && ws.name!==wv) return '';
-          return `<div class="level-ws">
-            <div class="ws-header">
-              <span class="ws-chev ${openState[wsKey]?'open':''}" id="chev-${wsKey}" onclick="tog('${wsKey}')" style="cursor:pointer;">&#9654;</span>
-              <span class="ws-lbl" onclick="tog('${wsKey}')" style="cursor:pointer;">${ws.name}</span>
-              <span class="ws-count" style="margin-left:8px;">${done}/${tasks.length}</span>
-              <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-                <span style="width:10px;height:10px;border-radius:3px;background:${wsColour(proj,ws.name)};"></span>
-                <span class="row-actions" style="display:inline-flex;gap:2px;">
-                  <button class="add-btn" title="Add task" onclick="event.stopPropagation();openAddTaskFor('${proj.id}','${ph.id}','${ws.id}')">+ Task</button>
-                  <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${proj.id}','${ph.id}','${ws.id}')">&#9998;</button>
-                </span>
-              </span>
-            </div>
-            <div class="ws-body ${openState[wsKey]?'open':''}" id="body-${wsKey}">
-              ${tasks.length? tasks.map(t=>taskRow(proj,ph,ws,t)).join('') : '<div style="padding:6px 0;font-size:11px;color:var(--muted);">No tasks yet.</div>'}
-            </div>
-          </div>`;
-        }).join('');
-      } else {
-        // Phase mode: all tasks flattened, ordered by date, workstream shown as bubbles
+      {
+        // Group by phase: all tasks flattened, ordered by date, workstream shown as bubbles/labels
         const flat=phaseTasksByDate(proj,ph).filter(x=>taskPass(proj,ph,x.ws,x.task));
         bodyInner = flat.length ? flat.map(x=>taskRow(proj,ph,x.ws,x.task)).join('')
           : '<div style="padding:8px 0 8px 10px;font-size:11px;color:var(--muted);">No tasks match the current filters.</div>';
@@ -2249,7 +2223,7 @@ function renderTasks(){
 
   // ---- OTHER TASKS bucket (permanent, non-casework) ----
   const hideOther = localStorage.getItem('wa_hide_other')==='1';
-  const showOther = !hideOther && (pv==='all' || pv==='__other__');
+  const showOther = !hideOther && !projSet.length;
   if(showOther){
     const others = (APP.otherTasks||[]).filter(t=>{
       const isDone = taskDoneState[t.id]||t.done;
@@ -2288,7 +2262,6 @@ function renderTasks(){
     el.innerHTML += otherBlock;
   }
 }
-renderTasks();
 
 // ---- PAGE SWITCHER ----
 function showPage(id){
@@ -2311,8 +2284,8 @@ function showPage(id){
 
 // Default project for the top-level "Add phase/task" button (respects the project filter)
 function ganttDefaultProj(){
-  const pf = document.getElementById('gantt-proj-filter');
-  if(pf && pf.value && pf.value!=='all') return pf.value;
+  const sel=_getFilterSet('gantt-proj-set');
+  if(sel.length) return sel[0];
   return PROJECTS.length ? PROJECTS[0].id : '';
 }
 
@@ -2377,8 +2350,14 @@ function _toggleFilterVal(setId, val, rerender){
 }
 function _clearFilterSet(setId, rerender){ _setFilterSet(setId, []); const lbl=document.getElementById(setId+'-label'); if(lbl) lbl.textContent=_filterLabel(setId, []); if(typeof rerender==='function') rerender(); }
 function _filterLabel(setId, arr){
-  if(!arr.length) return setId.indexOf('owner')>=0?'All Owners':'All Statuses';
-  if(arr.length===1){ const m={'on-track':'On Track','at-risk':'At Risk','delayed':'Delayed','done':'Done'}; if(m[arr[0]]) return m[arr[0]]; const t=TEAM.find(x=>x.initials===arr[0]); return t?t.name.split(' ')[0]:arr[0]; }
+  const allText = setId.indexOf('owner')>=0?'All Owners' : setId.indexOf('proj')>=0?'All Projects' : setId.indexOf('ws')>=0?'All Workstreams' : 'All Statuses';
+  if(!arr.length) return allText;
+  if(arr.length===1){
+    const m={'on-track':'On Track','at-risk':'At Risk','delayed':'Delayed','done':'Done'}; if(m[arr[0]]) return m[arr[0]];
+    const t=TEAM.find(x=>x.initials===arr[0]); if(t) return t.name.split(' ')[0];
+    const p=PROJECTS.find(x=>x.id===arr[0]); if(p) return p.caseCode;
+    return arr[0];
+  }
   return arr.length+' selected';
 }
 function _toggleFilterMenu(menuId, e){
@@ -2387,6 +2366,26 @@ function _toggleFilterMenu(menuId, e){
   const m=document.getElementById(menuId); if(m) m.style.display = m.style.display==='block'?'none':'block';
 }
 document.addEventListener('click', ()=>{ document.querySelectorAll('.filter-menu').forEach(m=>m.style.display='none'); });
+// Populate a checkbox filter menu with options {val,label,dot?} and a Clear row.
+function _fillFilterMenu(menuId, setId, opts, rerender){
+  const menu=document.getElementById(menuId); if(!menu) return;
+  const sel=_getFilterSet(setId);
+  const rows = opts.length ? opts.map(o=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;white-space:nowrap;">
+      <input type="checkbox" value="${o.val}" ${sel.includes(o.val)?'checked':''} onchange="_toggleFilterVal('${setId}','${String(o.val).replace(/'/g,"\\'")}',${rerender})" style="accent-color:${o.dot||'var(--red)'};">
+      ${o.dot?`<span style="width:10px;height:10px;border-radius:${o.round?'50%':'2px'};background:${o.dot};flex-shrink:0;"></span>`:''}${o.label}</label>`).join('')
+    : '<div style="padding:8px;font-size:11px;color:var(--muted);">None available.</div>';
+  menu.innerHTML = rows + `<div onclick="_clearFilterSet('${setId}',${rerender});document.querySelectorAll('#${menuId} input').forEach(c=>c.checked=false);" style="padding:6px 8px;font-size:11px;color:var(--red);cursor:pointer;border-top:1px solid var(--border);margin-top:4px;">Clear</div>`;
+  const lbl=document.getElementById(setId+'-label'); if(lbl) lbl.textContent=_filterLabel(setId, sel);
+}
+// Distinct workstream names across the given (or all active) projects
+function _allWorkstreamNames(projs){
+  const names=[]; (projs||PROJECTS.filter(p=>!p.archived)).forEach(p=>{
+    (p.workstreamDefs||[]).forEach(w=>{ if(!names.includes(w.name)) names.push(w.name); });
+    p.phases.forEach(ph=>ph.workstreams.forEach(w=>{ if(!names.includes(w.name)) names.push(w.name); }));
+  });
+  return names;
+}
+const _STATUS_OPTS=[{val:'on-track',label:'On Track',dot:'#2C9BC4',round:true},{val:'at-risk',label:'At Risk',dot:'#D19A2E',round:true},{val:'delayed',label:'Delayed',dot:'#D9535F',round:true},{val:'done',label:'Done',dot:'#3E9C5F',round:true}];
 // Stable colour for a workstream name within a project.
 function wsColour(proj, name){
   let defs = (proj && proj.workstreamDefs && proj.workstreamDefs.length)
@@ -2596,20 +2595,20 @@ function openGanttStatusMenu(projId, phaseId, wsId, taskId){
 }
 
 function renderGantt(){
-  const projVal = document.getElementById('gantt-proj-filter').value;
-  const wsVal   = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
-  const projects = (projVal==='all' ? PROJECTS : PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
+  // Multi-select filter sets (empty = all)
+  const projSet = _getFilterSet('gantt-proj-set');
+  const wsSet   = _getFilterSet('gantt-ws-set');
+  const ownerSet= _getFilterSet('gantt-owner-set');
+  const projects = (projSet.length ? PROJECTS.filter(p=>projSet.includes(p.id)) : PROJECTS).filter(p=>!p.archived);
 
-  // Populate workstream filter
-  const wsFilter = document.getElementById('gantt-ws-filter');
-  if (wsFilter) {
-    const allWS = [...new Set(projects.flatMap(p=>p.phases.flatMap(ph=>ph.workstreams.map(ws=>ws.name))))];
-    const curWS = wsFilter.value;
-    wsFilter.innerHTML = '<option value="all">All Workstreams</option>' +
-      allWS.map(w=>`<option value="${w}" ${curWS===w?'selected':''}>${w}</option>`).join('');
-  }
+  // Populate the filter menus from live data
+  _fillFilterMenu('gantt-proj-menu','gantt-proj-set', PROJECTS.filter(p=>!p.archived).map(p=>({val:p.id,label:p.caseCode+' — '+p.name,dot:p.color})), 'renderGantt');
+  _fillFilterMenu('gantt-ws-menu','gantt-ws-set', _allWorkstreamNames(projects).map(n=>({val:n,label:n})), 'renderGantt');
+  _fillFilterMenu('gantt-status-menu','gantt-status-set', _STATUS_OPTS, 'renderGantt');
+  _fillFilterMenu('gantt-owner-menu','gantt-owner-set', TEAM.map(m=>({val:m.initials,label:m.name,dot:m.color,round:true})), 'renderGantt');
 
-  document.getElementById('gantt-legend').innerHTML=[
+  const legend=document.getElementById('gantt-legend');
+  if(legend) legend.innerHTML=[
     {color:'#2C9BC4',label:'On Track'},
     {color:'#D19A2E',label:'At Risk'},
     {color:'#D9535F',label:'Delayed'},
@@ -2637,10 +2636,13 @@ function renderGantt(){
 
   // Build rows, filtering by workstream
   const allRows = buildGanttRows(projects);
-  // For ws filter: hide ws rows and task rows that don't match; hide phases that become empty
   const statusSet = _getFilterSet('gantt-status-set');
+  const _wsMatch = (ws,task)=> !wsSet.length || taskWsNames(ws,task).some(n=>wsSet.includes(n));
+  const _ownerMatch = (proj,ws,task)=> !ownerSet.length || _taskOwners(proj,ws,task).some(o=>ownerSet.includes(o));
+  const _anyFilter = wsSet.length||statusSet.length||ownerSet.length;
   const taskMatches = (t) => {
-    if(wsVal!=='all' && !taskWsNames(t.ws, t.task).includes(wsVal)) return false;
+    if(!_wsMatch(t.ws, t.task)) return false;
+    if(!_ownerMatch(t.proj, t.ws, t.task)) return false;
     if(statusSet.length){
       const st = (taskDoneState[t.task.id] || t.task.done) ? 'done' : (t.task.status||'on-track');
       if(!statusSet.includes(st)) return false;
@@ -2654,15 +2656,15 @@ function renderGantt(){
       if (row.type==='project') { out.push(row); }
       else if (row.type==='phase') { out.push(row); }
       else if (row.type==='ws') {
-        if (wsVal==='all' || row.ws.name===wsVal) out.push(row);
+        if (!wsSet.length || wsSet.includes(row.ws.name)) out.push(row);
       }
       else if (row.type==='task') {
         if (taskMatches(row)) out.push(row);
       }
     });
-    // If workstream/status filters are active, drop empty ws + empty phase rows
+    // If any filter is active, drop empty ws + empty phase rows
     let filtered = out;
-    if(wsVal!=='all' || statusVal!=='all'){
+    if(_anyFilter){
       // remove ws rows with no following task
       filtered = filtered.filter((r,i)=>{
         if(r.type!=='ws') return true;
@@ -2947,10 +2949,12 @@ function _collapsedWeekSpan(proj){
 function renderGanttCollapsed(projects){
   const container = document.getElementById('gantt-container');
   if(!projects.length){ container.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">No workplans to show.</div>'; return; }
-  const wsVal = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
+  const wsSet = _getFilterSet('gantt-ws-set');
+  const ownerSet = _getFilterSet('gantt-owner-set');
   const statusSet = _getFilterSet('gantt-status-set');
-  const _pass = (ws,t)=>{
-    if(wsVal!=='all' && !taskWsNames(ws,t).includes(wsVal)) return false;
+  const _pass = (proj,ws,t)=>{
+    if(wsSet.length && !taskWsNames(ws,t).some(n=>wsSet.includes(n))) return false;
+    if(ownerSet.length && !_taskOwners(proj,ws,t).some(o=>ownerSet.includes(o))) return false;
     if(statusSet.length){ const st=(taskDoneState[t.id]||t.done)?'done':(t.status||'on-track'); if(!statusSet.includes(st)) return false; }
     return true;
   };
@@ -2969,7 +2973,7 @@ function renderGanttCollapsed(projects){
     }
     // Phase columns
     const phaseCols = proj.phases.map((ph,idx)=>{
-      const tasks = phaseTasksByDate(proj,ph).filter(x=>_pass(x.ws,x.task));
+      const tasks = phaseTasksByDate(proj,ph).filter(x=>_pass(proj,x.ws,x.task));
       // group by workstream for sub-headers
       const groups={};
       tasks.forEach(x=>{ const k=(taskWsNames(x.ws,x.task)[0])||'—'; (groups[k]=groups[k]||[]).push(x); });
@@ -3215,25 +3219,14 @@ window.addEventListener('resize', ()=>{
 // ============================================================
 // ---- Export dropdown menu ----
 function clearGanttFilters(){
-  const p=document.getElementById('gantt-proj-filter'); if(p) p.value='all';
-  const w=document.getElementById('gantt-ws-filter'); if(w) w.value='all';
-  _clearFilterSet('gantt-status-set');
-  document.querySelectorAll('#gantt-status-menu input').forEach(c=>c.checked=false);
+  ['gantt-proj-set','gantt-ws-set','gantt-status-set','gantt-owner-set'].forEach(s=>_clearFilterSet(s));
+  document.querySelectorAll('#gantt-proj-menu input,#gantt-ws-menu input,#gantt-status-menu input,#gantt-owner-menu input').forEach(c=>c.checked=false);
   renderGantt();
 }
 function clearTaskFilters(){
-  const p=document.getElementById('proj-filter'); if(p) p.value='all';
-  _clearFilterSet('status-filter-set'); _clearFilterSet('owner-filter-set');
-  document.querySelectorAll('#status-menu input, #owner-menu input').forEach(c=>c.checked=false);
-  const w=document.getElementById('task-ws-filter'); if(w) w.value='all';
+  ['task-proj-set','task-ws-set','status-filter-set','owner-filter-set'].forEach(s=>_clearFilterSet(s));
+  document.querySelectorAll('#task-proj-menu input,#task-ws-menu input,#status-menu input,#owner-menu input').forEach(c=>c.checked=false);
   renderTasks();
-}
-// Populate the owner checkbox menu from the current team roster
-function _populateOwnerMenu(){
-  const menu=document.getElementById('owner-menu'); if(!menu) return;
-  const sel=_getFilterSet('owner-filter-set');
-  menu.innerHTML = (TEAM.length? TEAM.map(m=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="${m.initials}" ${sel.includes(m.initials)?'checked':''} onchange="_toggleFilterVal('owner-filter-set','${m.initials}',renderTasks)" style="accent-color:var(--red);"><span style="width:18px;height:18px;border-radius:50%;background:${m.color};color:#fff;font-size:8px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;">${m.initials}</span> ${m.name}</label>`).join('') : '<div style="padding:8px;font-size:11px;color:var(--muted);">No team members yet.</div>')
-    + `<div onclick="_clearFilterSet('owner-filter-set',renderTasks);document.querySelectorAll('#owner-menu input').forEach(c=>c.checked=false);" style="padding:6px 8px;font-size:11px;color:var(--red);cursor:pointer;border-top:1px solid var(--border);margin-top:4px;">Clear</div>`;
 }
 function toggleExportMenu(e){
   e.stopPropagation();
@@ -3247,8 +3240,8 @@ let _exportKind=null; // 'ppt' | 'excel'
 function _exportChoice(kind){
   _closeExportMenuOnce();
   _exportKind=kind;
-  const projVal=document.getElementById('gantt-proj-filter').value;
-  const avail=(projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
+  const _psel=_getFilterSet('gantt-proj-set');
+  const avail=(_psel.length?PROJECTS.filter(p=>_psel.includes(p.id)):PROJECTS).filter(p=>!p.archived);
   if(!avail.length){ alert('No workplans to export.'); return; }
   if(avail.length===1){ _runExport(kind, avail); return; }
   // Multiple projects: show the picker
@@ -3549,10 +3542,12 @@ function _addFullSlide(pptx, proj){
 // ============================================================
 // Build the "simple" (chevron + phase columns) slide for one project
 function _addSimpleSlide(pptx, proj){
-  const wsVal = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
+  const wsSet = _getFilterSet('gantt-ws-set');
+  const ownerSet = _getFilterSet('gantt-owner-set');
   const statusSet = _getFilterSet('gantt-status-set');
   const _pass = (ws,t)=>{
-    if(wsVal!=='all' && !taskWsNames(ws,t).includes(wsVal)) return false;
+    if(wsSet.length && !taskWsNames(ws,t).some(n=>wsSet.includes(n))) return false;
+    if(ownerSet.length && !_taskOwners(proj,ws,t).some(o=>ownerSet.includes(o))) return false;
     if(statusSet.length){ const st=(taskDoneState[t.id]||t.done)?'done':(t.status||'on-track'); if(!statusSet.includes(st)) return false; }
     return true;
   };
@@ -3636,11 +3631,6 @@ async function exportWorkplanPPT(projects){
     alert('Export to PPT failed: '+(err&&err.message?err.message:'unknown error')+'. Please try again.');
   }
 }
-PROJECTS.forEach(p=>{
-  const o=document.createElement('option');
-  o.value=p.id; o.textContent=`${p.caseCode} \u2014 ${p.name}`;
-  document.getElementById('gantt-proj-filter').appendChild(o);
-});
 
 // ---- FILES PAGE REMOVED ----
 // The Files tab and live-file links were removed to keep this a pure workplan
@@ -3703,20 +3693,14 @@ function renderWorkplans() {
 function goToTasksForProject(code) {
   showPage('tasks');
   // set project filter to matching project
-  const pf = document.getElementById('proj-filter');
-  if (pf) {
-    const proj = PROJECTS.find(p=>p.caseCode===code);
-    if (proj) { pf.value = proj.id; renderTasks(); }
-  }
+  const proj = PROJECTS.find(p=>p.caseCode===code);
+  if (proj) { _setFilterSet('task-proj-set', [proj.id]); renderTasks(); }
 }
 
 function goToTimeline(code) {
   showPage('timeline');
-  const gf = document.getElementById('gantt-proj-filter');
-  if (gf) {
-    const proj = PROJECTS.find(p=>p.caseCode===code);
-    if (proj) { gf.value = proj.id; renderGantt(); }
-  }
+  const proj = PROJECTS.find(p=>p.caseCode===code);
+  if (proj) { _setFilterSet('gantt-proj-set', [proj.id]); renderGantt(); }
 }
 
 // ---- TEAM PAGE ----
@@ -5039,8 +5023,7 @@ function saveNewWorkplan(){
   // then select it and render (otherwise the filter falls back to empty and
   // the page renders blank).
   renderDashboardWidgets();
-  const pf = document.getElementById('proj-filter');
-  if(pf){ pf.value = projId; }
+  _setFilterSet('task-proj-set', [projId]);
   renderTasks();
 }
 
@@ -5050,19 +5033,6 @@ function renderDashboardWidgets(){
     if(typeof renderGreeting==='function') renderGreeting();
     if(typeof renderDashboard==='function') renderDashboard();
   } catch(e){}
-  // refresh proj filters
-  const pf = document.getElementById('proj-filter');
-  if(pf){
-    const cur = pf.value;
-    pf.innerHTML = '<option value="all">All Projects</option>' + PROJECTS.map(p=>`<option value="${p.id}">${p.caseCode} — ${p.name}</option>`).join('');
-    pf.value = cur;
-  }
-  const gf = document.getElementById('gantt-proj-filter');
-  if(gf){
-    const cur = gf.value;
-    gf.innerHTML = '<option value="all">All Projects</option>' + PROJECTS.map(p=>`<option value="${p.id}">${p.caseCode} — ${p.name}</option>`).join('');
-    gf.value = cur;
-  }
 }
 
 // ============================================================
