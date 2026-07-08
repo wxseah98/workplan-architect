@@ -2545,7 +2545,7 @@ function renderGantt(){
   const todayInRange = now>=gridStart && now<=gridEnd;
   const todayOffset = Math.round((now - gridStart) / (7*24*60*60*1000) * WW);
   const _mobile = (typeof window!=='undefined' && window.innerWidth && window.innerWidth<=720);
-  const LW = _mobile ? 190 : (ganttShowOwners ? 460 : 400); // label + progress
+  const LW = _mobile ? 190 : (ganttShowOwners ? 560 : 500); // label + progress
   const PROG_W = _mobile ? 56 : 70; // progress column width
 
   let tableRows = '';
@@ -2642,14 +2642,14 @@ function renderGantt(){
         ownerHTML = mem.length ? `<span style="display:inline-flex;gap:2px;flex-shrink:0;">`+mem.map(o=>{
           const m=TEAM.find(x=>x.initials===o||x.name===o); const c=m?m.color:'#888'; const ini=m?m.initials:o;
           return `<span title="${(m?m.name:o)}" style="font-size:8px;font-weight:800;background:${c};color:#fff;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;">${ini}</span>`;
-        }).join('')+`</span>` : '';
+        }).join('')+`</span>` : '<span title="No members on this workstream yet — add them via Edit workstream" style="font-size:10px;color:#c4c4c4;flex-shrink:0;">&mdash;</span>';
       }
       const _gm = (typeof document!=='undefined' && document.getElementById('gantt-group')) ? document.getElementById('gantt-group').value : 'phase';
       const _bubbles = _gm==='phase' ? wsBubbles(proj, row.ws, task) : '';
-      labelInner=`<div style="padding:5px 8px 5px 40px;display:flex;align-items:center;gap:6px;">
-        <span style="font-size:11px;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;font-weight:600;'}flex:1;min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;" title="${(task.name||'').replace(/"/g,'&quot;')}">${isDone?'&#10003; ':''}${task.name}</span>
+      labelInner=`<div style="padding:5px 10px 5px 22px;display:flex;align-items:flex-start;gap:6px;">
+        <span style="font-size:11px;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;font-weight:600;'}flex:1;min-width:120px;white-space:normal;word-break:break-word;line-height:1.35;">${isDone?'&#10003; ':''}${task.name}</span>
         ${_bubbles}
-        <span style="font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0;">${_dateLbl}</span>
+        <span style="font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0;margin-top:1px;">${_dateLbl}</span>
         ${ownerHTML}
         <button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>
       </div>`;
