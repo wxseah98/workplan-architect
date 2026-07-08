@@ -2451,7 +2451,7 @@ function renderGantt(){
       const bw = Math.max(Math.round((e-s)/(7*24*60*60*1000)*WW),8);
       const phTipId = 'ph_' + ph.id;
       window['tip_'+phTipId] = `<b>${ph.name} Phase</b> (${row.proj.caseCode})<br>${fmtDateLong(s)} &rarr; ${fmtDateLong(e)}<br>Wk ${ph.startWk}–${ph.endWk}<br><i>Double-click to edit · right-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:18px;width:${bw}px;background:${ph.color};opacity:.9;border-radius:5px;display:flex;align-items:center;padding:0 6px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:#fff;cursor:pointer;z-index:2;"
+      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:4px;bottom:4px;width:${bw}px;background:${ph.color}26;border:1px solid ${ph.color}55;border-radius:6px;display:flex;align-items:center;padding:0 8px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:${ph.color};cursor:pointer;z-index:2;"
         ondblclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')"
         oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${phTipId}'])"
@@ -2465,7 +2465,7 @@ function renderGantt(){
       const x1 = Math.round((dd-gridStart)/(7*24*60*60*1000)*WW);
       const taskDur = Math.max(1, task.durWk||1);
       const taskBarW = Math.max(taskDur*WW - 8, 12);
-      const bc = task.done?'rgba(26,26,26,.25)':task.status==='delayed'?'#A52834':task.status==='at-risk'?'#D69200':'#1A7F4E';
+      const bc = task.done?'#9AA0A6':task.status==='delayed'?'#A52834':task.status==='at-risk'?'#D69200':'#1A7F4E';
       const outline = '';
       const member = TEAM.find(m=>m.initials===task.owner);
       const tipOwner = member ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${member.color};margin-right:3px;"></span>${member.name}` : task.owner;
@@ -2473,7 +2473,7 @@ function renderGantt(){
       const safeStatus = task.status.replace('-',' ');
       const taskTipId = 'task_' + task.id;
       window['tip_'+taskTipId] = `<b>${safeName}</b><br>${tipOwner}<br>${task.due} · ${fmtDateLong(dd)}<br>${safeStatus}<br>${row.proj.caseCode} › ${ph.name}<br><i>Double-click to edit · right-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:16px;width:${taskBarW}px;background:${bc};border-radius:5px;${outline}cursor:pointer;z-index:2;overflow:visible;"
+      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:8px;bottom:8px;width:${taskBarW}px;background:${bc}22;border:1px solid ${bc}55;border-left:3px solid ${bc};border-radius:5px;${outline}cursor:pointer;z-index:2;overflow:visible;"
         ondblclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')"
         oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${taskTipId}'])"
@@ -3413,7 +3413,7 @@ function openEditMember(idx){
   document.getElementById('member-modal').style.display='flex';
 }
 function closeMemberModal(){ document.getElementById('member-modal').style.display='none'; _memberDelArmed=false; clearTimeout(window._memberDelTimer); }
-const MEMBER_COLOURS = ['#CC0000','#1A4F8F','#1A7F4E','#8B5CF6','#D69200','#E84393','#00838F','#455A64'];
+const MEMBER_COLOURS = ['#D5495A','#3F72B0','#3E9C74','#9B7ED9','#E0A83E','#E67FB0','#3FA9B5','#5C6B7A'];
 function buildColourPicker(){
   const wrap=document.getElementById('colour-picker');
   if(!wrap) return;
@@ -3786,7 +3786,7 @@ function buildTemplateDropdown(selectedKey){
   if(selectedKey) sel.value = selectedKey;
 }
 
-const PHASE_COLOURS = ['#CC0000','#1A4F8F','#1A7F4E','#8B5CF6','#D69200','#00838F'];
+const PHASE_COLOURS = ['#D5495A','#3F72B0','#3E9C74','#9B7ED9','#E0A83E','#3FA9B5'];
 let phaseRowCount = 0;
 let wsRowCount = 0;
 
