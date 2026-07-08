@@ -243,7 +243,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 .phase-bar{width:0;height:0;flex-shrink:0;}
 .phase-lbl{font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;flex:1;}
 .phase-current-badge{font-size:9px;font-weight:700;color:#fff;padding:1px 7px;border-radius:10px;}
-.phase-meta{font-size:10px;color:var(--mid);}
+.phase-meta{font-size:11.5px;color:var(--slate);font-weight:600;}
 .phase-chev{color:var(--muted);font-size:10px;transition:transform .2s;}
 .phase-chev.open{transform:rotate(90deg);}
 .phase-body{display:none;padding-left:10px;}.phase-body.open{display:block;}
@@ -276,12 +276,12 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 .t-name{font-size:12px;font-weight:600;color:var(--ink);line-height:1.3;}
 .t-name.done{text-decoration:line-through;color:var(--muted);font-weight:400;}
 .t-chips{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;}
-.ownr{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;color:var(--slate);}
-.stat-chip{font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;}
+.ownr{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:600;color:var(--slate);}
+.stat-chip{font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;}
 .stat-chip.on-track{background:var(--green-lt);color:var(--green);}
 .stat-chip.at-risk{background:var(--warn-lt);color:var(--warn);}
 .stat-chip.delayed{background:var(--danger-lt);color:var(--danger);}
-.due-lbl{font-size:10px;color:var(--mid);}
+.due-lbl{font-size:11.5px;color:var(--slate);font-weight:600;}
 
 /* ── TIMELINE / GANTT ── */
 .gantt-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
@@ -452,7 +452,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 
 <!-- TASKS -->
 <div id="page-tasks" class="page">
-  <div class="tasks-toolbar">
+  <div class="tasks-toolbar" style="position:sticky;top:52px;background:var(--surface);z-index:50;padding:12px 0;margin-bottom:10px;">
     <div class="tasks-title">Tasks</div>
     <select class="fsel" id="proj-filter" onchange="renderTasks()"><option value="all">All Projects</option></select>
     <select class="fsel" id="status-filter" onchange="renderTasks()">
@@ -619,13 +619,12 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
         <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Case Code</label>
           <input id="wp-code" class="fi" placeholder="e.g. CT-0731"></div>
       </div>
-      <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-end;">
-        <div style="width:90px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;"># Weeks</label>
+      <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;">
+        <div style="width:140px;flex-shrink:0;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Duration (# of weeks)</label>
           <input id="wp-weeks" class="fi" type="number" min="1" placeholder="12" oninput="_wpWeeksChanged()"></div>
-        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Start Date</label>
-          <input id="wp-start" class="fi" type="date" onchange="_wpDatesChanged()"></div>
-        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">End Date</label>
-          <input id="wp-end" class="fi" type="date" onchange="_wpDatesChanged()"></div>
+        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Project dates</label>
+          <input id="wp-start" type="date" onchange="_wpDatesChanged()">
+          <input id="wp-end" type="date" onchange="_wpDatesChanged()"></div>
       </div>
       <div style="margin-bottom:14px;">
         <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Members <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">(type a name and press Enter; team members appear in the dropdown)</span></label>
@@ -634,7 +633,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 
       <!-- WORKSTREAMS -->
       <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--red);">
           <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;">Workstreams</div>
           <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addWsRow()">+ Add Workstream</button>
         </div>
@@ -644,7 +643,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 
       <!-- PHASES & TASKS -->
       <div style="border-top:1px solid var(--border);padding-top:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--red);">
           <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;">Phases &amp; Tasks</div>
           <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addPhaseRow()">+ Add Phase</button>
         </div>
@@ -1913,12 +1912,15 @@ function renderTasks(){
         const done=tasks.filter(t=>taskDoneState[t.id]||t.done).length;
         return `<div class="level-ws">
           <div class="ws-header">
-            <span class="ws-lbl" onclick="tog('${wsKey}')" style="cursor:pointer;">${ws.name}</span>
-            <span class="ws-count">${done}/${tasks.length} done</span>
             <span class="ws-chev ${openState[wsKey]?'open':''}" id="chev-${wsKey}" onclick="tog('${wsKey}')" style="cursor:pointer;">&#9654;</span>
-            <span class="row-actions">
-              <button class="add-btn" title="Add task" onclick="event.stopPropagation();openAddTaskFor('${proj.id}','${ph.id}','${ws.id}')">+ Task</button>
-              <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${proj.id}','${ph.id}','${ws.id}')">&#9998;</button>
+            <span class="ws-lbl" onclick="tog('${wsKey}')" style="cursor:pointer;">${ws.name}</span>
+            <span class="ws-count" style="margin-left:8px;">${done}/${tasks.length}</span>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+              <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;background:#EDEDED;padding:2px 6px;border-radius:4px;">Workstream</span>
+              <span class="row-actions" style="display:inline-flex;gap:2px;">
+                <button class="add-btn" title="Add task" onclick="event.stopPropagation();openAddTaskFor('${proj.id}','${ph.id}','${ws.id}')">+ Task</button>
+                <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${proj.id}','${ph.id}','${ws.id}')">&#9998;</button>
+              </span>
             </span>
           </div>
           <div class="ws-body ${openState[wsKey]?'open':''}" id="body-${wsKey}">
@@ -1930,7 +1932,7 @@ function renderTasks(){
                   <div class="t-name ${isDone?'done':''}">${t.name}</div>
                   <div class="t-chips">
                     <span class="ownr">${t.owner}</span>
-                    <span class="stat-chip ${t.status}">${t.status.replace('-',' ')}</span>
+                    <span class="stat-chip ${isDone?'on-track':t.status}">${isDone?'Done':(t.status==='at-risk'?'At Risk':t.status==='delayed'?'Delayed':'On Track')}</span>
                     <span class="due-lbl">${(()=>{const r=taskDateRange(proj,ph,t);return fmtDate(new Date(r.startISO))+' – '+fmtDate(new Date(r.endISO));})()}</span>
                   </div>
                 </div>
@@ -1950,14 +1952,17 @@ function renderTasks(){
       const curBadge=isCur?`<span class="phase-current-badge" style="background:${ph.color}">Current</span>`:'';
       return `<div class="level-phase">
         <div class="phase-header" style="background:${isCur?ph.color+'15':'#EFEFEF'};border-color:${isCur?ph.color+'55':'var(--border)'};border-left-color:${ph.color};">
+          <span class="phase-chev ${openState[ph.id]?'open':''}" id="chev-${ph.id}" onclick="tog('${ph.id}')" style="cursor:pointer;">&#9654;</span>
           <div class="phase-bar" style="background:${ph.color}"></div>
-          <span class="phase-lbl" onclick="tog('${ph.id}')" style="cursor:pointer;">${ph.name} Phase</span>
+          <span class="phase-lbl" onclick="tog('${ph.id}')" style="cursor:pointer;">${ph.name}</span>
           ${curBadge}
           <span class="phase-meta">Wk ${ph.startWk}&ndash;${ph.endWk} &middot; ${fmtDate(wkToDate(proj.startDate,ph.startWk))} &rarr; ${fmtDate(wkToDate(proj.startDate,ph.endWk))} &middot; ${phDone}/${allPT.length} tasks</span>
-          <span class="phase-chev ${openState[ph.id]?'open':''}" id="chev-${ph.id}" onclick="tog('${ph.id}')" style="cursor:pointer;">&#9654;</span>
-          <span class="row-actions">
-            <button class="add-btn" title="Add task to this phase" onclick="event.stopPropagation();openAddTaskFor('${proj.id}','${ph.id}','')">+ Task</button>
-            <button class="edit-btn" title="Edit phase" onclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')">&#9998;</button>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+            <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#777;background:#E4E4E4;padding:2px 6px;border-radius:4px;">Phase</span>
+            <span class="row-actions" style="display:inline-flex;gap:2px;">
+              <button class="add-btn" title="Add task to this phase" onclick="event.stopPropagation();openAddTaskFor('${proj.id}','${ph.id}','')">+ Task</button>
+              <button class="edit-btn" title="Edit phase" onclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')">&#9998;</button>
+            </span>
           </span>
         </div>
         <div class="phase-body ${openState[ph.id]?'open':''}" id="body-${ph.id}">${wsBlocks||'<div style="padding:8px 0 8px 10px;font-size:11px;color:var(--muted);">No workstreams. Use Edit phase to add one.</div>'}</div>
@@ -1971,14 +1976,14 @@ function renderTasks(){
       <div class="project-header">
         <span class="proj-code" onclick="tog('${proj.id}')" style="cursor:pointer;">${proj.caseCode}</span>
         <span class="proj-name" onclick="tog('${proj.id}')" style="cursor:pointer;">${proj.name}</span>
-        <span style="font-size:10px;color:#fff;margin-left:4px;">${fmtDateLong(projStart)} &rarr; ${fmtDateLong(projEndDate)}</span>
+        <span style="font-size:11px;color:#fff;margin-left:4px;">${fmtDateLong(projStart)} &rarr; ${fmtDateLong(projEndDate)}</span>
         <span class="proj-cadence">${cp.name} &middot; Wk ${wip}</span>
-        <span class="proj-chev ${openState[proj.id]?'open':''}" id="chev-${proj.id}" onclick="tog('${proj.id}')" style="cursor:pointer;">&#9654;</span>
         <span class="row-actions">
           <button class="add-btn" title="Add a workstream to every phase" onclick="event.stopPropagation();addWorkstreamToProject('${proj.id}')">+ Workstream</button>
           <button class="add-btn" title="Add a new phase with the existing workstreams" onclick="event.stopPropagation();addPhaseToProject('${proj.id}')">+ Phase</button>
           <button class="edit-btn" title="Edit project" onclick="event.stopPropagation();openEditProject('${proj.id}')">&#9998;</button>
         </span>
+        <span class="proj-chev ${openState[proj.id]?'open':''}" id="chev-${proj.id}" onclick="tog('${proj.id}')" style="cursor:pointer;margin-left:8px;">&#9654;</span>
       </div>
       <div class="proj-body ${openState[proj.id]?'open':''}" id="body-${proj.id}">
         ${phBlocks||'<div style="padding:12px 0;font-size:12px;color:var(--muted);">No tasks match the current filters.</div>'}
@@ -2106,6 +2111,11 @@ const ganttCollapsed = new Set();
 function toggleGanttPhase(phaseId){
   if(ganttCollapsed.has(phaseId)) ganttCollapsed.delete(phaseId);
   else ganttCollapsed.add(phaseId);
+  renderGantt();
+}
+function toggleGanttWs(wsId){
+  if(ganttCollapsed.has(wsId)) ganttCollapsed.delete(wsId);
+  else ganttCollapsed.add(wsId);
   renderGantt();
 }
 function collapseAllPhases(projId){
@@ -2252,14 +2262,19 @@ function renderGantt(){
     // Apply phase collapse: hide ws + task rows under collapsed phases
     const result = [];
     let collapsedPhase = null;
+    let collapsedWs = null;
     filtered.forEach(row=>{
-      if(row.type==='project'){ collapsedPhase=null; result.push(row); }
+      if(row.type==='project'){ collapsedPhase=null; collapsedWs=null; result.push(row); }
       else if(row.type==='phase'){
         collapsedPhase = ganttCollapsed.has(row.ph.id) ? row.ph.id : null;
+        collapsedWs = null;
         result.push(row);
       }
-      else if(row.type==='ws' || row.type==='task'){
-        if(!collapsedPhase) result.push(row);
+      else if(row.type==='ws'){
+        if(!collapsedPhase){ collapsedWs = ganttCollapsed.has(row.ws.id) ? row.ws.id : null; result.push(row); }
+      }
+      else if(row.type==='task'){
+        if(!collapsedPhase && !collapsedWs) result.push(row);
       }
     });
     return result;
@@ -2277,7 +2292,7 @@ function renderGantt(){
 
   let tableRows = '';
   rows.forEach(row => {
-    const rh = row.type==='project'?44:row.type==='phase'?36:row.type==='ws'?30:48;
+    const rh = row.type==='project'?38:row.type==='phase'?30:row.type==='ws'?26:40;
     const bgLabel = row.type==='project'?'#D8D8D8':row.type==='phase'?'#F5F5F5':row.type==='ws'?'#FAFAFA':'#FFFFFF';
     const bgChart = row.type==='project'?'#D8D8D8':row.type==='phase'?'rgba(0,0,0,.01)':'#FFFFFF';
 
@@ -2304,8 +2319,8 @@ function renderGantt(){
       const projPct  = allProjTasks.length ? Math.round(projDone/allProjTasks.length*100) : 0;
       const projCol  = projPct>=70?'#1A7F4E':projPct>=40?'#D69200':'#A52834';
       progInner = `<div style="padding:0 8px;display:flex;align-items:center;gap:4px;">
-        <div style="flex:1;height:3px;background:rgba(0,0,0,.12);border-radius:2px;overflow:hidden;">
-          <div style="width:${projPct}%;height:100%;background:${projCol};border-radius:3px;"></div>
+        <div style="flex:1;height:7px;background:rgba(0,0,0,.12);border-radius:4px;overflow:hidden;">
+          <div style="width:${projPct}%;height:100%;background:${projCol};border-radius:4px;"></div>
         </div>
         <span style="font-size:10px;font-weight:800;color:${projCol};min-width:28px;text-align:right;">${projPct}%</span>
       </div>`;
@@ -2314,14 +2329,14 @@ function renderGantt(){
       const ps = wkToDate(proj.startDate, ph.startWk);
       const pe = wkToDate(proj.startDate, ph.endWk);
       const isCur = (()=>{ const {phase}=currentPhase(proj); return phase.id===ph.id; })();
-      labelInner=`<div style="padding:6px 14px 6px 20px;display:flex;align-items:center;gap:6px;">
+      labelInner=`<div style="padding:5px 14px 5px 20px;display:flex;align-items:center;gap:6px;">
         <span onclick="event.stopPropagation();toggleGanttPhase('${ph.id}')" title="Collapse / expand phase" style="cursor:pointer;font-size:10px;color:var(--mid);display:inline-block;width:12px;transition:transform .15s;transform:rotate(${ganttCollapsed.has(ph.id)?'0':'90'}deg);flex-shrink:0;">&#9654;</span>
         <div style="width:3px;height:14px;border-radius:2px;background:${ph.color};flex-shrink:0;"></div>
-        <span onclick="event.stopPropagation();toggleGanttPhase('${ph.id}')" style="cursor:pointer;font-size:11px;font-weight:700;color:#333;">${ph.name}</span>
-        <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#EDEDED;padding:1px 5px;border-radius:4px;flex-shrink:0;">Phase</span>
+        <span onclick="event.stopPropagation();toggleGanttPhase('${ph.id}')" style="cursor:pointer;font-size:12px;font-weight:700;color:#1A1A1A;">${ph.name}</span>
         ${isCur?`<span style="font-size:9px;background:${ph.color};color:#fff;padding:1px 5px;border-radius:8px;font-weight:700;flex-shrink:0;">Now</span>`:''}
-        <span style="font-size:9px;color:var(--ink);font-weight:600;white-space:nowrap;">${fmtDate(ps)}&ndash;${fmtDate(pe)}</span>
-        <span style="margin-left:auto;display:flex;gap:2px;">
+        <span style="font-size:9px;color:#555;font-weight:600;white-space:nowrap;">${fmtDate(ps)}&ndash;${fmtDate(pe)}</span>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#777;background:#E4E4E4;padding:2px 6px;border-radius:4px;">Phase</span>
           <button class="edit-btn" title="Edit phase" onclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')">&#9998;</button>
         </span>
       </div>`;
@@ -2330,17 +2345,19 @@ function renderGantt(){
       const phPct   = phTasks.length ? Math.round(phDone/phTasks.length*100) : 0;
       const phCol   = phPct>=70?'#1A7F4E':phPct>=40?'#D69200':'#A52834';
       progInner = `<div style="padding:0 8px;display:flex;align-items:center;gap:4px;">
-        <div style="flex:1;height:3px;background:#e0e0e0;border-radius:2px;overflow:hidden;">
-          <div style="width:${phPct}%;height:100%;background:${phCol};border-radius:3px;"></div>
+        <div style="flex:1;height:6px;background:#e0e0e0;border-radius:4px;overflow:hidden;">
+          <div style="width:${phPct}%;height:100%;background:${phCol};border-radius:4px;"></div>
         </div>
         <span style="font-size:10px;font-weight:800;color:${phCol};min-width:28px;text-align:right;">${phPct}%</span>
       </div>`;
     } else if (row.type==='ws') {
-      labelInner=`<div style="padding:5px 14px 5px 30px;display:flex;align-items:center;gap:6px;">
-        <span style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;">${row.ws.name}</span>
-        <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#F0F0F0;padding:1px 5px;border-radius:4px;flex-shrink:0;">Workstream</span>
-        <span style="flex:1;"></span>
-        <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${row.proj.id}','${row.ph.id}','${row.ws.id}')">&#9998;</button>
+      labelInner=`<div style="padding:4px 14px 4px 30px;display:flex;align-items:center;gap:6px;">
+        <span onclick="event.stopPropagation();toggleGanttWs('${row.ws.id}')" title="Collapse / expand workstream" style="cursor:pointer;font-size:9px;color:var(--mid);display:inline-block;width:11px;transition:transform .15s;transform:rotate(${ganttCollapsed.has(row.ws.id)?'0':'90'}deg);flex-shrink:0;">&#9654;</span>
+        <span onclick="event.stopPropagation();toggleGanttWs('${row.ws.id}')" style="cursor:pointer;font-size:11px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.04em;">${row.ws.name}</span>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;background:#EDEDED;padding:2px 6px;border-radius:4px;">Workstream</span>
+          <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${row.proj.id}','${row.ph.id}','${row.ws.id}')">&#9998;</button>
+        </span>
       </div>`;
       const wsTasks = row.ws.tasks;
       const wsDone  = wsTasks.filter(t=>taskDoneState[t.id]||t.done).length;
@@ -2449,16 +2466,16 @@ function renderGantt(){
       <table style="border-collapse:collapse;table-layout:fixed;width:${LW+totalWeekW}px;max-width:${LW+totalWeekW}px;margin:0;">
         <thead>
           <tr>
-            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;left:0;z-index:6;text-align:left;">Project / Phase / Task</th>
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;left:${LW-PROG_W}px;z-index:6;text-align:center;">Status</th>
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;">
+            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:0;z-index:8;text-align:left;">Project / Phase / Task</th>
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:${LW-PROG_W}px;z-index:8;text-align:center;">Status</th>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;position:sticky;top:0;z-index:7;">
               <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
             </th>
           </tr>
           <tr>
-            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;left:0;z-index:6;"></th>
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;left:${LW-PROG_W}px;z-index:6;"></th>
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
+            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:0;z-index:8;"></th>
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:${LW-PROG_W}px;z-index:8;"></th>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:7;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
             </th>
           </tr>
         </thead>
@@ -3731,7 +3748,7 @@ function _renderOwnerField(box){
     return `<span style="display:inline-flex;align-items:center;gap:5px;background:${col}18;border:1px solid ${col}55;color:${col};border-radius:14px;padding:2px 6px 2px 9px;font-size:11px;font-weight:600;">${label}<span onclick="_ownerRemove(this)" data-o="${o.replace(/"/g,'&quot;')}" style="cursor:pointer;font-weight:800;">&times;</span></span>`;
   }).join('');
   box.innerHTML = `
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;" class="owner-chips">${chips||'<span style="font-size:11px;color:var(--muted);">No members added yet.</span>'}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;${chips?'margin-bottom:6px;':''}" class="owner-chips">${chips}</div>
     <div style="position:relative;display:flex;gap:6px;align-items:center;">
       <div style="position:relative;flex:1;">
         <input class="fi owner-text" autocomplete="off" placeholder="Type a name or pick a member" style="width:100%;"
@@ -3838,19 +3855,21 @@ function addPhaseRow(name, wks, startWk){
     <div style="display:flex;gap:8px;align-items:center;">
       <div class="wp-phase-swatch" onclick="_toggleWpPhasePalette(this)" style="width:20px;height:20px;border-radius:4px;background:${colour};flex-shrink:0;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--border);position:relative;" data-colour="${colour}" title="Click to change colour"></div>
       <input class="fi wp-phase-name" style="flex:2;min-width:80px;" placeholder="Phase name" value="${name||''}">
-      <span style="font-size:11px;color:var(--mid);flex-shrink:0;">start wk</span>
-      <input class="fi wp-phase-start" style="width:56px;" type="number" min="1" placeholder="1" value="${startWk||''}" title="Start week (leave blank to follow previous phase)" oninput="_phaseWkChanged(this)">
-      <input class="fi wp-phase-wks" style="width:56px;" type="number" min="1" placeholder="0" value="${wks||''}" oninput="_phaseWkChanged(this)">
-      <span style="font-size:11px;color:var(--mid);flex-shrink:0;">wks</span>
       <button type="button" onclick="togglePhaseTasks(this)" class="btn-ghost" style="font-size:10px;padding:4px 8px;white-space:nowrap;">Tasks &#9662;</button>
       <button onclick="this.closest('.wp-phase-row').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;flex-shrink:0;">&#10005;</button>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;margin-top:8px;padding-left:24px;">
-      <span style="font-size:11px;color:var(--mid);flex-shrink:0;">start date</span>
-      <input class="fi wp-phase-start-date" type="date" style="width:150px;" title="Phase start date" onchange="_phaseDateChanged(this,'start')">
-      <span style="font-size:11px;color:var(--mid);flex-shrink:0;">end date</span>
-      <input class="fi wp-phase-end-date" type="date" style="width:150px;" title="Phase end date" onchange="_phaseDateChanged(this,'end')">
-      <span class="wp-phase-date-hint" style="font-size:10px;color:var(--muted);"></span>
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-top:8px;padding-left:24px;">
+      <div style="width:140px;flex-shrink:0;">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Duration (# of weeks)</div>
+        <input class="fi wp-phase-wks" type="number" min="1" placeholder="4" value="${wks||''}" style="width:100%;" oninput="_phaseWkChanged(this)">
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Phase dates</div>
+        <input class="wp-phase-start-date" type="date" onchange="_phaseDateChanged(this,'start')">
+        <input class="wp-phase-end-date" type="date" onchange="_phaseDateChanged(this,'end')">
+        <span class="wp-phase-date-hint" style="font-size:10px;color:var(--muted);"></span>
+      </div>
+      <input class="wp-phase-start" type="hidden" value="${startWk||''}">
     </div>
     <div class="wp-phase-tasks" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"></div>`;
   document.getElementById('phase-rows').appendChild(row);
@@ -3890,19 +3909,34 @@ function _wpDateToWk(iso){
 }
 // Fill the date fields from the current start-wk / wks values
 function _syncPhaseDatesFromWeeks(row){
-  const startWk = parseInt(row.querySelector('.wp-phase-start').value);
+  let startWk = parseInt(row.querySelector('.wp-phase-start').value);
   const wks = parseInt(row.querySelector('.wp-phase-wks').value);
+  // If no explicit start week, derive it from the durations of preceding phases
+  if(!startWk){
+    let acc=1;
+    const rows=[...document.querySelectorAll('.wp-phase-row')];
+    for(const r of rows){
+      if(r===row){ startWk=acc; break; }
+      const w=parseInt(r.querySelector('.wp-phase-wks').value)||0;
+      acc+=w;
+    }
+    if(!startWk) startWk=1;
+    row.querySelector('.wp-phase-start').value=startWk;
+  }
   const sDate = row.querySelector('.wp-phase-start-date');
   const eDate = row.querySelector('.wp-phase-end-date');
   const hint = row.querySelector('.wp-phase-date-hint');
-  if(!_wpFormStart()){ if(hint) hint.textContent='(set the workplan start date to use dates)'; return; }
+  if(!_wpFormStart()){ if(hint) hint.textContent='(set the project start date to use dates)'; return; }
   if(hint) hint.textContent='';
   if(startWk){ sDate.value=_wpWkToISO(startWk); if(wks) eDate.value=_wpWkToISO(startWk+wks-1); }
+  if(sDate._rcRefresh) sDate._rcRefresh();
 }
 // User edited a week field -> refresh the date fields for that row
 function _phaseWkChanged(el){
   const row=el.closest('.wp-phase-row');
-  _syncPhaseDatesFromWeeks(row);
+  // clear the derived start so downstream phases recompute
+  document.querySelectorAll('.wp-phase-row').forEach(r=>{ if(r!==row) r.querySelector('.wp-phase-start').value=''; });
+  _refreshAllPhaseDates();
 }
 // Workplan start date changed -> refresh every phase row's date fields
 function _refreshAllPhaseDates(){
