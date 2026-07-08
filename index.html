@@ -773,6 +773,12 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
         </label>
       </div>
 
+      <!-- ARCHIVED PROJECTS -->
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;margin-bottom:4px;">
+        <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Archived projects</div>
+        <div id="archived-projects-list"></div>
+      </div>
+
       <!-- ACCOUNT INFORMATION -->
       <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
         <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Account</div>
@@ -945,7 +951,10 @@ Phase 3: Deliver, 4 weeks. Tasks: Rollout plan (Commercial)."></textarea>
     </div>
     <div style="padding:20px 24px;" id="edit-modal-body"></div>
     <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;">
-      <button class="btn-danger" id="edit-delete-btn" onclick="editModalDelete()">Delete</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-danger" id="edit-delete-btn" onclick="editModalDelete()">Delete</button>
+        <button class="btn-ghost" id="edit-archive-btn" onclick="editModalArchive()" style="display:none;">Archive</button>
+      </div>
       <div style="display:flex;gap:8px;">
         <button class="btn-ghost" onclick="closeEditModal()">Cancel</button>
         <button class="btn-red" onclick="editModalSave()">Save changes</button>
@@ -1429,7 +1438,7 @@ function currentPhase(proj){
   return{phase:last,wip:wk-last.startWk+1};
 }
 function allFlatTasks(){
-  const caseTasks = PROJECTS.flatMap(p=>p.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks.map(t=>({...t,projectId:p.id,caseCode:p.caseCode,phaseName:ph.name,phaseColor:ph.color,wsName:ws.name})))));
+  const caseTasks = PROJECTS.filter(p=>!p.archived).flatMap(p=>p.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks.map(t=>({...t,projectId:p.id,caseCode:p.caseCode,phaseName:ph.name,phaseColor:ph.color,wsName:ws.name})))));
   const other = (APP.otherTasks||[]).map(t=>({...t, projectId:'__other__', caseCode:'Other', phaseName:'', phaseColor:'#6B6B6B', wsName:'Other Tasks', due:t.due||''}));
   return caseTasks.concat(other);
 }
@@ -1474,7 +1483,7 @@ const MONS=['January','February','March','April','May','June','July','August','S
 document.getElementById('gdate').textContent=`${DAYS[now.getDay()]}, ${MONS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
 const hr=now.getHours();
 document.getElementById('gname').innerHTML=`${hr<12?'Good morning':hr<17?'Good afternoon':'Good evening'}, <em>Wen.</em>`;
-document.getElementById('gcadence').innerHTML=PROJECTS.map(p=>{
+document.getElementById('gcadence').innerHTML=PROJECTS.filter(p=>!p.archived).map(p=>{
   const{phase,wip}=currentPhase(p);
   return `<span class="cw-item"><span class="cw-dot" style="background:${phase.color}"></span><span class="cw-code">${p.caseCode}</span><span style="color:var(--border)">&middot;</span><span style="color:var(--mid)">${phase.name} &middot; Wk ${wip}</span></span>`;
 }).join('<span style="color:var(--border);margin:0 3px;">|</span>');
@@ -1647,10 +1656,11 @@ function buildTeamPulse(){
 }
 
 function buildWpProgress(){
-  if(!PROJECTS.length){
+  const active = PROJECTS.filter(p=>!p.archived);
+  if(!active.length){
     return '<div style="font-size:13px;color:var(--muted);padding:10px 0;text-align:center;">No workplans yet. Create one to see progress here.</div>';
   }
-  return PROJECTS.map(proj=>{
+  return active.map(proj=>{
     const allTasks = proj.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks));
     const done = allTasks.filter(t=>taskDoneState[t.id]||t.done).length;
     const overall = allTasks.length ? Math.round(done/allTasks.length*100) : 0;
@@ -1993,7 +2003,7 @@ function renderTasks(){
   const ov=document.getElementById('owner-filter').value;
   const wvEl=document.getElementById('task-ws-filter'); const wv=wvEl?wvEl.value:'all';
   const gmEl=document.getElementById('task-group'); const gm=gmEl?gmEl.value:'phase';
-  const projs=pv==='all'?PROJECTS:PROJECTS.filter(p=>p.id===pv);
+  const projs=(pv==='all'?PROJECTS:PROJECTS.filter(p=>p.id===pv)).filter(p=>!p.archived);
   const el=document.getElementById('tasks-content');
 
   // Refresh the workstream filter options from all visible projects
@@ -2418,7 +2428,7 @@ function openGanttStatusMenu(projId, phaseId, wsId, taskId){
 function renderGantt(){
   const projVal = document.getElementById('gantt-proj-filter').value;
   const wsVal   = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
-  const projects = projVal==='all' ? PROJECTS : PROJECTS.filter(p=>p.id===projVal);
+  const projects = (projVal==='all' ? PROJECTS : PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
 
   // Populate workstream filter
   const wsFilter = document.getElementById('gantt-ws-filter');
@@ -3035,7 +3045,7 @@ async function exportToExcel(){
   catch(e){ alert('Could not load the Excel library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
   if(typeof XLSX==='undefined'){ alert('Excel library unavailable. Please try again.'); return; }
   const projVal = document.getElementById('gantt-proj-filter').value;
-  const projects = projVal==='all' ? PROJECTS : PROJECTS.filter(p=>p.id===projVal);
+  const projects = (projVal==='all' ? PROJECTS : PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
   if(!projects.length){ alert('No workplans to export.'); return; }
 
   const range = computeDateRange(projects);
@@ -3165,7 +3175,7 @@ async function exportToPPT(){
   catch(e){ alert('Could not load the PowerPoint library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
   if(typeof PptxGenJS==='undefined'){ alert('PowerPoint library unavailable. Please try again.'); return; }
   const projVal=document.getElementById('gantt-proj-filter').value;
-  const projects=projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal);
+  const projects=(projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
   if(!projects.length){ alert('No workplans to export.'); return; }
 
   const pptx=new PptxGenJS();
@@ -3307,7 +3317,7 @@ async function exportCollapsedPPT(){
   catch(e){ alert('Could not load the PowerPoint library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
   if(typeof PptxGenJS==='undefined'){ alert('PowerPoint library unavailable. Please try again.'); return; }
   const projVal=document.getElementById('gantt-proj-filter').value;
-  const projects=projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal);
+  const projects=(projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
   if(!projects.length){ alert('No workplans to export.'); return; }
   const wsVal = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
   const statusVal = document.getElementById('gantt-status-filter') ? document.getElementById('gantt-status-filter').value : 'all';
@@ -3715,6 +3725,30 @@ function openSettingsModal(){
   document.getElementById('gh-autosync').checked = localStorage.getItem('gh_autosync') === '1';
   updateGithubStatus();
   renderVersionList();
+  renderArchivedProjects();
+}
+// Render the Archived projects list inside Settings, with Restore + Delete
+function renderArchivedProjects(){
+  const box=document.getElementById('archived-projects-list'); if(!box) return;
+  const arch=PROJECTS.filter(p=>p.archived);
+  if(!arch.length){ box.innerHTML='<p style="font-size:11px;color:var(--muted);line-height:1.5;margin:0;">No archived projects. Archive a project from its Edit dialog to hide it from your workplan and tasks without deleting it.</p>'; return; }
+  box.innerHTML = arch.map(p=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:7px;margin-bottom:6px;background:var(--surface);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink);">${p.caseCode}</div>
+        <div style="font-size:11px;color:var(--mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+      </div>
+      <button class="btn-ghost btn-sm" onclick="restoreArchivedProject('${p.id}')" title="Restore to your active workplan">Restore</button>
+    </div>`).join('');
+}
+function restoreArchivedProject(projId){
+  const p=_findProj(projId); if(!p) return;
+  p.archived=false;
+  APP.projects=PROJECTS; saveData();
+  if(typeof pushFeed==='function') pushFeed('Restored '+p.caseCode+' · '+p.name, '#3E9C5F');
+  renderArchivedProjects();
+  renderTasks(); renderDashboardWidgets();
+  if(typeof renderGantt==='function') renderGantt();
 }
 function highlightPrivacy(val){
   document.querySelectorAll('.privacy-opt').forEach(opt=>{
@@ -4897,7 +4931,21 @@ function openEditProject(projId){
         <input id="edit-f4" type="date" value="${p.endDate||''}" onchange="_projDatesChanged()"></div>
     </div>
     <div><label style="${_lbl}">Team Members</label><div id="edit-members" style="display:flex;flex-wrap:wrap;gap:5px;">${_memberChips(_editMembers)}</div></div>`;
+  const arch=document.getElementById('edit-archive-btn');
+  if(arch){ arch.style.display='inline-flex'; arch.textContent = p.archived ? 'Unarchive' : 'Archive'; }
   document.getElementById('edit-modal').style.display='flex';
+}
+// Archive / unarchive the project currently open in the edit modal
+function editModalArchive(){
+  if(!editCtx || editCtx.type!=='project') return;
+  const p=_findProj(editCtx.projId); if(!p) return;
+  p.archived = !p.archived;
+  APP.projects=PROJECTS; saveData();
+  if(typeof pushFeed==='function') pushFeed((p.archived?'Archived ':'Restored ')+p.caseCode+' · '+p.name, p.archived?'#9B9B9B':'#3E9C5F');
+  closeEditModal();
+  renderTasks(); renderDashboardWidgets();
+  if(typeof renderGantt==='function') renderGantt();
+  if(typeof renderWorkplans==='function') renderWorkplans();
 }
 // Weeks between the project's start and end dates (min 1)
 function _projDurWks(p){
@@ -4931,6 +4979,7 @@ function openEditPhase(projId, phaseId){
   const p=_findProj(projId); if(!p) return;
   const ph=p.phases.find(x=>x.id===phaseId); if(!ph) return;
   editCtx={type:'phase',projId,phaseId};
+  const _ab=document.getElementById('edit-archive-btn'); if(_ab) _ab.style.display='none';
   const colourOpts=PHASE_COLOURS.map(col=>`<div onclick="_pickPhaseColour('${col}')" id="epc-${col.replace('#','')}" style="width:24px;height:24px;border-radius:5px;background:${col};cursor:pointer;border:2px solid ${col===ph.color?'var(--ink)':'transparent'};"></div>`).join('');
   const sDate=wkToDate(p.startDate,ph.startWk), eDate=wkToDate(p.startDate,ph.endWk);
   document.getElementById('edit-modal-title').textContent='Edit Phase';
@@ -5088,6 +5137,7 @@ function openEditWorkstream(projId, phaseId, wsId){
   const ph=p.phases.find(x=>x.id===phaseId); if(!ph) return;
   const ws=ph.workstreams.find(x=>x.id===wsId); if(!ws) return;
   editCtx={type:'ws',projId,phaseId,wsId};
+  const _ab=document.getElementById('edit-archive-btn'); if(_ab) _ab.style.display='none';
   _editMembers=[...(ws.members||[])];
   document.getElementById('edit-modal-title').textContent='Edit Workstream';
   document.getElementById('edit-modal-body').innerHTML=`
@@ -5180,6 +5230,7 @@ function openEditTask(projId, phaseId, wsId, taskId){
   }
   if(!task) return;
   editCtx={type:'task',projId,phaseId,wsId,taskId,isOther};
+  const _ab=document.getElementById('edit-archive-btn'); if(_ab) _ab.style.display='none';
   const ownerOpts=TEAM.map(m=>`<option value="${m.initials}" ${task.owner===m.initials?'selected':''}>${m.name} (${m.initials})</option>`).join('');
   let startISO, endISO;
   if(isOther){
