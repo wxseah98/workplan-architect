@@ -1944,7 +1944,10 @@ function _closeMiniModal(){ const m=document.getElementById('mini-modal'); if(m)
 function _miniModalOk(){ if(_miniOk && _miniOk()!==false) _closeMiniModal(); }
 
 function renderTasks(){
-  const pv=document.getElementById('proj-filter').value;
+  const pfEl=document.getElementById('proj-filter');
+  let pv=pfEl?pfEl.value:'all';
+  // Guard against a stale/empty filter value (e.g. selected id no longer in the list)
+  if(pv!=='all' && pv!=='__other__' && !PROJECTS.some(p=>p.id===pv)){ pv='all'; if(pfEl) pfEl.value='all'; }
   const sv=document.getElementById('status-filter').value;
   const ov=document.getElementById('owner-filter').value;
   const projs=pv==='all'?PROJECTS:PROJECTS.filter(p=>p.id===pv);
@@ -2451,7 +2454,7 @@ function renderGantt(){
       const bw = Math.max(Math.round((e-s)/(7*24*60*60*1000)*WW),8);
       const phTipId = 'ph_' + ph.id;
       window['tip_'+phTipId] = `<b>${ph.name} Phase</b> (${row.proj.caseCode})<br>${fmtDateLong(s)} &rarr; ${fmtDateLong(e)}<br>Wk ${ph.startWk}–${ph.endWk}<br><i>Double-click to edit · right-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:4px;bottom:4px;width:${bw}px;background:${ph.color}A6;border:1px solid ${ph.color};border-radius:6px;display:flex;align-items:center;padding:0 8px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:#fff;cursor:pointer;z-index:2;"
+      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:4px;bottom:4px;width:${bw}px;background:${ph.color}BF;border:1px solid ${ph.color};border-radius:6px;display:flex;align-items:center;padding:0 8px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:#fff;cursor:pointer;z-index:2;"
         ondblclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')"
         oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${phTipId}'])"
@@ -2473,7 +2476,7 @@ function renderGantt(){
       const safeStatus = task.status.replace('-',' ');
       const taskTipId = 'task_' + task.id;
       window['tip_'+taskTipId] = `<b>${safeName}</b><br>${tipOwner}<br>${task.due} · ${fmtDateLong(dd)}<br>${safeStatus}<br>${row.proj.caseCode} › ${ph.name}<br><i>Double-click to edit · right-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:8px;bottom:8px;width:${taskBarW}px;background:${bc}A6;border:1px solid ${bc};border-left:3px solid ${bc};border-radius:5px;${outline}cursor:pointer;z-index:2;overflow:visible;"
+      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:8px;bottom:8px;width:${taskBarW}px;background:${bc}BF;border:1px solid ${bc};border-left:3px solid ${bc};border-radius:5px;${outline}cursor:pointer;z-index:2;overflow:visible;"
         ondblclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')"
         oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${taskTipId}'])"
@@ -3813,7 +3816,9 @@ function _wpWeeksChanged(){
   const wks=parseInt(document.getElementById('wp-weeks').value);
   if(s && wks){
     const d=new Date(s); d.setDate(d.getDate()+wks*7-1);
-    document.getElementById('wp-end').value=d.toISOString().slice(0,10);
+    const endEl=document.getElementById('wp-end');
+    endEl.value=d.toISOString().slice(0,10);
+    if(endEl._rcRefresh) endEl._rcRefresh();
   }
   _refreshAllPhaseDates();
 }
@@ -4227,10 +4232,13 @@ function saveNewWorkplan(){
   saveData();
   closeNewWorkplan();
   showPage('tasks');
+  // Refresh the filter dropdowns FIRST so the new project's option exists,
+  // then select it and render (otherwise the filter falls back to empty and
+  // the page renders blank).
+  renderDashboardWidgets();
   const pf = document.getElementById('proj-filter');
   if(pf){ pf.value = projId; }
   renderTasks();
-  renderDashboardWidgets();
 }
 
 // Re-render dashboard widgets that depend on project/task data
@@ -4414,14 +4422,15 @@ function openEditPhase(projId, phaseId){
   document.getElementById('edit-modal-title').textContent='Edit Phase';
   document.getElementById('edit-modal-body').innerHTML=`
     <div style="margin-bottom:14px;"><label style="${_lbl}">Phase Name</label><input id="edit-f1" class="fi" value="${(ph.name||'').replace(/"/g,'&quot;')}"></div>
-    <div style="display:flex;gap:10px;margin-bottom:6px;align-items:flex-end;">
-      <div style="flex:1;"><label style="${_lbl}">Start date</label><input id="edit-f2d" class="fi" type="date" value="${sDate.toISOString().slice(0,10)}" onchange="_phaseDateToWk('start')"></div>
-      <div style="width:80px;"><label style="${_lbl}">Start Wk</label><input id="edit-f2" class="fi" type="number" min="1" value="${ph.startWk}" oninput="_phaseWkToDate('start')"></div>
+    <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;">
+      <div style="width:150px;flex-shrink:0;"><label style="${_lbl}">Duration (# of weeks)</label>
+        <input id="edit-phdur" class="fi" type="number" min="1" value="${ph.endWk-ph.startWk+1}" oninput="_phaseDurationChanged()"></div>
+      <div style="flex:1;"><label style="${_lbl}">Phase dates</label>
+        <input id="edit-f2d" type="date" value="${sDate.toISOString().slice(0,10)}" onchange="_phaseDateToWk('start')">
+        <input id="edit-f3d" type="date" value="${eDate.toISOString().slice(0,10)}" onchange="_phaseDateToWk('end')"></div>
     </div>
-    <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-end;">
-      <div style="flex:1;"><label style="${_lbl}">End date</label><input id="edit-f3d" class="fi" type="date" value="${eDate.toISOString().slice(0,10)}" onchange="_phaseDateToWk('end')"></div>
-      <div style="width:80px;"><label style="${_lbl}">End Wk</label><input id="edit-f3" class="fi" type="number" min="1" value="${ph.endWk}" oninput="_phaseWkToDate('end')"></div>
-    </div>
+    <input type="hidden" id="edit-f2" value="${ph.startWk}">
+    <input type="hidden" id="edit-f3" value="${ph.endWk}">
     <div id="phase-proj-share" style="margin-bottom:14px;"></div>
     <div style="margin-bottom:14px;"><label style="${_lbl}">Colour</label><div style="display:flex;gap:8px;flex-wrap:wrap;" id="edit-colour-row">${colourOpts}</div><input type="hidden" id="edit-f4" value="${ph.color}"></div>
     <div style="border-top:1px dashed var(--border);padding-top:12px;">
@@ -4432,6 +4441,18 @@ function openEditPhase(projId, phaseId){
       <div id="downstream-box" style="display:none;margin-top:10px;"></div>
     </div>`;
   document.getElementById('edit-modal').style.display='flex';
+  _updatePhaseProjShare();
+}
+// Duration changed in Edit Phase -> recompute end week + end date from start
+function _phaseDurationChanged(){
+  const p=_findProj(editCtx.projId); if(!p) return;
+  const dur=Math.max(1, parseInt(document.getElementById('edit-phdur').value)||1);
+  const sw=parseInt(document.getElementById('edit-f2').value)||1;
+  const ew=sw+dur-1;
+  document.getElementById('edit-f3').value=ew;
+  const eEl=document.getElementById('edit-f3d');
+  eEl.value=wkToDate(p.startDate,ew).toISOString().slice(0,10);
+  if(eEl._rcRefresh) eEl._rcRefresh();
   _updatePhaseProjShare();
 }
 // Render a dotted-outline bar showing the whole project length with a filled
@@ -4469,6 +4490,10 @@ function _phaseDateToWk(which){
   const dv=document.getElementById(which==='start'?'edit-f2d':'edit-f3d').value; if(!dv) return;
   const wk=Math.max(1, Math.round((new Date(dv)-new Date(p.startDate))/(7*24*60*60*1000))+1);
   document.getElementById(which==='start'?'edit-f2':'edit-f3').value=wk;
+  // keep duration field in sync
+  const sw=parseInt(document.getElementById('edit-f2').value)||1;
+  const ew=parseInt(document.getElementById('edit-f3').value)||sw;
+  const dEl=document.getElementById('edit-phdur'); if(dEl) dEl.value=Math.max(1, ew-sw+1);
   _updatePhaseProjShare();
 }
 function _toggleDownstream(){
@@ -4657,13 +4682,24 @@ function openEditTask(projId, phaseId, wsId, taskId){
   document.getElementById('edit-modal-body').innerHTML=`
     <div style="margin-bottom:14px;"><label style="${_lbl}">Task Name</label><input id="edit-f1" class="fi" value="${(task.name||'').replace(/"/g,'&quot;')}"></div>
     <div style="margin-bottom:14px;"><label style="${_lbl}">Owner</label><select id="edit-f2" class="fs">${ownerOpts}</select></div>
-    <div style="display:flex;gap:10px;margin-bottom:6px;align-items:flex-end;">
-      <div style="flex:1;"><label style="${_lbl}">Start date</label><input id="edit-f3s" class="fi" type="date" value="${startISO}" onchange="_taskEditDateToWk('start')"></div>
-      ${isOther?'':`<div style="width:70px;"><label style="${_lbl}">Start wk</label><input id="edit-f3sw" class="fi" type="number" min="1" value="${_sw}" oninput="_taskEditWkToDate('start')"></div>`}
-    </div>
-    <div style="display:flex;gap:10px;margin-bottom:6px;align-items:flex-end;">
-      <div style="flex:1;"><label style="${_lbl}">End date</label><input id="edit-f3e" class="fi" type="date" value="${endISO}" onchange="_taskEditDateToWk('end')"></div>
-      ${isOther?'':`<div style="width:70px;"><label style="${_lbl}">End wk</label><input id="edit-f3ew" class="fi" type="number" min="1" value="${_ew}" oninput="_taskEditWkToDate('end')"></div>`}
+    <div style="margin-bottom:6px;"><label style="${_lbl}">Task dates</label>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <input id="edit-f3s" type="date" value="${startISO}" onchange="_taskEditDateToWk('start')">
+          <input id="edit-f3e" type="date" value="${endISO}" onchange="_taskEditDateToWk('end')">
+        </div>
+        ${isOther?'':`<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Wk</span>
+          <input id="edit-f3sw" class="fi" type="number" min="1" value="${_sw}" title="Start week" style="width:56px;" oninput="_taskEditWkToDate('start')">
+          <span style="color:var(--muted);">&ndash;</span>
+          <input id="edit-f3ew" class="fi" type="number" min="1" value="${_ew}" title="End week" style="width:56px;" oninput="_taskEditWkToDate('end')">
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Duration</span>
+          <input id="edit-tkdur" class="fi" type="number" min="1" value="${Math.max(1,(_ew||_sw||1)-(_sw||1)+1)}" title="Duration in weeks" style="width:56px;" oninput="_taskEditDurationChanged()">
+          <span style="font-size:10px;color:var(--muted);">wks</span>
+        </div>`}
+      </div>
     </div>
     ${isOther?'':`<div id="task-phase-share" style="margin-bottom:14px;"></div>`}
     <div><label style="${_lbl}">Status</label><select id="edit-f4" class="fs">
@@ -4674,6 +4710,19 @@ function openEditTask(projId, phaseId, wsId, taskId){
   document.getElementById('edit-modal').style.display='flex';
   if(!isOther){ _taskEditPhaseCtx={ projStart:p.startDate, phStartWk:ph?ph.startWk:1, phEndWk:ph?ph.endWk:1, phLen:_phLen }; _updateTaskPhaseShare(); }
 }
+// Duration changed in Edit Task -> recompute end week + end date from start
+function _taskEditDurationChanged(){
+  if(!_taskEditPhaseCtx) return;
+  const ps=new Date(_taskEditPhaseCtx.projStart);
+  const dur=Math.max(1, parseInt(document.getElementById('edit-tkdur').value)||1);
+  const sw=parseInt(document.getElementById('edit-f3sw').value)||_taskEditPhaseCtx.phStartWk;
+  const ew=sw+dur-1;
+  document.getElementById('edit-f3ew').value=ew;
+  const eEl=document.getElementById('edit-f3e');
+  eEl.value=wkToISO(ps,ew);
+  if(eEl._rcRefresh) eEl._rcRefresh();
+  _updateTaskPhaseShare();
+}
 // Two-way week/date sync + phase-share note for the task edit form
 let _taskEditPhaseCtx=null;
 function _taskEditWkToDate(which){
@@ -4683,6 +4732,8 @@ function _taskEditWkToDate(which){
   const dEl=document.getElementById(which==='start'?'edit-f3s':'edit-f3e');
   const wk=parseInt(wkEl.value); if(!wk) return;
   dEl.value=wkToISO(ps,wk);
+  if(dEl._rcRefresh) dEl._rcRefresh();
+  _taskEditSyncDuration();
   _updateTaskPhaseShare();
 }
 function _taskEditDateToWk(which){
@@ -4692,7 +4743,14 @@ function _taskEditDateToWk(which){
   const wkEl=document.getElementById(which==='start'?'edit-f3sw':'edit-f3ew');
   if(!dEl.value) return;
   wkEl.value=dateToWk(ps,dEl.value);
+  _taskEditSyncDuration();
   _updateTaskPhaseShare();
+}
+function _taskEditSyncDuration(){
+  const sw=parseInt(document.getElementById('edit-f3sw').value);
+  const ew=parseInt(document.getElementById('edit-f3ew').value);
+  const dEl=document.getElementById('edit-tkdur');
+  if(dEl && sw && ew) dEl.value=Math.max(1, ew-sw+1);
 }
 function _updateTaskPhaseShare(){
   const el=document.getElementById('task-phase-share');
