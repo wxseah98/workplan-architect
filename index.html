@@ -2768,16 +2768,18 @@ function renderGanttCollapsed(projects){
     if(statusVal!=='all'){ const d=taskDoneState[t.id]||t.done; if(statusVal==='done'){ if(!d) return false; } else if(d||t.status!==statusVal) return false; }
     return true;
   };
+  const _mobile = (typeof window!=='undefined' && window.innerWidth && window.innerWidth<=720);
   const blocks = projects.map(proj=>{
     const maxWk = _collapsedWeekSpan(proj);
-    // Chevron week header 0..maxWk
-    const CHEV_W = 150;
+    // Chevron week header 0..maxWk (narrower on mobile)
+    const CHEV_W = _mobile ? 96 : 150;
+    const CHEV_FS = _mobile ? 10 : 12;
     let chevs='';
     for(let w=0; w<=maxWk; w++){
       const isFirst=w===0;
       const bg = isFirst?'#1A1A1A':'#F0F0F0';
       const col = isFirst?'#fff':'#333';
-      chevs += `<div style="position:relative;flex:0 0 ${CHEV_W}px;height:34px;display:flex;align-items:center;justify-content:center;background:${bg};color:${col};font-size:12px;font-weight:800;margin-right:10px;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%);">Week ${w}</div>`;
+      chevs += `<div style="position:relative;flex:0 0 ${CHEV_W}px;height:34px;display:flex;align-items:center;justify-content:center;background:${bg};color:${col};font-size:${CHEV_FS}px;font-weight:800;margin-right:10px;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%);">Week ${w}</div>`;
     }
     // Phase columns
     const phaseCols = proj.phases.map((ph,idx)=>{
@@ -2800,7 +2802,11 @@ function renderGanttCollapsed(projects){
       });
       if(!tasks.length) body='<div style="font-size:11px;color:var(--muted);padding:6px 0;">No tasks.</div>';
       const tint = ph.color;
-      return `<div style="flex:1;min-width:180px;border:1px solid ${tint}66;border-top:3px solid ${tint};border-radius:6px;background:${tint}0F;padding:10px 12px;display:flex;flex-direction:column;">
+      // On mobile each phase is a full-width card; on desktop they sit side by side
+      const colStyle = _mobile
+        ? `width:100%;border:1px solid ${tint}66;border-top:3px solid ${tint};border-radius:6px;background:${tint}0F;padding:10px 12px;display:flex;flex-direction:column;`
+        : `flex:1;min-width:180px;border:1px solid ${tint}66;border-top:3px solid ${tint};border-radius:6px;background:${tint}0F;padding:10px 12px;display:flex;flex-direction:column;`;
+      return `<div style="${colStyle}">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
           <span style="width:20px;height:20px;border-radius:50%;border:2px solid ${tint};color:${tint};font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${idx+1}</span>
           <span style="font-size:12px;font-weight:800;color:#1A1A1A;">${ph.name}</span>
@@ -2809,17 +2815,19 @@ function renderGanttCollapsed(projects){
         ${body}
       </div>`;
     }).join('');
+    const colsWrap = _mobile
+      ? `<div style="display:flex;flex-direction:column;gap:10px;">${phaseCols}</div>`
+      : `<div style="display:flex;gap:10px;align-items:stretch;overflow-x:auto;">${phaseCols}</div>`;
     return `<div style="margin-bottom:26px;">
       <div style="font-size:13px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">${proj.caseCode} · ${proj.name}</div>
       <div style="display:flex;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;">${chevs}</div>
-      <div style="display:flex;gap:10px;align-items:stretch;overflow-x:auto;">${phaseCols}</div>
+      ${colsWrap}
     </div>`;
   }).join('');
   container.innerHTML = `<div style="padding:14px;">${blocks}</div>`;
 }
 
 // Highlight a team member card on the team page (moved below)
-function _collapsedNoop(){}
 function highlightTeamMember(initials) {
   const cards = document.querySelectorAll('#team-content > div');
   cards.forEach(card => {
@@ -3938,7 +3946,6 @@ function _tkDurationChanged(){
 }
 // Task owner removed — kept as a no-op so existing calls don't error
 function renderTaskOwnerBubbles(){ /* owner field removed for tasks */ }
-function toggleTaskOwner(init){ /* legacy no-op; owner-field handles selection */ }
 function closeTaskModal(){ document.getElementById('task-modal').style.display='none'; }
 function openAddTaskFor(projId, phaseId, wsId){
   openAddTask();
@@ -4678,8 +4685,7 @@ function _appendWpTaskRow(container, ws, name, sw, dur){
   container.appendChild(tr);
 }
 
-function applyTemplate(){ /* templates removed */ }
-function saveAsTemplate(){ /* templates removed */ }
+
 
 function saveNewWorkplan(){
   const name = document.getElementById('wp-name').value.trim();
