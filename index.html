@@ -469,6 +469,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <option value="RC">Riley Chen</option>
       <option value="DK">Drew Kim</option>
     </select>
+    <button class="btn-ghost btn-sm" onclick="clearTaskFilters()" title="Reset all filters" style="margin-left:6px;">Clear filters</button>
     <button class="btn-red" onclick="openAddTask()" style="margin-left:auto;">+ Add Task</button>
   </div>
   <div id="tasks-content"></div>
@@ -476,8 +477,24 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 
 <!-- TIMELINE -->
 <div id="page-timeline" class="page">
-  <div class="gantt-toolbar">
+  <div class="gantt-toolbar" style="justify-content:space-between;margin-bottom:12px;">
     <div class="gantt-title">Timeline</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <select class="fsel" id="gantt-view" onchange="renderGantt()">
+        <option value="weeks">Week view</option>
+        <option value="months">Month view</option>
+      </select>
+      <button class="btn-sm" onclick="openAddTaskFor(ganttDefaultProj(),'','')" style="border-color:var(--ink);color:var(--ink);font-weight:700;">+ Add phase / task</button>
+      <div style="position:relative;display:inline-block;">
+        <button class="btn-sm" onclick="toggleExportMenu(event)" style="border-color:var(--red);color:var(--red);font-weight:700;">Export &#9662;</button>
+        <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:180px;">
+          <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to PowerPoint</div>
+          <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="gantt-toolbar" style="justify-content:flex-start;margin-bottom:14px;gap:12px;">
     <div class="gantt-legend" id="gantt-legend"></div>
     <select class="fsel" id="gantt-proj-filter" onchange="renderGantt()">
       <option value="all">All Projects</option>
@@ -492,18 +509,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <option value="delayed">Delayed</option>
       <option value="done">Done</option>
     </select>
-    <select class="fsel" id="gantt-view" onchange="renderGantt()">
-      <option value="weeks">Week view</option>
-      <option value="months">Month view</option>
-    </select>
-    <button class="btn-sm" onclick="openAddTaskFor(ganttDefaultProj(),'','')" style="border-color:var(--ink);color:var(--ink);font-weight:700;">+ Add phase / task</button>
-    <div style="position:relative;display:inline-block;">
-      <button class="btn-sm" onclick="toggleExportMenu(event)" style="border-color:var(--red);color:var(--red);font-weight:700;">Export &#9662;</button>
-      <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:180px;">
-        <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to PowerPoint</div>
-        <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel</div>
-      </div>
-    </div>
+    <button class="btn-ghost btn-sm" onclick="clearGanttFilters()" title="Reset all filters">Clear filters</button>
   </div>
   <div class="gantt-outer" id="gantt-outer" style="font-size:12px;">
     <div id="gantt-container"></div>
@@ -568,7 +574,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
         <input id="phase-name-new" class="fi" placeholder="e.g. Diagnose"></div>
       </div>
       <div>
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Task dates</label>
+        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;"><span id="task-date-label">Task</span> dates</label>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <div style="flex:1;min-width:200px;">
             <input id="task-start-date" type="date" onchange="_tkDateToWk('start')">
@@ -579,6 +585,11 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
             <input id="task-start-wk" class="fi" type="number" min="1" placeholder="Start" title="Start week" style="width:60px;" oninput="_tkWkToDate('start')">
             <span style="color:var(--muted);">&ndash;</span>
             <input id="task-end-wk" class="fi" type="number" min="1" placeholder="End" title="End week" style="width:60px;" oninput="_tkWkToDate('end')">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+            <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Duration</span>
+            <input id="task-duration" class="fi" type="number" min="1" placeholder="Wks" title="Duration in weeks" style="width:60px;" oninput="_tkDurationChanged()">
+            <span style="font-size:10px;color:var(--muted);">wks</span>
           </div>
         </div>
       </div>
@@ -1858,33 +1869,79 @@ function toggleTaskRow(id,el){
 // Add a workstream to every phase of a project (from the Tasks page case row)
 function addWorkstreamToProject(projId){
   const p=_findProj(projId); if(!p) return;
-  const name=(prompt&&prompt('New workstream name (added to all phases):'))||'';
-  const nm=name.trim(); if(!nm) return;
-  if(!p.workstreamDefs) p.workstreamDefs=[];
-  if(!p.workstreamDefs.some(w=>w.name.toLowerCase()===nm.toLowerCase())) p.workstreamDefs.push({name:nm,members:[]});
-  p.phases.forEach(ph=>{
-    if(!ph.workstreams.some(w=>w.name.toLowerCase()===nm.toLowerCase())){
-      ph.workstreams.push({id:'ws'+Date.now()+Math.floor(Math.random()*999),name:nm,members:[],tasks:[]});
-    }
-  });
-  APP.projects=PROJECTS; saveData(); renderTasks();
-  if(typeof renderGantt==='function' && document.getElementById('page-timeline').classList.contains('active')) renderGantt();
+  const phaseChecks = p.phases.map(ph=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:13px;color:var(--slate);">
+    <input type="checkbox" class="wsp-phase" value="${ph.id}" checked style="accent-color:var(--red);width:16px;height:16px;">
+    <span style="width:10px;height:10px;border-radius:2px;background:${ph.color};display:inline-block;"></span>${ph.name}</label>`).join('');
+  _openMiniModal('Add Workstream', `
+    <div style="margin-bottom:14px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Workstream name</label>
+      <input id="wsp-name" class="fi" placeholder="e.g. Demand" autofocus></div>
+    <div><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Add to which phases?</label>
+      <div style="border:1px solid var(--border);border-radius:6px;padding:6px 12px;max-height:180px;overflow-y:auto;">${phaseChecks||'<div style="font-size:12px;color:var(--muted);padding:6px 0;">No phases yet.</div>'}</div></div>`,
+    ()=>{
+      const nm=(document.getElementById('wsp-name').value||'').trim(); if(!nm) return false;
+      const phaseIds=[...document.querySelectorAll('.wsp-phase:checked')].map(c=>c.value);
+      if(!p.workstreamDefs) p.workstreamDefs=[];
+      if(!p.workstreamDefs.some(w=>w.name.toLowerCase()===nm.toLowerCase())) p.workstreamDefs.push({name:nm,members:[]});
+      p.phases.forEach(ph=>{
+        if(phaseIds.includes(ph.id) && !ph.workstreams.some(w=>w.name.toLowerCase()===nm.toLowerCase())){
+          ph.workstreams.push({id:'ws'+Date.now()+Math.floor(Math.random()*999),name:nm,members:[],tasks:[]});
+        }
+      });
+      APP.projects=PROJECTS; saveData(); renderTasks();
+      if(typeof renderGantt==='function' && document.getElementById('page-timeline').classList.contains('active')) renderGantt();
+      return true;
+    });
 }
-// Add a new phase (seeded with the project's existing workstreams) from the case row
+// Add a new phase (seeded with the project's existing workstreams)
 function addPhaseToProject(projId){
   const p=_findProj(projId); if(!p) return;
-  const name=(prompt&&prompt('New phase name:'))||'';
-  const nm=name.trim(); if(!nm) return;
-  const lastEnd=p.phases.length?Math.max(...p.phases.map(x=>x.endWk)):0;
-  const startWk=lastEnd+1, endWk=startWk+3;
-  const colour=PHASE_COLOURS[p.phases.length % PHASE_COLOURS.length];
-  const phId='ph'+Date.now();
-  const wsDefs=(p.workstreamDefs&&p.workstreamDefs.length)?p.workstreamDefs:[{name:'Workstream 1',members:[]}];
-  const workstreams=wsDefs.map((wd,wi)=>({id:'ws'+phId+'_'+wi,name:wd.name,members:[...(wd.members||[])],tasks:[]}));
-  p.phases.push({id:phId,name:nm,startWk,endWk,color:colour,workstreams});
-  APP.projects=PROJECTS; saveData(); renderTasks();
-  if(typeof renderGantt==='function' && document.getElementById('page-timeline').classList.contains('active')) renderGantt();
+  _openMiniModal('Add Phase', `
+    <div style="margin-bottom:14px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Phase name</label>
+      <input id="php-name" class="fi" placeholder="e.g. Diagnose" autofocus></div>
+    <div style="width:160px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Duration (# of weeks)</label>
+      <input id="php-weeks" class="fi" type="number" min="1" value="4"></div>`,
+    ()=>{
+      const nm=(document.getElementById('php-name').value||'').trim(); if(!nm) return false;
+      const dur=Math.max(1, parseInt(document.getElementById('php-weeks').value)||4);
+      const lastEnd=p.phases.length?Math.max(...p.phases.map(x=>x.endWk)):0;
+      const startWk=lastEnd+1, endWk=startWk+dur-1;
+      const colour=PHASE_COLOURS[p.phases.length % PHASE_COLOURS.length];
+      const phId='ph'+Date.now();
+      const wsDefs=(p.workstreamDefs&&p.workstreamDefs.length)?p.workstreamDefs:[{name:'Workstream 1',members:[]}];
+      const workstreams=wsDefs.map((wd,wi)=>({id:'ws'+phId+'_'+wi,name:wd.name,members:[...(wd.members||[])],tasks:[]}));
+      p.phases.push({id:phId,name:nm,startWk,endWk,color:colour,workstreams});
+      APP.projects=PROJECTS; saveData(); renderTasks();
+      if(typeof renderGantt==='function' && document.getElementById('page-timeline').classList.contains('active')) renderGantt();
+      return true;
+    });
 }
+// Small reusable confirm modal: title, body HTML, onOk() returning true to close
+let _miniOk=null;
+function _openMiniModal(title, bodyHTML, onOk){
+  _miniOk=onOk;
+  let m=document.getElementById('mini-modal');
+  if(!m){
+    m=document.createElement('div');
+    m.id='mini-modal';
+    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:260;display:flex;align-items:center;justify-content:center;padding:20px;';
+    document.body.appendChild(m);
+  }
+  m.innerHTML=`<div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.15);width:100%;max-width:420px;">
+    <div style="padding:18px 22px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:15px;font-weight:800;">${title}</div>
+      <button onclick="_closeMiniModal()" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
+    </div>
+    <div style="padding:18px 22px;">${bodyHTML}</div>
+    <div style="padding:12px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn-ghost" onclick="_closeMiniModal()">Cancel</button>
+      <button class="btn-red" onclick="_miniModalOk()">Add</button>
+    </div>
+  </div>`;
+  m.style.display='flex';
+  const first=m.querySelector('input'); if(first) setTimeout(()=>first.focus(),30);
+}
+function _closeMiniModal(){ const m=document.getElementById('mini-modal'); if(m) m.style.display='none'; _miniOk=null; }
+function _miniModalOk(){ if(_miniOk && _miniOk()!==false) _closeMiniModal(); }
 
 function renderTasks(){
   const pv=document.getElementById('proj-filter').value;
@@ -2292,7 +2349,7 @@ function renderGantt(){
 
   let tableRows = '';
   rows.forEach(row => {
-    const rh = row.type==='project'?38:row.type==='phase'?30:row.type==='ws'?26:40;
+    const rh = row.type==='project'?44:row.type==='phase'?36:row.type==='ws'?30:48;
     const bgLabel = row.type==='project'?'#D8D8D8':row.type==='phase'?'#F5F5F5':row.type==='ws'?'#FAFAFA':'#FFFFFF';
     const bgChart = row.type==='project'?'#D8D8D8':row.type==='phase'?'rgba(0,0,0,.01)':'#FFFFFF';
 
@@ -2334,7 +2391,7 @@ function renderGantt(){
         <div style="width:3px;height:14px;border-radius:2px;background:${ph.color};flex-shrink:0;"></div>
         <span onclick="event.stopPropagation();toggleGanttPhase('${ph.id}')" style="cursor:pointer;font-size:12px;font-weight:700;color:#1A1A1A;">${ph.name}</span>
         ${isCur?`<span style="font-size:9px;background:${ph.color};color:#fff;padding:1px 5px;border-radius:8px;font-weight:700;flex-shrink:0;">Now</span>`:''}
-        <span style="font-size:9px;color:#555;font-weight:600;white-space:nowrap;">${fmtDate(ps)}&ndash;${fmtDate(pe)}</span>
+        <span style="font-size:9px;color:#555;font-weight:600;white-space:nowrap;">${fmtDate(ps)}&ndash;${fmtDate(pe)} &middot; ${ph.endWk-ph.startWk+1} wk${(ph.endWk-ph.startWk+1)>1?'s':''}</span>
         <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#777;background:#E4E4E4;padding:2px 6px;border-radius:4px;">Phase</span>
           <button class="edit-btn" title="Edit phase" onclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')">&#9998;</button>
@@ -2394,7 +2451,7 @@ function renderGantt(){
       const bw = Math.max(Math.round((e-s)/(7*24*60*60*1000)*WW),8);
       const phTipId = 'ph_' + ph.id;
       window['tip_'+phTipId] = `<b>${ph.name} Phase</b> (${row.proj.caseCode})<br>${fmtDateLong(s)} &rarr; ${fmtDateLong(e)}<br>Wk ${ph.startWk}–${ph.endWk}<br><i>Double-click to edit · right-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:20px;width:${bw}px;background:${ph.color};opacity:.88;border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:#fff;cursor:pointer;z-index:2;"
+      barHTML=`<div class="gantt-drag-bar" data-kind="phase" data-proj="${proj.id}" data-phase="${ph.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:28px;width:${bw}px;background:${ph.color};opacity:.88;border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:visible;white-space:nowrap;font-size:9px;font-weight:700;color:#fff;cursor:pointer;z-index:2;"
         ondblclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')"
         oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${phTipId}'])"
@@ -2416,7 +2473,7 @@ function renderGantt(){
       const safeStatus = task.status.replace('-',' ');
       const taskTipId = 'task_' + task.id;
       window['tip_'+taskTipId] = `<b>${safeName}</b><br>${tipOwner}<br>${task.due} · ${fmtDateLong(dd)}<br>${safeStatus}<br>${row.proj.caseCode} › ${ph.name}<br><i>Double-click to edit · right-click to move/resize</i>`;
-      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:14px;width:${taskBarW}px;background:${bc};border-radius:3px;${outline}cursor:pointer;z-index:2;overflow:visible;"
+      barHTML=`<div class="gantt-drag-bar" data-kind="task" data-proj="${proj.id}" data-phase="${ph.id}" data-ws="${row.ws.id}" data-task="${task.id}" style="position:absolute;left:${x1}px;top:50%;transform:translateY(-50%);height:36px;width:${taskBarW}px;background:${bc};border-radius:3px;${outline}cursor:pointer;z-index:2;overflow:visible;"
         ondblclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')"
         oncontextmenu="event.preventDefault();armBarDrag(this,event)"
         onmouseenter="showTip(event,window['tip_${taskTipId}'])"
@@ -2540,11 +2597,11 @@ function _linkDatePair(startEl, endEl){
   startEl.type='hidden'; endEl.type='hidden';
   const disp=document.createElement('div');
   disp.className='rc-display';
-  disp.style.cssText='display:flex;align-items:center;gap:6px;';
+  disp.style.cssText='display:inline-flex;align-items:center;gap:4px;';
   disp.innerHTML=`
-    <span class="rc-box rc-start" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--ink);cursor:pointer;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+    <span class="rc-box rc-start" style="width:92px;flex-shrink:0;border:1px solid var(--border);border-radius:6px;padding:8px 8px;font-size:12px;color:var(--ink);cursor:pointer;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;"></span>
     <span style="color:var(--muted);font-weight:700;">&ndash;</span>
-    <span class="rc-box rc-end" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--ink);cursor:pointer;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
+    <span class="rc-box rc-end" style="width:92px;flex-shrink:0;border:1px solid var(--border);border-radius:6px;padding:8px 8px;font-size:12px;color:var(--ink);cursor:pointer;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;"></span>`;
   if(endEl.parentNode && typeof endEl.parentNode.insertBefore==='function'){
     endEl.parentNode.insertBefore(disp, endEl.nextSibling);
   } else { return; }
@@ -2587,21 +2644,13 @@ function _renderRangeCalendar(){
   const first=new Date(year,month,1);
   const startDow=(first.getDay()+6)%7; // Mon=0
   const daysInMonth=new Date(year,month+1,0).getDate();
-  const sIso=st.startISO, eIso=st.endISO, hIso=st.hoverISO;
   let cells='';
   for(let i=0;i<startDow;i++) cells+='<div></div>';
   for(let d=1; d<=daysInMonth; d++){
     const iso=_isoOf(new Date(year,month,d));
-    // Range highlight: committed range, or preview between start and hovered day
-    let lo=sIso, hi=eIso;
-    if(sIso && !eIso && hIso){ lo = sIso<hIso?sIso:hIso; hi = sIso<hIso?hIso:sIso; }
-    const inRange = lo && hi && iso>=lo && iso<=hi;
-    const isEnd = iso===sIso || iso===eIso;
-    const bg = isEnd?'var(--red)':inRange?'rgba(204,0,0,.14)':'transparent';
-    const col = isEnd?'#fff':'var(--ink)';
     cells+=`<div class="rc-day" data-iso="${iso}"
       onclick="_rcDayClick('${iso}')" onmouseenter="_rcDayHover('${iso}')"
-      style="text-align:center;padding:7px 0;font-size:12px;border-radius:6px;cursor:pointer;background:${bg};color:${col};transition:background .08s;">${d}</div>`;
+      style="text-align:center;padding:7px 0;font-size:12px;border-radius:6px;cursor:pointer;transition:background .08s;">${d}</div>`;
   }
   pop.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -2613,11 +2662,28 @@ function _renderRangeCalendar(){
       ${['M','T','W','T','F','S','S'].map(d=>`<div style="text-align:center;font-size:9px;font-weight:700;color:var(--muted);padding:2px 0;">${d}</div>`).join('')}
     </div>
     <div class="rc-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">${cells}</div>
-    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center;">Click the start day, then click the end day.</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center;">Click the start day, then click the end day. You can also edit the fields directly.</div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
       <button type="button" class="btn-ghost" style="font-size:12px;padding:6px 14px;" onclick="_closeRangeCalendar()">Cancel</button>
       <button type="button" class="btn-red" style="font-size:12px;padding:6px 16px;" onclick="_rcCommit()">OK</button>
     </div>`;
+  _rcPaint();
+}
+// Lightweight repaint of just the day-cell colours (does NOT rebuild the DOM,
+// so an in-progress click is never torn out from under the pointer).
+function _rcPaint(){
+  const st=_rcState; if(!st) return;
+  const pop=document.getElementById('rc-pop'); if(!pop) return;
+  const sIso=st.startISO, eIso=st.endISO, hIso=st.hoverISO;
+  let lo=sIso, hi=eIso;
+  if(sIso && !eIso && hIso){ lo = sIso<hIso?sIso:hIso; hi = sIso<hIso?hIso:sIso; }
+  pop.querySelectorAll('.rc-day').forEach(cell=>{
+    const iso=cell.dataset.iso;
+    const inRange = lo && hi && iso>=lo && iso<=hi;
+    const isEnd = iso===sIso || iso===eIso;
+    cell.style.background = isEnd?'var(--red)':inRange?'rgba(204,0,0,.14)':'transparent';
+    cell.style.color = isEnd?'#fff':'var(--ink)';
+  });
 }
 function _rcDayClick(iso){
   const st=_rcState; if(!st) return;
@@ -2630,11 +2696,11 @@ function _rcDayClick(iso){
     else { st.endISO=st.startISO; st.startISO=iso; }
     st.hoverISO='';
   }
-  _renderRangeCalendar();
+  _rcPaint();
 }
 function _rcDayHover(iso){
   const st=_rcState; if(!st) return;
-  if(st.startISO && !st.endISO){ st.hoverISO=iso; _renderRangeCalendar(); }
+  if(st.startISO && !st.endISO){ st.hoverISO=iso; _rcPaint(); }
 }
 function _rcNav(delta){ if(!_rcState) return; _rcState.view=new Date(_rcState.view.getFullYear(), _rcState.view.getMonth()+delta, 1); _renderRangeCalendar(); }
 function _rcCommit(){
@@ -2673,6 +2739,18 @@ window.addEventListener('resize', ()=>{
 // PPT EXPORT via pptxgenjs
 // ============================================================
 // ---- Export dropdown menu ----
+function clearGanttFilters(){
+  const p=document.getElementById('gantt-proj-filter'); if(p) p.value='all';
+  const w=document.getElementById('gantt-ws-filter'); if(w) w.value='all';
+  const s=document.getElementById('gantt-status-filter'); if(s) s.value='all';
+  renderGantt();
+}
+function clearTaskFilters(){
+  const p=document.getElementById('proj-filter'); if(p) p.value='all';
+  const s=document.getElementById('status-filter'); if(s) s.value='all';
+  const o=document.getElementById('owner-filter'); if(o) o.value='all';
+  renderTasks();
+}
 function toggleExportMenu(e){
   e.stopPropagation();
   const m=document.getElementById('export-menu');
@@ -3398,6 +3476,7 @@ function openAddTask(){
   document.getElementById('task-end-date').value='';
   document.getElementById('task-start-wk').value='';
   document.getElementById('task-end-wk').value='';
+  const _dur=document.getElementById('task-duration'); if(_dur) _dur.value='';
   document.getElementById('task-week-hint').textContent='Weeks are relative to the project start. If start is blank, today is used.';
   document.getElementById('task-status').value='on-track';
   document.getElementById('task-new-ws').value='';
@@ -3425,6 +3504,7 @@ function setTaskMode(mode){
   document.getElementById('task-ws-wrap').style.display = isPhase?'none':'block';
   document.getElementById('task-modal-title').textContent = isPhase?'Add Phase':'Add Task';
   document.getElementById('task-add-btn').textContent = isPhase?'Add Phase':'Add Task';
+  const _dl=document.getElementById('task-date-label'); if(_dl) _dl.textContent = isPhase?'Phase':'Task';
   if(!isPhase) onTaskProjectChange();
 }
 // Week <-> date conversion for the paired fields (based on selected project's start)
@@ -3439,6 +3519,8 @@ function _tkWkToDate(which){
   const dEl=document.getElementById(which==='start'?'task-start-date':'task-end-date');
   const wk=parseInt(wkEl.value); if(!wk) return;
   dEl.value = wkToISO(ps, wk);
+  _tkSyncDuration();
+  if(dEl._rcRefresh) dEl._rcRefresh();
 }
 function _tkDateToWk(which){
   const ps=_tkProjStart(); if(!ps) return;
@@ -3446,6 +3528,26 @@ function _tkDateToWk(which){
   const wkEl=document.getElementById(which==='start'?'task-start-wk':'task-end-wk');
   if(!dEl.value) return;
   wkEl.value = dateToWk(ps, dEl.value);
+  _tkSyncDuration();
+}
+// Keep the Duration field in step with the start/end weeks
+function _tkSyncDuration(){
+  const sw=parseInt(document.getElementById('task-start-wk').value);
+  const ew=parseInt(document.getElementById('task-end-wk').value);
+  const dEl=document.getElementById('task-duration');
+  if(dEl && sw && ew) dEl.value=Math.max(1, ew-sw+1);
+}
+// User typed a Duration -> compute the end week/date from the start
+function _tkDurationChanged(){
+  const dur=parseInt(document.getElementById('task-duration').value);
+  const sw=parseInt(document.getElementById('task-start-wk').value);
+  if(!dur) return;
+  if(sw){
+    const ew=sw+dur-1;
+    document.getElementById('task-end-wk').value=ew;
+    const ps=_tkProjStart();
+    if(ps){ const de=document.getElementById('task-end-date'); de.value=wkToISO(ps,ew); if(de._rcRefresh) de._rcRefresh(); }
+  }
 }
 // Task owner uses the reusable owner-field (text box + member dropdown + free text)
 function renderTaskOwnerBubbles(){
@@ -3761,14 +3863,54 @@ function _renderOwnerField(box){
 }
 function _ownerListItems(box, filter){
   const owners = JSON.parse(box.dataset.owners||'[]');
-  const f=(filter||'').toLowerCase();
+  const f=(filter||'').trim();
+  const fl=f.toLowerCase();
   const avail = TEAM.filter(m=>!owners.includes(m.initials) &&
-    (!f || m.name.toLowerCase().includes(f) || m.initials.toLowerCase().includes(f)));
-  if(!avail.length) return `<div style="padding:9px 12px;font-size:11px;color:var(--muted);">${f?'No matching members — press + to add as a non-member.':'All team members added. Type a name to add a non-member.'}</div>`;
-  return avail.map(m=>`<div onmousedown="event.preventDefault();_ownerPick(this,'${m.initials}')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+    (!fl || m.name.toLowerCase().includes(fl) || m.initials.toLowerCase().includes(fl)));
+  let html = avail.map(m=>`<div onmousedown="event.preventDefault();_ownerPick(this,'${m.initials}')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
     <span style="width:22px;height:22px;border-radius:50%;background:${m.color};color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${m.initials}</span>
     <span style="font-size:12px;color:var(--slate);">${m.name} <span style="color:var(--muted);">(${m.initials})</span></span>
   </div>`).join('');
+  // If the typed text isn't an exact existing member, offer add-as-member / add-as-non-member
+  const exact = f && TEAM.some(m=>m.name.toLowerCase()===fl || m.initials.toLowerCase()===fl);
+  if(f && !exact){
+    const esc=f.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    html += `<div style="border-top:1px solid var(--border);padding:6px;">
+      <div onmousedown="event.preventDefault();_ownerAddTyped(this,'member')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-radius:5px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</span>
+        <span style="font-size:12px;color:var(--ink);">Add &ldquo;<b>${f}</b>&rdquo; as a <b>team member</b></span>
+      </div>
+      <div onmousedown="event.preventDefault();_ownerAddTyped(this,'nonmember')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;border-radius:5px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+        <span style="width:20px;height:20px;border-radius:50%;background:#888;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">&#9679;</span>
+        <span style="font-size:12px;color:var(--ink);">Add &ldquo;<b>${f}</b>&rdquo; as a <b>non-member</b> (this plan only)</span>
+      </div>
+    </div>`;
+  } else if(!avail.length && !f){
+    html += `<div style="padding:9px 12px;font-size:11px;color:var(--muted);">All team members added. Type a name to add someone new.</div>`;
+  }
+  return html;
+}
+// Add the currently-typed name as a member (persists to TEAM) or non-member (owner only)
+function _ownerAddTyped(el, kind){
+  const box=el.closest('.owner-field');
+  const input=box.querySelector('.owner-text');
+  const val=(input.value||'').trim(); if(!val) return;
+  let store=val;
+  if(kind==='member'){
+    // Create initials from the name and add to the team roster
+    const initials=val.split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase() || val.slice(0,2).toUpperCase();
+    let uniq=initials, n=1;
+    while(TEAM.some(m=>m.initials===uniq)){ uniq=initials+(++n); }
+    const color=MEMBER_COLOURS[TEAM.length % MEMBER_COLOURS.length];
+    TEAM.push({ name:val, initials:uniq, color, role:'' });
+    APP.team=TEAM; saveData();
+    if(typeof renderTeam==='function') renderTeam();
+    store=uniq;
+  }
+  const owners=JSON.parse(box.dataset.owners||'[]');
+  if(!owners.includes(store)){ owners.push(store); box.dataset.owners=JSON.stringify(owners); }
+  input.value='';
+  _renderOwnerField(box);
 }
 function _ownerShowList(input){
   const box=input.closest('.owner-field');
@@ -3930,6 +4072,7 @@ function _syncPhaseDatesFromWeeks(row){
   if(hint) hint.textContent='';
   if(startWk){ sDate.value=_wpWkToISO(startWk); if(wks) eDate.value=_wpWkToISO(startWk+wks-1); }
   if(sDate._rcRefresh) sDate._rcRefresh();
+  if(eDate._rcRefresh) eDate._rcRefresh();
 }
 // User edited a week field -> refresh the date fields for that row
 function _phaseWkChanged(el){
