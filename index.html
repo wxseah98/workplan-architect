@@ -489,24 +489,43 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 <div id="page-timeline" class="page">
   <div class="gantt-toolbar" style="justify-content:space-between;align-items:center;margin-bottom:12px;">
     <div class="gantt-title">Workplan</div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-      <select class="fsel" id="gantt-group" onchange="renderGantt()">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+      <span style="display:inline-flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">View by:</span>
+        <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
+          <button class="btn-sm" id="gantt-group-phase" onclick="setGanttGroup('phase')" title="Group tasks by phase" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Phase</button>
+          <button class="btn-sm" id="gantt-group-ws" onclick="setGanttGroup('ws')" title="Group tasks by workstream" style="border:none;border-radius:0;font-weight:600;">Workstream</button>
+        </span>
+        <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
+          <button class="btn-sm" id="gantt-view-weeks" onclick="setGanttView('weeks')" title="Show weeks" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Week</button>
+          <button class="btn-sm" id="gantt-view-months" onclick="setGanttView('months')" title="Show months" style="border:none;border-radius:0;font-weight:600;">Month</button>
+        </span>
+      </span>
+      <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
+        <button class="btn-sm" id="gantt-timeline-btn" onclick="setGanttLayout('timeline')" title="Standard Gantt timeline" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Timeline</button>
+        <button class="btn-sm" id="gantt-collapsed-btn" onclick="setGanttLayout('collapsed')" title="Collapsed phase-arrow overview" style="border:none;border-radius:0;font-weight:600;">Collapsed</button>
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Show:</span>
+        <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
+          <button class="btn-sm" id="gantt-label-btn" onclick="toggleGanttLabels()" title="Show task/phase names on the bars" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Labels</button>
+          <button class="btn-sm" id="gantt-sidebar-btn" onclick="toggleGanttSidebar()" title="Toggle the left label columns" style="border:none;border-radius:0;font-weight:600;">Sidebar</button>
+        </span>
+      </span>
+      <select class="fsel" id="gantt-group" onchange="renderGantt()" style="display:none;">
         <option value="phase">Group: Phase</option>
         <option value="ws">Group: Workstream</option>
       </select>
-      <select class="fsel" id="gantt-view" onchange="renderGantt()">
+      <select class="fsel" id="gantt-view" onchange="renderGantt()" style="display:none;">
         <option value="weeks">Week view</option>
         <option value="months">Month view</option>
       </select>
-      <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
-        <button class="btn-sm" id="gantt-label-btn" onclick="toggleGanttLabels()" title="Show task/phase names on the bars" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Labels</button>
-        <button class="btn-sm" id="gantt-sidebar-btn" onclick="toggleGanttSidebar()" title="Hide the left columns; show only the timeline" style="border:none;border-radius:0;font-weight:600;">Hide sidebar</button>
-      </span>
       <button class="btn-sm" onclick="openAddTaskFor(ganttDefaultProj(),'','')" style="border-color:var(--ink);color:var(--ink);font-weight:700;">+ Add</button>
       <div style="position:relative;display:inline-block;">
         <button class="btn-sm" onclick="toggleExportMenu(event)" style="border-color:var(--red);color:var(--red);font-weight:700;">Export &#9662;</button>
-        <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:180px;">
-          <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to PowerPoint</div>
+        <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:200px;">
+          <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export timeline to PowerPoint</div>
+          <div onclick="_exportChoice('collapsed')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export collapsed view to PowerPoint</div>
           <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel</div>
         </div>
       </div>
@@ -658,7 +677,12 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--red);">
           <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;">Workstreams</div>
-          <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addWsRow()">+ Add Workstream</button>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select class="fsel" id="wp-existing-ws" style="font-size:11px;padding:4px 8px;" onchange="addExistingWs(this.value); this.value='';">
+              <option value="">Add existing…</option>
+            </select>
+            <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addWsRow()">+ Add Workstream</button>
+          </div>
         </div>
         <p style="font-size:11px;color:var(--mid);margin-bottom:10px;">Define workstreams once (e.g. Demand, Supply) and assign members. Each phase automatically gets a copy of every workstream.</p>
         <div id="ws-rows" style="display:flex;flex-direction:column;gap:8px;"></div>
@@ -668,7 +692,12 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <div style="border-top:1px solid var(--border);padding-top:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--red);">
           <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;">Phases &amp; Tasks</div>
-          <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addPhaseRow()">+ Add Phase</button>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select class="fsel" id="wp-existing-phase" style="font-size:11px;padding:4px 8px;" onchange="addExistingPhase(this.value); this.value='';">
+              <option value="">Add existing…</option>
+            </select>
+            <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addPhaseRow()">+ Add Phase</button>
+          </div>
         </div>
         <div id="phase-rows" style="display:flex;flex-direction:column;gap:12px;"></div>
       </div>
@@ -862,10 +891,10 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
           <input type="radio" name="wpv-kind" id="wpv-kind-phase" value="phase" checked onchange="_wpvUpdateKindFields()" style="accent-color:var(--red);"> Phase
         </label>
         <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--border);border-radius:6px;padding:8px 6px;cursor:pointer;font-size:12px;font-weight:600;">
-          <input type="radio" name="wpv-kind" id="wpv-kind-task" value="task" onchange="_wpvUpdateKindFields()" style="accent-color:var(--red);"> Task
+          <input type="radio" name="wpv-kind" id="wpv-kind-ws" value="ws" onchange="_wpvUpdateKindFields()" style="accent-color:var(--red);"> Workstream
         </label>
         <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--border);border-radius:6px;padding:8px 6px;cursor:pointer;font-size:12px;font-weight:600;">
-          <input type="radio" name="wpv-kind" id="wpv-kind-ws" value="ws" onchange="_wpvUpdateKindFields()" style="accent-color:var(--red);"> Workstream
+          <input type="radio" name="wpv-kind" id="wpv-kind-task" value="task" onchange="_wpvUpdateKindFields()" style="accent-color:var(--red);"> Task
         </label>
       </div>
       <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Name</label>
@@ -2233,6 +2262,20 @@ function phaseTasksByDate(proj, ph){
 // ---- WORKPLAN DISPLAY TOGGLES: label bars + hide sidebar ----
 let ganttLabelBars = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_labels')==='1');
 let ganttHideSidebar = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_nosidebar')==='1');
+let ganttLayout = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_layout')) || 'timeline';
+function setGanttLayout(mode){
+  ganttLayout=mode;
+  try{ localStorage.setItem('wa_gantt_layout', mode); }catch(e){}
+  renderGantt();
+}
+function setGanttGroup(mode){
+  const sel=document.getElementById('gantt-group'); if(sel) sel.value=mode;
+  renderGantt();
+}
+function setGanttView(mode){
+  const sel=document.getElementById('gantt-view'); if(sel) sel.value=mode;
+  renderGantt();
+}
 function toggleGanttLabels(){
   ganttLabelBars=!ganttLabelBars;
   try{ localStorage.setItem('wa_gantt_labels', ganttLabelBars?'1':'0'); }catch(e){}
@@ -2247,7 +2290,19 @@ function _syncGanttToggleButtons(){
   const lb=document.getElementById('gantt-label-btn');
   if(lb){ lb.style.background=ganttLabelBars?'var(--red)':'#fff'; lb.style.color=ganttLabelBars?'#fff':'var(--slate)'; lb.style.borderColor=ganttLabelBars?'var(--red)':'var(--border)'; }
   const sb=document.getElementById('gantt-sidebar-btn');
-  if(sb){ sb.style.background=ganttHideSidebar?'var(--red)':'#fff'; sb.style.color=ganttHideSidebar?'#fff':'var(--slate)'; sb.style.borderColor=ganttHideSidebar?'var(--red)':'var(--border)'; sb.textContent=ganttHideSidebar?'Show sidebar':'Hide sidebar'; }
+  if(sb){ const on=!ganttHideSidebar; sb.style.background=on?'var(--red)':'#fff'; sb.style.color=on?'#fff':'var(--slate)'; sb.style.borderColor=on?'var(--red)':'var(--border)'; }
+  const tb=document.getElementById('gantt-timeline-btn'), cb=document.getElementById('gantt-collapsed-btn');
+  if(tb){ const on=ganttLayout==='timeline'; tb.style.background=on?'var(--red)':'#fff'; tb.style.color=on?'#fff':'var(--slate)'; }
+  if(cb){ const on=ganttLayout==='collapsed'; cb.style.background=on?'var(--red)':'#fff'; cb.style.color=on?'#fff':'var(--slate)'; }
+  // View-by group + view buttons mirror the hidden selects
+  const gsel=document.getElementById('gantt-group'), gm=gsel?gsel.value:'phase';
+  const gp=document.getElementById('gantt-group-phase'), gw=document.getElementById('gantt-group-ws');
+  if(gp){ const on=gm==='phase'; gp.style.background=on?'var(--red)':'#fff'; gp.style.color=on?'#fff':'var(--slate)'; }
+  if(gw){ const on=gm==='ws'; gw.style.background=on?'var(--red)':'#fff'; gw.style.color=on?'#fff':'var(--slate)'; }
+  const vsel=document.getElementById('gantt-view'), vm=vsel?vsel.value:'weeks';
+  const vw=document.getElementById('gantt-view-weeks'), vmo=document.getElementById('gantt-view-months');
+  if(vw){ const on=vm==='weeks'; vw.style.background=on?'var(--red)':'#fff'; vw.style.color=on?'#fff':'var(--slate)'; }
+  if(vmo){ const on=vm==='months'; vmo.style.background=on?'var(--red)':'#fff'; vmo.style.color=on?'#fff':'var(--slate)'; }
 }
 
 function computeDateRange(projects){
@@ -2380,6 +2435,9 @@ function renderGantt(){
     {color:'#D9535F',label:'Delayed'},
     {color:'#3E9C5F',label:'Done'}
   ].map(l=>`<div class="legend-item"><div class="legend-swatch" style="background:${l.color}"></div>${l.label}</div>`).join('');
+
+  // Collapsed (phase-arrow) layout is a separate renderer
+  if(ganttLayout==='collapsed'){ _syncGanttToggleButtons(); renderGanttCollapsed(projects); return; }
 
   const range = computeDateRange(projects);
   window._ganttRange = range;
@@ -2682,7 +2740,76 @@ function renderGantt(){
   }, 80);
 }
 
-// Highlight a team member card on the team page
+// ============================================================
+// COLLAPSED VIEW — chevron week header + phase columns with task bullets
+// ============================================================
+function _collapsedWeekSpan(proj){
+  // total weeks across the project's phases
+  const maxWk = Math.max(1, ...proj.phases.map(p=>p.endWk||1));
+  return maxWk;
+}
+function renderGanttCollapsed(projects){
+  const container = document.getElementById('gantt-container');
+  if(!projects.length){ container.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">No workplans to show.</div>'; return; }
+  const wsVal = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
+  const statusVal = document.getElementById('gantt-status-filter') ? document.getElementById('gantt-status-filter').value : 'all';
+  const _pass = (ws,t)=>{
+    if(wsVal!=='all' && !taskWsNames(ws,t).includes(wsVal)) return false;
+    if(statusVal!=='all'){ const d=taskDoneState[t.id]||t.done; if(statusVal==='done'){ if(!d) return false; } else if(d||t.status!==statusVal) return false; }
+    return true;
+  };
+  const blocks = projects.map(proj=>{
+    const maxWk = _collapsedWeekSpan(proj);
+    // Chevron week header 0..maxWk
+    const CHEV_W = 150;
+    let chevs='';
+    for(let w=0; w<=maxWk; w++){
+      const isFirst=w===0;
+      const bg = isFirst?'#1A1A1A':'#F0F0F0';
+      const col = isFirst?'#fff':'#333';
+      chevs += `<div style="position:relative;flex:0 0 ${CHEV_W}px;height:34px;display:flex;align-items:center;justify-content:center;background:${bg};color:${col};font-size:12px;font-weight:800;margin-right:10px;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%);">Week ${w}</div>`;
+    }
+    // Phase columns
+    const phaseCols = proj.phases.map((ph,idx)=>{
+      const tasks = phaseTasksByDate(proj,ph).filter(x=>_pass(x.ws,x.task));
+      // group by workstream for sub-headers
+      const groups={};
+      tasks.forEach(x=>{ const k=(taskWsNames(x.ws,x.task)[0])||'—'; (groups[k]=groups[k]||[]).push(x); });
+      let body='';
+      Object.keys(groups).forEach(wsName=>{
+        const c=wsColour(proj,wsName);
+        body += `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:${c};margin:8px 0 4px;display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:${c};"></span>${wsName}</div>`;
+        groups[wsName].forEach(x=>{
+          const done=taskDoneState[x.task.id]||x.task.done;
+          const sc=done?'#3E9C5F':x.task.status==='delayed'?'#D9535F':x.task.status==='at-risk'?'#D19A2E':'#2C9BC4';
+          body += `<div style="display:flex;gap:6px;font-size:11px;color:#333;line-height:1.35;margin-bottom:5px;">
+            <span style="color:${sc};font-weight:800;flex-shrink:0;">•</span>
+            <span style="${done?'text-decoration:line-through;color:#999;':''}">${x.task.name}</span>
+          </div>`;
+        });
+      });
+      if(!tasks.length) body='<div style="font-size:11px;color:var(--muted);padding:6px 0;">No tasks.</div>';
+      const tint = ph.color;
+      return `<div style="flex:1;min-width:180px;border:1px solid ${tint}66;border-top:3px solid ${tint};border-radius:6px;background:${tint}0F;padding:10px 12px;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+          <span style="width:20px;height:20px;border-radius:50%;border:2px solid ${tint};color:${tint};font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${idx+1}</span>
+          <span style="font-size:12px;font-weight:800;color:#1A1A1A;">${ph.name}</span>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:6px;padding-left:26px;">Wk ${ph.startWk}–${ph.endWk} · ${fmtDate(wkToDate(proj.startDate,ph.startWk))}–${fmtDate(wkToDate(proj.startDate,ph.endWk))}</div>
+        ${body}
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:26px;">
+      <div style="font-size:13px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">${proj.caseCode} · ${proj.name}</div>
+      <div style="display:flex;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;">${chevs}</div>
+      <div style="display:flex;gap:10px;align-items:stretch;overflow-x:auto;">${phaseCols}</div>
+    </div>`;
+  }).join('');
+  container.innerHTML = `<div style="padding:14px;">${blocks}</div>`;
+}
+
+// Highlight a team member card on the team page (moved below)
+function _collapsedNoop(){}
 function highlightTeamMember(initials) {
   const cards = document.querySelectorAll('#team-content > div');
   cards.forEach(card => {
@@ -2899,6 +3026,7 @@ function _closeExportMenuOnce(){ const m=document.getElementById('export-menu');
 function _exportChoice(kind){
   _closeExportMenuOnce();
   if(kind==='ppt') exportToPPT();
+  else if(kind==='collapsed') exportCollapsedPPT();
   else if(kind==='excel') exportToExcel();
 }
 
@@ -3171,7 +3299,97 @@ async function exportToPPT(){
   }
 }
 
-// Populate gantt project filter on load
+// ============================================================
+// COLLAPSED VIEW → PowerPoint (chevron week header + phase columns)
+// ============================================================
+async function exportCollapsedPPT(){
+  try { await ensurePptxLib(); }
+  catch(e){ alert('Could not load the PowerPoint library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
+  if(typeof PptxGenJS==='undefined'){ alert('PowerPoint library unavailable. Please try again.'); return; }
+  const projVal=document.getElementById('gantt-proj-filter').value;
+  const projects=projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal);
+  if(!projects.length){ alert('No workplans to export.'); return; }
+  const wsVal = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
+  const statusVal = document.getElementById('gantt-status-filter') ? document.getElementById('gantt-status-filter').value : 'all';
+  const _pass = (ws,t)=>{
+    if(wsVal!=='all' && !taskWsNames(ws,t).includes(wsVal)) return false;
+    if(statusVal!=='all'){ const d=taskDoneState[t.id]||t.done; if(statusVal==='done'){ if(!d) return false; } else if(d||t.status!==statusVal) return false; }
+    return true;
+  };
+
+  const pptx=new PptxGenJS();
+  pptx.layout='LAYOUT_WIDE';
+  const SW=13.33, SH=7.5, MX=0.35;
+  const MAROON='8A1A1A';
+  const hexClean=(c)=>(c||'').replace('#','').slice(0,6)||'888888';
+
+  projects.forEach(proj=>{
+    const slide=pptx.addSlide();
+    slide.background={color:'FFFFFF'};
+    // Title band
+    slide.addShape(pptx.ShapeType.rect,{x:0,y:0,w:SW,h:0.55,fill:{color:MAROON},line:{type:'none'}});
+    slide.addText(`${proj.caseCode}  ·  ${proj.name}`,{x:MX,y:0.06,w:SW-3,h:0.4,fontSize:15,bold:true,color:'FFFFFF',fontFace:'Arial',valign:'middle'});
+    slide.addText(`Collapsed view · ${fmtDateLong(now)}`,{x:SW-3.3,y:0.1,w:3,h:0.3,fontSize:9,color:'FBD9DB',fontFace:'Arial',align:'right',valign:'middle'});
+
+    const maxWk = Math.max(1, ...proj.phases.map(p=>p.endWk||1));
+    // Chevron week header: Week 0..maxWk, capped to fit the slide width
+    const wkCount = maxWk+1;
+    const chevGap = 0.08;
+    const chevTotalW = SW - 2*MX;
+    const chevW = Math.max(0.7, (chevTotalW - chevGap*(wkCount-1))/wkCount);
+    const chevY = 0.75, chevH = 0.42;
+    for(let w=0; w<=maxWk; w++){
+      const x = MX + w*(chevW+chevGap);
+      const isFirst = w===0;
+      slide.addShape(pptx.ShapeType.chevron,{x,y:chevY,w:chevW,h:chevH,
+        fill:{color:isFirst?'1A1A1A':'F0F0F0'},line:{type:'none'}});
+      slide.addText(`Week ${w}`,{x,y:chevY,w:chevW,h:chevH,fontSize:9,bold:true,
+        color:isFirst?'FFFFFF':'333333',fontFace:'Arial',align:'center',valign:'middle'});
+    }
+
+    // Phase columns
+    const nPh = proj.phases.length || 1;
+    const colGap = 0.15;
+    const colTotalW = SW - 2*MX;
+    const colW = (colTotalW - colGap*(nPh-1))/nPh;
+    const colY = 1.4, colH = SH - colY - 0.3;
+    proj.phases.forEach((ph,idx)=>{
+      const x = MX + idx*(colW+colGap);
+      const tint = hexClean(ph.color);
+      // Column background + top accent
+      slide.addShape(pptx.ShapeType.rect,{x,y:colY,w:colW,h:colH,fill:{color:'FFFFFF'},line:{color:tint,pt:1}});
+      slide.addShape(pptx.ShapeType.rect,{x,y:colY,w:colW,h:0.06,fill:{color:tint},line:{type:'none'}});
+      // Phase title
+      slide.addText(`${idx+1}. ${ph.name}`,{x:x+0.12,y:colY+0.12,w:colW-0.24,h:0.3,fontSize:11,bold:true,color:'1A1A1A',fontFace:'Arial',valign:'middle'});
+      slide.addText(`Wk ${ph.startWk}–${ph.endWk}`,{x:x+0.12,y:colY+0.42,w:colW-0.24,h:0.2,fontSize:8,color:'888888',fontFace:'Arial'});
+
+      // Task bullets grouped by workstream
+      const tasks = phaseTasksByDate(proj,ph).filter(z=>_pass(z.ws,z.task));
+      const groups={};
+      tasks.forEach(z=>{ const k=(taskWsNames(z.ws,z.task)[0])||'—'; (groups[k]=groups[k]||[]).push(z); });
+      const textRuns=[];
+      Object.keys(groups).forEach(wsName=>{
+        const c=hexClean(wsColour(proj,wsName));
+        textRuns.push({text:wsName.toUpperCase(), options:{fontSize:8,bold:true,color:c,breakLine:true,paraSpaceBefore:4}});
+        groups[wsName].forEach(z=>{
+          const done=taskDoneState[z.task.id]||z.task.done;
+          const sc=done?'3E9C5F':z.task.status==='delayed'?'D9535F':z.task.status==='at-risk'?'D19A2E':'2C9BC4';
+          textRuns.push({text:z.task.name, options:{fontSize:9,color:done?'999999':'333333',bullet:{code:'2022',indent:10},
+            fontFace:'Arial',breakLine:true, italic:done, paraSpaceAfter:2}});
+        });
+      });
+      if(!textRuns.length) textRuns.push({text:'No tasks.',options:{fontSize:9,color:'AAAAAA',italic:true,fontFace:'Arial'}});
+      slide.addText(textRuns,{x:x+0.12,y:colY+0.68,w:colW-0.24,h:colH-0.8,valign:'top',fontFace:'Arial'});
+    });
+  });
+
+  try {
+    await pptx.writeFile({fileName:`Workplan_Collapsed_${now.toISOString().slice(0,10)}.pptx`});
+  } catch(err){
+    console.error('Collapsed PPT export failed:', err);
+    alert('Export failed: '+(err&&err.message?err.message:'unknown error')+'. Please try again.');
+  }
+}
 PROJECTS.forEach(p=>{
   const o=document.createElement('option');
   o.value=p.id; o.textContent=`${p.caseCode} \u2014 ${p.name}`;
@@ -3940,8 +4158,37 @@ function openNewWorkplan(){
   phaseRowCount = 0;
   document.getElementById('phase-rows').innerHTML='';
   addPhaseRow();
+  _populateExistingPickers();
   setWpView('form');
   document.getElementById('workplan-modal').style.display='flex';
+}
+// Fill the "Add existing…" dropdowns from all current projects
+function _populateExistingPickers(){
+  const wsSel=document.getElementById('wp-existing-ws');
+  const phSel=document.getElementById('wp-existing-phase');
+  if(wsSel){
+    const names=[]; PROJECTS.forEach(p=>{ (p.workstreamDefs||[]).forEach(w=>{ if(!names.includes(w.name)) names.push(w.name); }); p.phases.forEach(ph=>ph.workstreams.forEach(w=>{ if(!names.includes(w.name)) names.push(w.name); })); });
+    wsSel.innerHTML='<option value="">Add existing…</option>'+names.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+  }
+  if(phSel){
+    const seen=new Set(), opts=[];
+    PROJECTS.forEach(p=>p.phases.forEach(ph=>{ const key=ph.name.toLowerCase(); if(!seen.has(key)){ seen.add(key); opts.push({name:ph.name, wks:(ph.endWk-ph.startWk+1)}); } }));
+    phSel.innerHTML='<option value="">Add existing…</option>'+opts.map(o=>`<option value="${o.name.replace(/"/g,'&quot;')}|${o.wks}">${o.name} (${o.wks} wk${o.wks>1?'s':''})</option>`).join('');
+  }
+}
+// Add an existing workstream by name (skips duplicates already in the form)
+function addExistingWs(name){
+  if(!name) return;
+  const have=getDefinedWorkstreams().map(w=>w.name.toLowerCase());
+  if(have.includes(name.toLowerCase())) return;
+  addWsRow(name, []);
+  if(typeof refreshPhaseWsHints==='function') refreshPhaseWsHints();
+}
+// Add an existing phase by "name|weeks"
+function addExistingPhase(val){
+  if(!val) return;
+  const [name, wks] = val.split('|');
+  addPhaseRow(name, parseInt(wks)||4);
 }
 // Weeks <-> dates auto-calc for the project header
 function _wpWeeksChanged(){
