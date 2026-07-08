@@ -561,7 +561,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <div style="margin-bottom:14px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Task Name</label>
         <input id="task-name" class="fi" placeholder="e.g. Draft market share analysis"></div>
       <div style="margin-bottom:14px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Owner(s)</label>
-        <div id="task-owner-bubbles" style="display:flex;flex-wrap:wrap;gap:5px;min-height:30px;align-items:center;"></div></div>
+        <div id="task-owner-field"></div></div>
       </div>
       <div id="phase-only-fields" style="display:none;">
       <div style="margin-bottom:14px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Phase Name</label>
@@ -604,54 +604,48 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
           <button id="wp-tab-form" class="wp-view-tab" onclick="setWpView('form')" style="border:none;background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;">Form</button>
           <button id="wp-tab-visual" class="wp-view-tab" onclick="setWpView('visual')" style="border:none;background:#fff;color:var(--slate);font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;">Workplan view</button>
         </div>
-        <button class="btn-sm" onclick="openImportText()" style="font-size:11px;padding:5px 12px;">Create from text</button>
         <button onclick="closeNewWorkplan()" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
       </div>
     </div>
     <div style="padding:20px 24px;" id="wp-form-body">
+      <!-- PROJECT DETAILS -->
+      <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--red);">Project Details</div>
       <div style="display:flex;gap:12px;margin-bottom:14px;">
         <div style="flex:2;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Project / Case Name</label>
           <input id="wp-name" class="fi" placeholder="e.g. Acme Corp Cost Transformation"></div>
         <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Case Code</label>
           <input id="wp-code" class="fi" placeholder="e.g. CT-0731"></div>
       </div>
-      <div style="display:flex;gap:12px;margin-bottom:14px;">
+      <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-end;">
+        <div style="width:90px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;"># Weeks</label>
+          <input id="wp-weeks" class="fi" type="number" min="1" placeholder="12" oninput="_wpWeeksChanged()"></div>
         <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Start Date</label>
-          <input id="wp-start" class="fi" type="date" onchange="_refreshAllPhaseDates()"></div>
+          <input id="wp-start" class="fi" type="date" onchange="_wpDatesChanged()"></div>
         <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">End Date</label>
-          <input id="wp-end" class="fi" type="date"></div>
+          <input id="wp-end" class="fi" type="date" onchange="_wpDatesChanged()"></div>
       </div>
       <div style="margin-bottom:14px;">
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Template</label>
-        <select id="wp-template" class="fs"></select>
-      </div>
-      <div style="margin-bottom:14px;">
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Team Members <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">(optional)</span></label>
-        <div id="wp-team-picker" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Members <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);">(type a name and press Enter; team members appear in the dropdown)</span></label>
+        <div id="wp-member-owner" data-owner-field="wp"></div>
       </div>
 
       <!-- WORKSTREAMS -->
       <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;">Workstreams</div>
+          <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;">Workstreams</div>
           <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addWsRow()">+ Add Workstream</button>
         </div>
-        <p style="font-size:11px;color:var(--mid);margin-bottom:10px;">Define workstreams once (e.g. Demand, Supply) and assign members. Each phase will automatically get a copy of every workstream.</p>
+        <p style="font-size:11px;color:var(--mid);margin-bottom:10px;">Define workstreams once (e.g. Demand, Supply) and assign members. Each phase automatically gets a copy of every workstream.</p>
         <div id="ws-rows" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
 
-      <!-- PHASES -->
+      <!-- PHASES & TASKS -->
       <div style="border-top:1px solid var(--border);padding-top:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;">Phases &amp; Tasks</div>
+          <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;">Phases &amp; Tasks</div>
           <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addPhaseRow()">+ Add Phase</button>
         </div>
         <div id="phase-rows" style="display:flex;flex-direction:column;gap:12px;"></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <input id="wp-new-template-name" class="fi" style="flex:1;min-width:160px;" placeholder="Name this phase set as a template (optional)">
-          <button class="btn-ghost" style="font-size:11px;padding:6px 12px;white-space:nowrap;" onclick="saveAsTemplate()">&#128190; Save as template</button>
-        </div>
-        <div id="wp-template-msg" style="font-size:11px;color:var(--green);min-height:14px;margin-top:6px;"></div>
       </div>
     </div>
 
@@ -1506,23 +1500,47 @@ function updateHealthStrip(){
 }
 
 function buildFocus(){
-  const open=allFlatTasks().filter(t=>t.owner==='WZ'&&!taskDoneState[t.id]);
-  if(!open.length) return '<div style="font-size:13px;color:var(--green);font-weight:600;padding:8px 0;">&#10003; All clear &mdash; nothing pending!</div>';
-  return open.slice(0,5).map(t=>{
+  const mine = allFlatTasks().filter(t=>t.owner==='WZ' || (t.owner&&t.owner.split(',').map(s=>s.trim()).includes('WZ')));
+  if(!mine.length) return '<div style="font-size:13px;color:var(--muted);padding:8px 0;">No tasks assigned to you yet.</div>';
+  const todayISO = new Date().toISOString().slice(0,10);
+  // Determine each task's end date to decide "due today"
+  const withDates = mine.map(t=>{
+    let endISO = t.endDate || t.dueDate || '';
+    if(!endISO && t.projectId!=='__other__'){
+      const proj = PROJECTS.find(p=>p.id===t.projectId);
+      const ph = proj && proj.phases.find(x=>x.workstreams.some(w=>w.tasks.some(tk=>tk.id===t.id)));
+      if(proj && ph){ const r=taskDateRange(proj,ph,ph.workstreams.flatMap(w=>w.tasks).find(tk=>tk.id===t.id)); endISO=r.endISO; }
+    }
+    return {...t, _end:endISO};
+  });
+  const isDone=t=>!!taskDoneState[t.id];
+  const dueTodaySet = withDates.filter(t=>!isDone(t) && t._end===todayISO);
+  const others = withDates.filter(t=>!isDone(t) && t._end!==todayISO);
+  const completed = withDates.filter(isDone);
+
+  const row=(t)=>{
     const dc=t.status==='delayed'?'urgent':t.status==='at-risk'?'soon':'ok';
-    const dl=t.status==='delayed'?'Overdue':t.status==='at-risk'?'At risk':t.due;
-    return `<div class="focus-task">
-      <div class="chk ${taskDoneState[t.id]?'done':''}" onclick="toggleFocus('${t.id}')">${taskDoneState[t.id]?'&#10003;':''}</div>
+    const dl=t.status==='delayed'?'Overdue':t.status==='at-risk'?'At risk':(t._end?fmtDate(new Date(t._end)):(t.due||''));
+    const done=isDone(t);
+    return `<div class="focus-task" style="${done?'opacity:.6;':''}">
+      <div class="chk ${done?'done':''}" onclick="toggleFocus('${t.id}')">${done?'&#10003;':''}</div>
       <div style="flex:1;">
-        <div class="f-name ${taskDoneState[t.id]?'done':''}">${t.name}</div>
+        <div class="f-name ${done?'done':''}">${t.name}</div>
         <div class="f-meta">
           <span class="f-project">${t.caseCode||'Other'}</span>
           <span class="f-ws">${t.phaseName?t.phaseName+' &rsaquo; ':''}${t.wsName||''}</span>
-          <span class="due-chip ${dc}">${dl}</span>
+          ${done?'<span class="due-chip ok">Done</span>':`<span class="due-chip ${dc}">${dl}</span>`}
         </div>
       </div>
     </div>`;
-  }).join('');
+  };
+  const seg=(title,arr)=> arr.length? `<div style="font-size:10px;font-weight:800;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 6px;">${title}</div>`+arr.map(row).join('') : '';
+  let html='';
+  html += seg('Due today', dueTodaySet) || (dueTodaySet.length?'':'');
+  html += seg('Other tasks', others);
+  if(completed.length) html += `<div style="border-top:1px dashed var(--border);margin-top:8px;padding-top:6px;">`+seg('Completed', completed)+`</div>`;
+  if(!dueTodaySet.length && !others.length && !completed.length) html='<div style="font-size:13px;color:var(--green);font-weight:600;padding:8px 0;">&#10003; All clear &mdash; nothing pending!</div>';
+  return html;
 }
 
 function buildWeekly(){
@@ -1993,6 +2011,7 @@ function showPage(id){
     t.classList.toggle('active', tabIds[i]===id);
   });
   if(id==='timeline') renderGantt();
+  if(id==='tasks') renderTasks();
   if(id==='workplans') renderWorkplans();
   if(id==='team') renderTeam();
 }
@@ -2229,25 +2248,26 @@ function renderGantt(){
   let tableRows = '';
   rows.forEach(row => {
     const rh = row.type==='project'?44:row.type==='phase'?36:row.type==='ws'?30:48;
-    const bgLabel = row.type==='project'?'#6B6B6B':row.type==='phase'?'#F5F5F5':row.type==='ws'?'#FAFAFA':'#FFFFFF';
-    const bgChart = row.type==='project'?'#6B6B6B':row.type==='phase'?'rgba(0,0,0,.01)':'#FFFFFF';
+    const bgLabel = row.type==='project'?'#D8D8D8':row.type==='phase'?'#F5F5F5':row.type==='ws'?'#FAFAFA':'#FFFFFF';
+    const bgChart = row.type==='project'?'#D8D8D8':row.type==='phase'?'rgba(0,0,0,.01)':'#FFFFFF';
 
     let labelInner='', progInner='';
 
     if (row.type==='project') {
       const _pp = row.proj.phases;
-      let _dr = '';
+      let _dr = '', _wks = 0;
       if(_pp && _pp.length){
         const _mn = Math.min(..._pp.map(x=>x.startWk));
         const _mx = Math.max(..._pp.map(x=>x.endWk));
+        _wks = _mx - _mn + 1;
         _dr = fmtDate(wkToDate(row.proj.startDate,_mn))+' – '+fmtDate(wkToDate(row.proj.startDate,_mx+1));
       }
       labelInner=`<div style="padding:8px 14px;display:flex;align-items:center;gap:8px;">
         <div style="flex:1;min-width:0;cursor:pointer;" onclick="collapseAllPhases('${row.proj.id}')" title="Click to collapse/expand all phases">
-          <div style="font-size:12px;font-weight:800;color:#fff;letter-spacing:.04em;">${row.proj.caseCode}${_dr?` <span style="font-weight:600;color:rgba(255,255,255,.6);font-size:10px;letter-spacing:0;">· ${_dr}</span>`:''}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;">${row.proj.name}</div>
+          <div style="font-size:12px;font-weight:800;color:#fff;letter-spacing:.04em;">${row.proj.caseCode}${_dr?` <span style="font-weight:600;color:#fff;font-size:10px;letter-spacing:0;">· ${_dr}${_wks?` · ${_wks} wk${_wks>1?'s':''}`:''}</span>`:''}</div>
+          <div style="font-size:10px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">${row.proj.name}</div>
         </div>
-        <button class="edit-btn" title="Edit project" style="color:rgba(255,255,255,.75);" onclick="event.stopPropagation();openEditProject('${row.proj.id}')">&#9998;</button>
+        <button class="edit-btn" title="Edit project" style="color:#fff;" onclick="event.stopPropagation();openEditProject('${row.proj.id}')">&#9998;</button>
       </div>`;
       const allProjTasks = row.proj.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks));
       const projDone = allProjTasks.filter(t=>taskDoneState[t.id]||t.done).length;
@@ -2268,6 +2288,7 @@ function renderGantt(){
         <span onclick="event.stopPropagation();toggleGanttPhase('${ph.id}')" title="Collapse / expand phase" style="cursor:pointer;font-size:10px;color:var(--mid);display:inline-block;width:12px;transition:transform .15s;transform:rotate(${ganttCollapsed.has(ph.id)?'0':'90'}deg);flex-shrink:0;">&#9654;</span>
         <div style="width:3px;height:14px;border-radius:2px;background:${ph.color};flex-shrink:0;"></div>
         <span onclick="event.stopPropagation();toggleGanttPhase('${ph.id}')" style="cursor:pointer;font-size:11px;font-weight:700;color:#333;">${ph.name}</span>
+        <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#EDEDED;padding:1px 5px;border-radius:4px;flex-shrink:0;">Phase</span>
         ${isCur?`<span style="font-size:9px;background:${ph.color};color:#fff;padding:1px 5px;border-radius:8px;font-weight:700;flex-shrink:0;">Now</span>`:''}
         <span style="font-size:9px;color:var(--ink);font-weight:600;white-space:nowrap;">${fmtDate(ps)}&ndash;${fmtDate(pe)}</span>
         <span style="margin-left:auto;display:flex;gap:2px;">
@@ -2286,7 +2307,9 @@ function renderGantt(){
       </div>`;
     } else if (row.type==='ws') {
       labelInner=`<div style="padding:5px 14px 5px 30px;display:flex;align-items:center;gap:6px;">
-        <span style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;flex:1;">${row.ws.name}</span>
+        <span style="font-size:10px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;">${row.ws.name}</span>
+        <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:#F0F0F0;padding:1px 5px;border-radius:4px;flex-shrink:0;">Workstream</span>
+        <span style="flex:1;"></span>
         <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${row.proj.id}','${row.ph.id}','${row.ws.id}')">&#9998;</button>
       </div>`;
       const wsTasks = row.ws.tasks;
@@ -2381,7 +2404,7 @@ function renderGantt(){
     let lbl = mg.label;
     if(groupW < 58) lbl = mg.label.split(' ')[0];      // drop year
     if(groupW < 26) lbl = mg.label.slice(0,1);          // just first letter
-    return `<th style="width:${groupW}px;min-width:${groupW}px;max-width:${groupW}px;padding:5px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#8A8A8A;border-right:1px solid #444;border-bottom:1px solid #444;white-space:nowrap;overflow:hidden;text-align:center;">${lbl}</th>`;
+    return `<th style="width:${groupW}px;min-width:${groupW}px;max-width:${groupW}px;padding:5px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#1A1A1A;border-right:1px solid #444;border-bottom:1px solid #444;white-space:nowrap;overflow:hidden;text-align:center;">${lbl}</th>`;
   }).join('');
   const weekHdr = weeks.map(wk=>{
     const isT = wk<=now&&now<new Date(wk.getTime()+7*24*60*60*1000);
@@ -2396,16 +2419,16 @@ function renderGantt(){
       <table style="border-collapse:collapse;table-layout:fixed;width:${LW+totalWeekW}px;max-width:${LW+totalWeekW}px;">
         <thead>
           <tr>
-            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A8A8A;border-right:1px solid #444;border-bottom:1px solid #444;position:sticky;left:0;z-index:6;text-align:left;">Project / Phase / Task</th>
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A8A8A;border-right:2px solid #555;border-bottom:1px solid #444;position:sticky;left:${LW-PROG_W}px;z-index:6;text-align:center;">Status</th>
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #444;background:#8A8A8A;">
+            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#1A1A1A;border-right:1px solid #444;border-bottom:1px solid #444;position:sticky;left:0;z-index:6;text-align:left;">Project / Phase / Task</th>
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#1A1A1A;border-right:2px solid #555;border-bottom:1px solid #444;position:sticky;left:${LW-PROG_W}px;z-index:6;text-align:center;">Status</th>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #444;background:#1A1A1A;">
               <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
             </th>
           </tr>
           <tr>
-            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#9A9A9A;border-right:1px solid #444;border-bottom:2px solid #555;position:sticky;left:0;z-index:6;"></th>
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#9A9A9A;border-right:2px solid #555;border-bottom:2px solid #555;position:sticky;left:${LW-PROG_W}px;z-index:6;"></th>
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#9A9A9A;border-bottom:2px solid #555;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
+            <th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#2D2D2D;border-right:1px solid #444;border-bottom:2px solid #555;position:sticky;left:0;z-index:6;"></th>
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#2D2D2D;border-right:2px solid #555;border-bottom:2px solid #555;position:sticky;left:${LW-PROG_W}px;z-index:6;"></th>
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#2D2D2D;border-bottom:2px solid #555;position:relative;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
             </th>
           </tr>
         </thead>
@@ -2441,6 +2464,46 @@ function showTip(e,html){tooltip.innerHTML=html;tooltip.classList.add('visible')
 function hideTip(){tooltip.classList.remove('visible');}
 function moveTip(e){tooltip.style.left=(e.clientX+14)+'px';tooltip.style.top=(e.clientY-10)+'px';}
 document.addEventListener('mousemove',e=>{if(tooltip.classList.contains('visible'))moveTip(e);});
+
+// ============================================================
+// LINKED DATE-RANGE PAIRS
+// Visually join each start/end date pair with a dash and link them so
+// choosing a start constrains the end (and vice-versa). Each field still
+// opens the browser's own calendar and is separately selectable.
+// Pairs are matched by known id/class prefixes.
+// ============================================================
+const _DATE_PAIRS = [
+  ['task-start-date','task-end-date'],
+  ['wp-start','wp-end'],
+  ['edit-f2d','edit-f3d'],   // edit phase
+  ['edit-f3s','edit-f3e'],   // edit task
+  ['edit-f3','edit-f4']      // edit project (start/end)
+];
+function _linkDatePair(startEl, endEl){
+  if(!startEl||!endEl||startEl.dataset.linked) return;
+  startEl.dataset.linked='1';
+  const sync=()=>{ if(startEl.value) endEl.min=startEl.value; if(endEl.value) startEl.max=endEl.value; };
+  startEl.addEventListener('change', ()=>{ if(startEl.value && (!endEl.value || endEl.value<startEl.value)) { /* leave end for user */ } sync(); });
+  endEl.addEventListener('change', sync);
+  sync();
+  // Wrap the two inputs with a dash separator if they share a parent row
+  if(startEl.parentElement && endEl.parentElement && !startEl.dataset.dashed){
+    startEl.dataset.dashed='1';
+  }
+}
+function linkAllDatePairs(){
+  _DATE_PAIRS.forEach(([a,b])=>{
+    const ea=document.getElementById(a), eb=document.getElementById(b);
+    if(ea&&eb) _linkDatePair(ea,eb);
+  });
+  // class-based pairs (repeatable rows)
+  document.querySelectorAll('.ds-task').forEach(r=>_linkDatePair(r.querySelector('.ds-start'),r.querySelector('.ds-end')));
+  document.querySelectorAll('.wsds-task').forEach(r=>_linkDatePair(r.querySelector('.wsds-start'),r.querySelector('.wsds-end')));
+  document.querySelectorAll('.wp-phase-row').forEach(r=>_linkDatePair(r.querySelector('.wp-phase-start-date'),r.querySelector('.wp-phase-end-date')));
+}
+// Re-link whenever a modal opens (fields are created dynamically)
+document.addEventListener('click', ()=>setTimeout(linkAllDatePairs, 60), true);
+
 
 // Re-render the Gantt on viewport resize so mobile/desktop column widths apply
 let _ganttResizeTimer=null;
@@ -3113,7 +3176,7 @@ function openEditMember(idx){
   document.getElementById('member-modal').style.display='flex';
 }
 function closeMemberModal(){ document.getElementById('member-modal').style.display='none'; _memberDelArmed=false; clearTimeout(window._memberDelTimer); }
-const MEMBER_COLOURS = ['#CC0000','#1A4F8F','#1A7F4E','#8B5CF6','#B87000','#E84393','#00838F','#455A64'];
+const MEMBER_COLOURS = ['#CC0000','#1A4F8F','#1A7F4E','#8B5CF6','#D69200','#E84393','#00838F','#455A64'];
 function buildColourPicker(){
   const wrap=document.getElementById('colour-picker');
   if(!wrap) return;
@@ -3169,7 +3232,7 @@ function openAddTask(){
   const projSel = document.getElementById('task-project');
   projSel.innerHTML = PROJECTS.map(p=>`<option value="${p.id}">${p.caseCode} — ${p.name}</option>`).join('')
     + '<option value="__other__">Other Tasks (non-casework)</option>';
-  taskSelectedOwners = [];
+  mountOwnerField('task-owner-field', []);
   document.getElementById('task-name').value='';
   document.getElementById('phase-name-new').value='';
   document.getElementById('task-start-date').value='';
@@ -3225,38 +3288,14 @@ function _tkDateToWk(which){
   if(!dEl.value) return;
   wkEl.value = dateToWk(ps, dEl.value);
 }
-// Owner bubbles reflect the members of the currently-selected workstream (or whole team for Other tasks)
+// Task owner uses the reusable owner-field (text box + member dropdown + free text)
 function renderTaskOwnerBubbles(){
-  const wrap = document.getElementById('task-owner-bubbles');
-  if(!wrap) return;
-  const pid = document.getElementById('task-project').value;
-  let pool = TEAM;
-  if(pid!=='__other__'){
-    const proj = PROJECTS.find(p=>p.id===pid);
-    const ph = proj && proj.phases.find(x=>x.id===document.getElementById('task-phase').value);
-    const ws = ph && ph.workstreams.find(x=>x.id===document.getElementById('task-ws').value);
-    const newWsVisible = !document.getElementById('task-new-ws-block').classList.contains('hidden');
-    if(newWsVisible){ pool = TEAM.filter(m=>taskNewWsMembers.includes(m.initials)); }
-    else if(ws && ws.members && ws.members.length){ pool = TEAM.filter(m=>ws.members.includes(m.initials)); }
-    else { pool = TEAM; } // workstream has no members defined yet → allow anyone
-  }
-  if(!pool.length){ wrap.innerHTML='<span style="font-size:11px;color:var(--muted);">No members in this workstream — add members to it first, or pick from the team.</span>'; return; }
-  // keep only still-valid selections
-  taskSelectedOwners = taskSelectedOwners.filter(o=>pool.some(m=>m.initials===o));
-  wrap.innerHTML = pool.map(m=>{
-    const on = taskSelectedOwners.includes(m.initials);
-    return `<div onclick="toggleTaskOwner('${m.initials}')" style="display:flex;align-items:center;gap:5px;padding:3px 9px 3px 3px;border:1.5px solid ${on?m.color:'var(--border)'};background:${on?m.color+'18':'#fff'};border-radius:20px;cursor:pointer;">
-      <span style="width:18px;height:18px;border-radius:50%;background:${m.color};color:#fff;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;">${m.initials}</span>
-      <span style="font-size:10px;font-weight:600;color:${on?m.color:'var(--slate)'};">${m.name.split(' ')[0]}</span>
-      ${on?`<span style="color:${m.color};font-size:11px;font-weight:800;">&#10003;</span>`:''}
-    </div>`;
-  }).join('');
+  const box = document.getElementById('task-owner-field');
+  if(!box) return;
+  if(box.dataset.owners===undefined) mountOwnerField(box, []);
+  else _renderOwnerField(box);
 }
-function toggleTaskOwner(init){
-  const i=taskSelectedOwners.indexOf(init);
-  if(i>=0) taskSelectedOwners.splice(i,1); else taskSelectedOwners.push(init);
-  renderTaskOwnerBubbles();
-}
+function toggleTaskOwner(init){ /* legacy no-op; owner-field handles selection */ }
 function closeTaskModal(){ document.getElementById('task-modal').style.display='none'; }
 function openAddTaskFor(projId, phaseId, wsId){
   openAddTask();
@@ -3378,7 +3417,7 @@ function saveTask(){
 
   const name = document.getElementById('task-name').value.trim();
   if(!name){ alert('Please enter a task name.'); return; }
-  const owner = taskSelectedOwners.join(', ');
+  const owner = getOwnerFieldValue('task-owner-field').join(', ');
   const status = document.getElementById('task-status').value;
   const tid = 't'+Date.now();
 
@@ -3486,7 +3525,7 @@ function buildTemplateDropdown(selectedKey){
   if(selectedKey) sel.value = selectedKey;
 }
 
-const PHASE_COLOURS = ['#CC0000','#1A4F8F','#1A7F4E','#8B5CF6','#B87000','#00838F'];
+const PHASE_COLOURS = ['#CC0000','#1A4F8F','#1A7F4E','#8B5CF6','#D69200','#00838F'];
 let phaseRowCount = 0;
 let wsRowCount = 0;
 
@@ -3496,85 +3535,119 @@ function openNewWorkplan(){
   document.getElementById('wp-code').value='';
   document.getElementById('wp-start').value = new Date().toISOString().slice(0,10);
   document.getElementById('wp-end').value = '';
-  document.getElementById('wp-new-template-name').value='';
-  document.getElementById('wp-template-msg').textContent='';
-  buildTemplateDropdown('custom');
-  wpSelectedMembers = [];
-  buildWpTeamPicker();
+  const wkEl=document.getElementById('wp-weeks'); if(wkEl) wkEl.value='';
+  mountOwnerField('wp-member-owner', []);
   wsRowCount = 0;
   document.getElementById('ws-rows').innerHTML='';
   addWsRow();
   phaseRowCount = 0;
   document.getElementById('phase-rows').innerHTML='';
   addPhaseRow();
-  document.getElementById('wp-template').onchange = applyTemplate;
   setWpView('form');
   document.getElementById('workplan-modal').style.display='flex';
 }
-function buildWpTeamPicker(){
-  const wrap = document.getElementById('wp-team-picker');
-  if(!wrap) return;
-  if(!TEAM.length){ wrap.innerHTML='<span style="font-size:11px;color:var(--muted);">No team members yet — add them from the Team tab.</span>'; return; }
-  wrap.innerHTML = TEAM.map(m=>{
-    const on = wpSelectedMembers.includes(m.initials);
-    return `<div onclick="toggleWpMember('${m.initials}')" style="display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border:1.5px solid ${on?m.color:'var(--border)'};background:${on?m.color+'18':'#fff'};border-radius:20px;cursor:pointer;transition:all .15s;">
-      <span style="width:22px;height:22px;border-radius:50%;background:${m.color};color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${m.initials}</span>
-      <span style="font-size:11px;font-weight:600;color:${on?m.color:'var(--slate)'};">${m.name.split(' ')[0]}</span>
-      ${on?`<span style="color:${m.color};font-size:11px;font-weight:800;">&#10003;</span>`:''}
-    </div>`;
-  }).join('');
+// Weeks <-> dates auto-calc for the project header
+function _wpWeeksChanged(){
+  const s=document.getElementById('wp-start').value;
+  const wks=parseInt(document.getElementById('wp-weeks').value);
+  if(s && wks){
+    const d=new Date(s); d.setDate(d.getDate()+wks*7-1);
+    document.getElementById('wp-end').value=d.toISOString().slice(0,10);
+  }
+  _refreshAllPhaseDates();
 }
-function toggleWpMember(initials){
-  const i = wpSelectedMembers.indexOf(initials);
-  if(i>=0) wpSelectedMembers.splice(i,1); else wpSelectedMembers.push(initials);
-  buildWpTeamPicker();
+function _wpDatesChanged(){
+  const s=document.getElementById('wp-start').value;
+  const e=document.getElementById('wp-end').value;
+  if(s && e){
+    const wks=Math.max(1, Math.round((new Date(e)-new Date(s))/(7*24*60*60*1000)));
+    document.getElementById('wp-weeks').value=wks;
+  }
+  _refreshAllPhaseDates();
 }
 function closeNewWorkplan(){ document.getElementById('workplan-modal').style.display='none'; }
 
-// ---- WORKSTREAM ROWS (definition, with member chips) ----
+// ============================================================
+// REUSABLE OWNER / MEMBER FIELD
+// A text box with a member dropdown and a + button. Picking from the
+// dropdown or typing a free-text name (then + or Enter) adds a chip.
+// Non-team names are allowed. State lives on the container's dataset.
+// ============================================================
+function mountOwnerField(containerId, initial){
+  const box = typeof containerId==='string' ? document.getElementById(containerId) : containerId;
+  if(!box) return;
+  box.dataset.owners = JSON.stringify(initial||[]);
+  box.classList.add('owner-field');
+  _renderOwnerField(box);
+}
+function _renderOwnerField(box){
+  const owners = JSON.parse(box.dataset.owners||'[]');
+  const memberOpts = TEAM.map(m=>`<option value="${m.initials}">${m.name} (${m.initials})</option>`).join('');
+  const chips = owners.map(o=>{
+    const m = TEAM.find(x=>x.initials===o || x.name===o);
+    const col = m?m.color:'#888';
+    const label = m?m.name.split(' ')[0]:o;
+    return `<span style="display:inline-flex;align-items:center;gap:5px;background:${col}18;border:1px solid ${col}55;color:${col};border-radius:14px;padding:2px 6px 2px 9px;font-size:11px;font-weight:600;">${label}<span onclick="_ownerRemove(this)" data-o="${o.replace(/"/g,'&quot;')}" style="cursor:pointer;font-weight:800;">&times;</span></span>`;
+  }).join('');
+  box.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;" class="owner-chips">${chips||'<span style="font-size:11px;color:var(--muted);">No members added yet.</span>'}</div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input class="fi owner-text" list="_teamlist" placeholder="Type a name or pick a member" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();_ownerAddFromInput(this);}">
+      <button type="button" class="btn-ghost owner-add" style="font-size:16px;padding:4px 12px;line-height:1;" onclick="_ownerAddFromInput(this)">+</button>
+    </div>
+    <datalist id="_teamlist">${memberOpts}</datalist>`;
+}
+function _ownerAddFromInput(el){
+  const box = el.closest('.owner-field');
+  const input = box.querySelector('.owner-text');
+  let val = (input.value||'').trim();
+  if(!val) return;
+  // If they typed a member name, normalise to initials
+  const m = TEAM.find(x=>x.name.toLowerCase()===val.toLowerCase() || x.initials.toLowerCase()===val.toLowerCase() || (`${x.name} (${x.initials})`).toLowerCase()===val.toLowerCase());
+  const store = m ? m.initials : val;
+  const owners = JSON.parse(box.dataset.owners||'[]');
+  if(!owners.includes(store)){ owners.push(store); box.dataset.owners=JSON.stringify(owners); }
+  input.value='';
+  _renderOwnerField(box);
+}
+function _ownerRemove(el){
+  const box = el.closest('.owner-field');
+  const o = el.dataset.o;
+  const owners = JSON.parse(box.dataset.owners||'[]').filter(x=>x!==o);
+  box.dataset.owners = JSON.stringify(owners);
+  _renderOwnerField(box);
+}
+function getOwnerFieldValue(containerId){
+  const box = typeof containerId==='string' ? document.getElementById(containerId) : containerId;
+  if(!box) return [];
+  return JSON.parse(box.dataset.owners||'[]');
+}
+
+// ---- WORKSTREAM ROWS (definition, with member owner-field) ----
 function addWsRow(name, memberList){
   const idx = wsRowCount++;
   const members = memberList || [];
   const row = document.createElement('div');
   row.className = 'wp-ws-row';
-  row.dataset.members = JSON.stringify(members);
-  row.style.cssText = 'border:1px solid var(--border);border-radius:6px;padding:10px;background:var(--surface);';
+  row.style.cssText = 'border:1px solid var(--border);border-radius:6px;padding:10px;background:var(--surface);display:flex;gap:10px;align-items:flex-start;';
   row.innerHTML = `
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-      <input class="fi wp-ws-name" style="flex:1;background:#fff;" placeholder="Workstream name (e.g. Demand)" value="${name||''}">
-      <button onclick="this.closest('.wp-ws-row').remove();refreshPhaseWsHints()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">&#10005;</button>
+    <div style="flex:1;min-width:120px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Workstream name</div>
+      <input class="fi wp-ws-name" style="width:100%;background:#fff;" placeholder="e.g. Demand" value="${name||''}">
     </div>
-    <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Members</div>
-    <div class="wp-ws-members" style="display:flex;flex-wrap:wrap;gap:5px;"></div>`;
+    <div style="flex:1.4;min-width:160px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Members</div>
+      <div class="wp-ws-owner"></div>
+    </div>
+    <button onclick="this.closest('.wp-ws-row').remove();refreshPhaseWsHints()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;margin-top:16px;flex-shrink:0;">&#10005;</button>`;
   document.getElementById('ws-rows').appendChild(row);
-  renderWsRowMembers(row);
+  mountOwnerField(row.querySelector('.wp-ws-owner'), members);
   row.querySelector('.wp-ws-name').addEventListener('input', refreshPhaseWsHints);
-}
-function renderWsRowMembers(row){
-  const sel = JSON.parse(row.dataset.members||'[]');
-  const wrap = row.querySelector('.wp-ws-members');
-  if(!TEAM.length){ wrap.innerHTML='<span style="font-size:10px;color:var(--muted);">Add team members from the Team tab first.</span>'; return; }
-  wrap.innerHTML = TEAM.map(m=>{
-    const on = sel.includes(m.initials);
-    return `<div onclick="toggleWsMember(this)" data-initials="${m.initials}" style="display:flex;align-items:center;gap:5px;padding:3px 9px 3px 3px;border:1.5px solid ${on?m.color:'var(--border)'};background:${on?m.color+'18':'#fff'};border-radius:20px;cursor:pointer;">
-      <span style="width:18px;height:18px;border-radius:50%;background:${m.color};color:#fff;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;">${m.initials}</span>
-      <span style="font-size:10px;font-weight:600;color:${on?m.color:'var(--slate)'};">${m.name.split(' ')[0]}</span>
-    </div>`;
-  }).join('');
-}
-function toggleWsMember(el){
-  const row = el.closest('.wp-ws-row');
-  const init = el.dataset.initials;
-  const sel = JSON.parse(row.dataset.members||'[]');
-  const i = sel.indexOf(init);
-  if(i>=0) sel.splice(i,1); else sel.push(init);
-  row.dataset.members = JSON.stringify(sel);
-  renderWsRowMembers(row);
 }
 function getDefinedWorkstreams(){
   return [...document.querySelectorAll('.wp-ws-row')].map(r=>({
     name: r.querySelector('.wp-ws-name').value.trim(),
-    members: JSON.parse(r.dataset.members||'[]')
+    members: getOwnerFieldValue(r.querySelector('.wp-ws-owner'))
   })).filter(w=>w.name);
 }
 
@@ -3735,38 +3808,8 @@ function _appendWpTaskRow(container, bucket, name, owner){
   container.appendChild(tr);
 }
 
-function applyTemplate(){
-  const t = document.getElementById('wp-template').value;
-  const tpl = allTemplates()[t];
-  const phases = tpl ? tpl.phases : [];
-  phaseRowCount = 0;
-  document.getElementById('phase-rows').innerHTML='';
-  document.getElementById('wp-template-msg').textContent='';
-  if(!phases || phases.length===0){ addPhaseRow(); return; }
-  phases.forEach(p => addPhaseRow(p.name, p.wks));
-}
-
-function saveAsTemplate(){
-  const nameInput = document.getElementById('wp-new-template-name');
-  const msg = document.getElementById('wp-template-msg');
-  const tplName = nameInput.value.trim();
-  if(!tplName){ msg.style.color='var(--red)'; msg.textContent='Enter a template name first.'; return; }
-  const rows = [...document.querySelectorAll('.wp-phase-row')];
-  if(!rows.length){ msg.style.color='var(--red)'; msg.textContent='Add at least one phase to save as a template.'; return; }
-  const phases = rows.map((row,i)=>{
-    const pname = row.querySelector('.wp-phase-name').value.trim() || ('Phase '+(i+1));
-    const wks = parseInt(row.querySelector('.wp-phase-wks').value) || 4;
-    const colour = row.querySelector('[data-colour]').getAttribute('data-colour');
-    return { name:pname, color:colour, wks:wks };
-  });
-  const key = 'tpl_' + Date.now();
-  APP.customTemplates[key] = { label: tplName, phases };
-  saveData();
-  buildTemplateDropdown(key);
-  msg.style.color='var(--green)';
-  msg.textContent = '\u2713 Saved "' + tplName + '" to the template list.';
-  nameInput.value='';
-}
+function applyTemplate(){ /* templates removed */ }
+function saveAsTemplate(){ /* templates removed */ }
 
 function saveNewWorkplan(){
   const name = document.getElementById('wp-name').value.trim();
@@ -3821,7 +3864,7 @@ function saveNewWorkplan(){
 
   const projColour = PHASE_COLOURS[PROJECTS.length % PHASE_COLOURS.length];
   PROJECTS.push({ id:projId, caseCode:code, name, color:projColour, startDate:start, endDate:end||'',
-    members:[...wpSelectedMembers], workstreamDefs:definedWs, phases });
+    members:getOwnerFieldValue('wp-member-owner'), workstreamDefs:definedWs, phases });
 
   WP_LIST.push({ name, code, type:'both', progress:0, phase:phases[0].name, phaseColor:phases[0].color });
 
@@ -4019,15 +4062,15 @@ function openEditPhase(projId, phaseId){
   document.getElementById('edit-modal-body').innerHTML=`
     <div style="margin-bottom:14px;"><label style="${_lbl}">Phase Name</label><input id="edit-f1" class="fi" value="${(ph.name||'').replace(/"/g,'&quot;')}"></div>
     <div style="display:flex;gap:10px;margin-bottom:6px;align-items:flex-end;">
-      <div style="width:80px;"><label style="${_lbl}">Start Wk</label><input id="edit-f2" class="fi" type="number" min="1" value="${ph.startWk}" oninput="_phaseWkToDate('start')"></div>
       <div style="flex:1;"><label style="${_lbl}">Start date</label><input id="edit-f2d" class="fi" type="date" value="${sDate.toISOString().slice(0,10)}" onchange="_phaseDateToWk('start')"></div>
+      <div style="width:80px;"><label style="${_lbl}">Start Wk</label><input id="edit-f2" class="fi" type="number" min="1" value="${ph.startWk}" oninput="_phaseWkToDate('start')"></div>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:14px;align-items:flex-end;">
-      <div style="width:80px;"><label style="${_lbl}">End Wk</label><input id="edit-f3" class="fi" type="number" min="1" value="${ph.endWk}" oninput="_phaseWkToDate('end')"></div>
       <div style="flex:1;"><label style="${_lbl}">End date</label><input id="edit-f3d" class="fi" type="date" value="${eDate.toISOString().slice(0,10)}" onchange="_phaseDateToWk('end')"></div>
+      <div style="width:80px;"><label style="${_lbl}">End Wk</label><input id="edit-f3" class="fi" type="number" min="1" value="${ph.endWk}" oninput="_phaseWkToDate('end')"></div>
     </div>
+    <div id="phase-proj-share" style="margin-bottom:14px;"></div>
     <div style="margin-bottom:14px;"><label style="${_lbl}">Colour</label><div style="display:flex;gap:8px;flex-wrap:wrap;" id="edit-colour-row">${colourOpts}</div><input type="hidden" id="edit-f4" value="${ph.color}"></div>
-    <div id="phase-proj-share" style="font-size:11px;color:var(--mid);margin-bottom:14px;"></div>
     <div style="border-top:1px dashed var(--border);padding-top:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="_toggleDownstream()">
         <span style="${_lbl}margin-bottom:0;">Tasks in this phase</span>
@@ -4038,16 +4081,27 @@ function openEditPhase(projId, phaseId){
   document.getElementById('edit-modal').style.display='flex';
   _updatePhaseProjShare();
 }
+// Render a dotted-outline bar showing the whole project length with a filled
+// segment positioned where this span (phase or task) sits within it.
+function spanBarHTML(spanStart, spanLen, totalLen, colour, caption){
+  totalLen=Math.max(1,totalLen); spanLen=Math.max(1,spanLen);
+  const leftPct=Math.max(0,Math.min(100,(spanStart-1)/totalLen*100));
+  const wPct=Math.max(3,Math.min(100-leftPct,spanLen/totalLen*100));
+  const pct=Math.round(spanLen/totalLen*100);
+  return `<div style="font-size:11px;color:var(--mid);margin-bottom:6px;">${caption} — <b style="color:var(--ink);">${spanLen} wk${spanLen>1?'s':''}</b> · ${pct}% of ${totalLen} wks</div>
+    <div style="position:relative;height:18px;border:1.5px dashed var(--border);border-radius:5px;background:repeating-linear-gradient(90deg,transparent,transparent 6px,rgba(0,0,0,.03) 6px,rgba(0,0,0,.03) 7px);">
+      <div style="position:absolute;top:2px;bottom:2px;left:${leftPct}%;width:${wPct}%;background:${colour};border-radius:3px;opacity:.9;"></div>
+    </div>`;
+}
 function _updatePhaseProjShare(){
   const el=document.getElementById('phase-proj-share'); if(!el||!editCtx) return;
   const p=_findProj(editCtx.projId); if(!p) return;
+  const ph=p.phases.find(x=>x.id===editCtx.phaseId);
   const sw=parseInt(document.getElementById('edit-f2').value)||1;
   const ew=parseInt(document.getElementById('edit-f3').value)||sw;
   const span=Math.max(1, ew-sw+1);
-  // Total project length = span from week 1 to the latest phase end week
   const projLen=Math.max(span, ...p.phases.map(x=>x.endWk), 1);
-  const pct=Math.round(span/projLen*100);
-  el.textContent=`This phase spans ${span} week${span>1?'s':''} — about ${pct}% of the entire project (${projLen} week${projLen>1?'s':''}).`;
+  el.innerHTML=spanBarHTML(sw, span, projLen, (ph&&ph.color)||'#1A4F8F', 'This phase within the project');
 }
 function _phaseWkToDate(which){
   const p=_findProj(editCtx.projId); if(!p) return;
@@ -4258,7 +4312,7 @@ function openEditTask(projId, phaseId, wsId, taskId){
       <div style="flex:1;"><label style="${_lbl}">End date</label><input id="edit-f3e" class="fi" type="date" value="${endISO}" onchange="_taskEditDateToWk('end')"></div>
       ${isOther?'':`<div style="width:70px;"><label style="${_lbl}">End wk</label><input id="edit-f3ew" class="fi" type="number" min="1" value="${_ew}" oninput="_taskEditWkToDate('end')"></div>`}
     </div>
-    ${isOther?'':`<div id="task-phase-share" style="font-size:11px;color:var(--mid);margin-bottom:14px;"></div>`}
+    ${isOther?'':`<div id="task-phase-share" style="margin-bottom:14px;"></div>`}
     <div><label style="${_lbl}">Status</label><select id="edit-f4" class="fs">
       <option value="on-track" ${task.status==='on-track'?'selected':''}>On Track</option>
       <option value="at-risk" ${task.status==='at-risk'?'selected':''}>At Risk</option>
@@ -4294,8 +4348,9 @@ function _updateTaskPhaseShare(){
   const ew=parseInt(document.getElementById('edit-f3ew').value)||sw;
   const span=Math.max(1, ew-sw+1);
   const phLen=_taskEditPhaseCtx.phLen||1;
-  const pct=Math.round(span/phLen*100);
-  el.textContent=`This task spans ${span} week${span>1?'s':''} — about ${pct}% of its phase (${phLen} week${phLen>1?'s':''}).`;
+  // Position the task within its phase (offset from phase start)
+  const offset=Math.max(0, sw-_taskEditPhaseCtx.phStartWk)+1;
+  el.innerHTML=spanBarHTML(offset, span, phLen, '#1A7F4E', 'This task within its phase');
 }
 function _taskWkToDate(){
   const p=_findProj(editCtx.projId); if(!p) return;
