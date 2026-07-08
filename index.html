@@ -502,13 +502,14 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
         </span>
       </span>
       <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
-        <button class="btn-sm" id="gantt-timeline-btn" onclick="setGanttLayout('timeline')" title="Standard Gantt timeline" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Timeline</button>
+        <button class="btn-sm" id="gantt-timeline-btn" onclick="setGanttLayout('timeline')" title="Full Gantt timeline" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Full</button>
         <button class="btn-sm" id="gantt-collapsed-btn" onclick="setGanttLayout('collapsed')" title="Collapsed phase-arrow overview" style="border:none;border-radius:0;font-weight:600;">Collapsed</button>
       </span>
       <span style="display:inline-flex;align-items:center;gap:6px;">
         <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Show:</span>
         <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
           <button class="btn-sm" id="gantt-label-btn" onclick="toggleGanttLabels()" title="Show task/phase names on the bars" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Labels</button>
+          <button class="btn-sm" id="gantt-owners-btn" onclick="toggleGanttOwners()" title="Show an owners column with workstream members" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Owners</button>
           <button class="btn-sm" id="gantt-sidebar-btn" onclick="toggleGanttSidebar()" title="Toggle the left label columns" style="border:none;border-radius:0;font-weight:600;">Sidebar</button>
         </span>
       </span>
@@ -1448,8 +1449,9 @@ function wkToDate(projStartStr, wkNum) {
   return d;
 }
 const MON_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-function fmtDate(d){ return d.getDate()+' '+MON_SHORT[d.getMonth()]; }
-function fmtDateLong(d){ return d.getDate()+' '+MON_SHORT[d.getMonth()]+' '+d.getFullYear(); }
+function _validDate(d){ return (d instanceof Date) && !isNaN(d.getTime()); }
+function fmtDate(d){ if(!_validDate(d)) return ''; return d.getDate()+' '+MON_SHORT[d.getMonth()]; }
+function fmtDateLong(d){ if(!_validDate(d)) return ''; return d.getDate()+' '+MON_SHORT[d.getMonth()]+' '+d.getFullYear(); }
 function parseWkDue(s){ const m=String(s).match(/\d+/); return m?parseInt(m[0]):1; }
 
 // ---- TASK DATE HELPERS (start/end dates <-> project weeks, snapped to weeks) ----
@@ -2272,7 +2274,13 @@ function phaseTasksByDate(proj, ph){
 // ---- WORKPLAN DISPLAY TOGGLES: label bars + hide sidebar ----
 let ganttLabelBars = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_labels')==='1');
 let ganttHideSidebar = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_nosidebar')==='1');
+let ganttShowOwners = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_owners')==='1');
 let ganttLayout = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_layout')) || 'timeline';
+function toggleGanttOwners(){
+  ganttShowOwners=!ganttShowOwners;
+  try{ localStorage.setItem('wa_gantt_owners', ganttShowOwners?'1':'0'); }catch(e){}
+  renderGantt();
+}
 function setGanttLayout(mode){
   ganttLayout=mode;
   try{ localStorage.setItem('wa_gantt_layout', mode); }catch(e){}
@@ -2301,6 +2309,8 @@ function _syncGanttToggleButtons(){
   if(lb){ lb.style.background=ganttLabelBars?'var(--red)':'#fff'; lb.style.color=ganttLabelBars?'#fff':'var(--slate)'; lb.style.borderColor=ganttLabelBars?'var(--red)':'var(--border)'; }
   const sb=document.getElementById('gantt-sidebar-btn');
   if(sb){ const on=!ganttHideSidebar; sb.style.background=on?'var(--red)':'#fff'; sb.style.color=on?'#fff':'var(--slate)'; sb.style.borderColor=on?'var(--red)':'var(--border)'; }
+  const ob=document.getElementById('gantt-owners-btn');
+  if(ob){ ob.style.background=ganttShowOwners?'var(--red)':'#fff'; ob.style.color=ganttShowOwners?'#fff':'var(--slate)'; ob.style.borderColor=ganttShowOwners?'var(--red)':'var(--border)'; }
   const tb=document.getElementById('gantt-timeline-btn'), cb=document.getElementById('gantt-collapsed-btn');
   if(tb){ const on=ganttLayout==='timeline'; tb.style.background=on?'var(--red)':'#fff'; tb.style.color=on?'#fff':'var(--slate)'; }
   if(cb){ const on=ganttLayout==='collapsed'; cb.style.background=on?'var(--red)':'#fff'; cb.style.color=on?'#fff':'var(--slate)'; }
@@ -2535,7 +2545,7 @@ function renderGantt(){
   const todayInRange = now>=gridStart && now<=gridEnd;
   const todayOffset = Math.round((now - gridStart) / (7*24*60*60*1000) * WW);
   const _mobile = (typeof window!=='undefined' && window.innerWidth && window.innerWidth<=720);
-  const LW = _mobile ? 190 : 380; // label + progress
+  const LW = _mobile ? 190 : (ganttShowOwners ? 460 : 400); // label + progress
   const PROG_W = _mobile ? 56 : 70; // progress column width
 
   let tableRows = '';
@@ -2599,9 +2609,16 @@ function renderGantt(){
         <span style="font-size:10px;font-weight:800;color:${phCol};min-width:28px;text-align:right;">${phPct}%</span>
       </div>`;
     } else if (row.type==='ws') {
+      const _wsMem = ganttShowOwners && (row.ws.members||[]).length
+        ? `<span style="display:inline-flex;gap:2px;margin-left:6px;">`+(row.ws.members||[]).map(o=>{
+            const m=TEAM.find(x=>x.initials===o||x.name===o); const c=m?m.color:'#888'; const ini=m?m.initials:o;
+            return `<span title="${(m?m.name:o)}" style="font-size:8px;font-weight:800;background:${c};color:#fff;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;">${ini}</span>`;
+          }).join('')+`</span>`
+        : '';
       labelInner=`<div style="padding:4px 14px 4px 30px;display:flex;align-items:center;gap:6px;">
         <span onclick="event.stopPropagation();toggleGanttWs('${row.ws.id}')" title="Collapse / expand workstream" style="cursor:pointer;font-size:9px;color:var(--mid);display:inline-block;width:11px;transition:transform .15s;transform:rotate(${ganttCollapsed.has(row.ws.id)?'0':'90'}deg);flex-shrink:0;">&#9654;</span>
         <span onclick="event.stopPropagation();toggleGanttWs('${row.ws.id}')" style="cursor:pointer;font-size:11px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.04em;">${row.ws.name}</span>
+        ${_wsMem}
         <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;background:#EDEDED;padding:2px 6px;border-radius:4px;">Workstream</span>
           <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${row.proj.id}','${row.ph.id}','${row.ws.id}')">&#9998;</button>
@@ -2614,17 +2631,25 @@ function renderGantt(){
       const {task,proj,ph} = row;
       const isDone = taskDoneState[task.id]||task.done;
       const dueDate = wkToDate(proj.startDate, parseWkDue(task.due));
-      // Find team member for link
-      const member = TEAM.find(m=>m.initials===task.owner);
-      const ownerHTML = !task.owner ? '' : (member
-        ? `<span style="font-size:9px;font-weight:700;background:${member.color}22;border:1px solid ${member.color}44;border-radius:10px;padding:1px 6px;color:${member.color};cursor:pointer;flex-shrink:0;"
-            onclick="event.stopPropagation();showPage('team');setTimeout(()=>highlightTeamMember('${member.initials}'),100)">${task.owner}</span>`
-        : `<span style="font-size:9px;font-weight:700;background:#f0f0f0;border:1px solid #ddd;border-radius:10px;padding:1px 6px;color:#555;flex-shrink:0;">${task.owner}</span>`);
+      const _tr = taskDateRange(proj, ph, task);
+      const _dateLbl = `${fmtDate(new Date(_tr.startISO))} – ${fmtDate(new Date(_tr.endISO))}`;
+      // Owners = members of the task's workstream(s); shown only when the toggle is on
+      let ownerHTML = '';
+      if(ganttShowOwners){
+        const wsNames = taskWsNames(row.ws, task);
+        const mem = [];
+        wsNames.forEach(nm=>{ (proj.phases.flatMap(pp=>pp.workstreams).filter(w=>w.name===nm)).forEach(w=>(w.members||[]).forEach(mi=>{ if(!mem.includes(mi)) mem.push(mi); })); });
+        ownerHTML = mem.length ? `<span style="display:inline-flex;gap:2px;flex-shrink:0;">`+mem.map(o=>{
+          const m=TEAM.find(x=>x.initials===o||x.name===o); const c=m?m.color:'#888'; const ini=m?m.initials:o;
+          return `<span title="${(m?m.name:o)}" style="font-size:8px;font-weight:800;background:${c};color:#fff;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;">${ini}</span>`;
+        }).join('')+`</span>` : '';
+      }
       const _gm = (typeof document!=='undefined' && document.getElementById('gantt-group')) ? document.getElementById('gantt-group').value : 'phase';
       const _bubbles = _gm==='phase' ? wsBubbles(proj, row.ws, task) : '';
-      labelInner=`<div style="padding:5px 8px 5px 40px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        <span style="font-size:11px;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;font-weight:600;'}flex:1;min-width:90px;white-space:normal;word-break:break-word;line-height:1.35;">${isDone?'&#10003; ':''}${task.name}</span>
+      labelInner=`<div style="padding:5px 8px 5px 40px;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;font-weight:600;'}flex:1;min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;" title="${(task.name||'').replace(/"/g,'&quot;')}">${isDone?'&#10003; ':''}${task.name}</span>
         ${_bubbles}
+        <span style="font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0;">${_dateLbl}</span>
         ${ownerHTML}
         <button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>
       </div>`;
@@ -2888,10 +2913,11 @@ function _linkDatePair(startEl, endEl){
   } else { return; }
   const refresh=()=>{
     const s=_parseISO(startEl.value), e=_parseISO(endEl.value);
-    disp.querySelector('.rc-start').textContent = s?fmtDateLong(s):'Start date';
-    disp.querySelector('.rc-end').textContent   = e?fmtDateLong(e):'End date';
-    disp.querySelector('.rc-start').style.color = s?'var(--ink)':'var(--muted)';
-    disp.querySelector('.rc-end').style.color   = e?'var(--ink)':'var(--muted)';
+    const sOk=_validDate(s), eOk=_validDate(e);
+    disp.querySelector('.rc-start').textContent = sOk?fmtDateLong(s):'Start date';
+    disp.querySelector('.rc-end').textContent   = eOk?fmtDateLong(e):'End date';
+    disp.querySelector('.rc-start').style.color = sOk?'var(--ink)':'var(--muted)';
+    disp.querySelector('.rc-end').style.color   = eOk?'var(--ink)':'var(--muted)';
   };
   disp.querySelector('.rc-start').onclick=()=>_openRangeCalendar(startEl,endEl,disp,refresh);
   disp.querySelector('.rc-end').onclick  =()=>_openRangeCalendar(startEl,endEl,disp,refresh);
@@ -4260,10 +4286,11 @@ function closeNewWorkplan(){ document.getElementById('workplan-modal').style.dis
 // dropdown or typing a free-text name (then + or Enter) adds a chip.
 // Non-team names are allowed. State lives on the container's dataset.
 // ============================================================
-function mountOwnerField(containerId, initial){
+function mountOwnerField(containerId, initial, opts){
   const box = typeof containerId==='string' ? document.getElementById(containerId) : containerId;
   if(!box) return;
   box.dataset.owners = JSON.stringify(initial||[]);
+  if(opts && opts.noPlus) box.dataset.noplus='1'; else delete box.dataset.noplus;
   box.classList.add('owner-field');
   _renderOwnerField(box);
 }
@@ -4275,6 +4302,7 @@ function _renderOwnerField(box){
     const label = m?m.name.split(' ')[0]:o;
     return `<span style="display:inline-flex;align-items:center;gap:5px;background:${col}18;border:1px solid ${col}55;color:${col};border-radius:14px;padding:2px 6px 2px 9px;font-size:11px;font-weight:600;">${label}<span onclick="_ownerRemove(this)" data-o="${o.replace(/"/g,'&quot;')}" style="cursor:pointer;font-weight:800;">&times;</span></span>`;
   }).join('');
+  const hidePlus = box.dataset.noplus==='1';
   box.innerHTML = `
     <div style="position:relative;display:flex;gap:6px;align-items:center;">
       <div style="position:relative;flex:1;">
@@ -4283,7 +4311,7 @@ function _renderOwnerField(box){
           onkeydown="if(event.key==='Enter'){event.preventDefault();_ownerAddFromInput(this);}">
         <div class="owner-list" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:70;background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;box-shadow:0 6px 20px rgba(0,0,0,.12);max-height:190px;overflow-y:auto;"></div>
       </div>
-      <button type="button" class="btn-ghost owner-add" style="font-size:16px;padding:4px 12px;line-height:1;flex-shrink:0;" onclick="_ownerAddFromInput(this)">+</button>
+      ${hidePlus?'':`<button type="button" class="btn-ghost owner-add" style="font-size:16px;padding:4px 12px;line-height:1;flex-shrink:0;" onclick="_ownerAddFromInput(this)">+</button>`}
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:5px;${chips?'margin-top:6px;':''}" class="owner-chips">${chips}</div>`;
 }
@@ -4500,7 +4528,7 @@ function addWsRow(name, memberList){
     </div>
     <button onclick="this.closest('.wp-ws-row').remove();refreshPhaseWsHints()" title="Remove workstream" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;margin-top:18px;flex-shrink:0;">&#10005;</button>`;
   document.getElementById('ws-rows').appendChild(row);
-  mountOwnerField(row.querySelector('.wp-ws-owner'), members);
+  mountOwnerField(row.querySelector('.wp-ws-owner'), members, {noPlus:true});
   row.querySelector('.wp-ws-name').addEventListener('input', refreshPhaseWsHints);
 }
 function getDefinedWorkstreams(){
@@ -4901,9 +4929,10 @@ let _deleteArmed=false;
 function closeEditModal(){ document.getElementById('edit-modal').style.display='none'; editCtx=null; _deleteArmed=false; clearTimeout(window._delTimer); const b=document.getElementById('edit-delete-btn'); if(b){b.classList.remove('confirm');b.textContent='Delete';} }
 function _findProj(id){ return PROJECTS.find(p=>p.id===id); }
 
-function _memberChips(selected, cbName){
-  if(!TEAM.length) return '<span style="font-size:11px;color:var(--muted);">No team members yet.</span>';
-  return TEAM.map(m=>{
+function _memberChips(selected, pool){
+  const roster = (pool && pool.length) ? TEAM.filter(m=>pool.includes(m.initials)) : TEAM;
+  if(!roster.length) return '<span style="font-size:11px;color:var(--muted);">'+(pool?'No members on this project yet — add them in Edit Project.':'No team members yet.')+'</span>';
+  return roster.map(m=>{
     const on = selected.includes(m.initials);
     return `<div onclick="_toggleEditMember('${m.initials}')" data-init="${m.initials}" style="display:flex;align-items:center;gap:5px;padding:3px 9px 3px 3px;border:1.5px solid ${on?m.color:'var(--border)'};background:${on?m.color+'18':'#fff'};border-radius:20px;cursor:pointer;">
       <span style="width:18px;height:18px;border-radius:50%;background:${m.color};color:#fff;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;">${m.initials}</span>
@@ -4911,12 +4940,14 @@ function _memberChips(selected, cbName){
     </div>`;
   }).join('');
 }
+// pool for scoping the member picker in the current edit context
+let _memberPool = null;
 let _editMembers = [];
 function _toggleEditMember(init){
   const i=_editMembers.indexOf(init);
   if(i>=0)_editMembers.splice(i,1); else _editMembers.push(init);
   const wrap=document.getElementById('edit-members');
-  if(wrap) wrap.innerHTML=_memberChips(_editMembers);
+  if(wrap) wrap.innerHTML=_memberChips(_editMembers, _memberPool);
 }
 const _lbl='font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;';
 
@@ -4924,6 +4955,7 @@ const _lbl='font-size:11px;font-weight:700;color:var(--slate);text-transform:upp
 function openEditProject(projId){
   const p=_findProj(projId); if(!p) return;
   editCtx={type:'project',projId};
+  _memberPool=null; // Edit Project can choose from the whole team
   _editMembers=[...(p.members||[])];
   document.getElementById('edit-modal-title').textContent='Edit Project';
   document.getElementById('edit-modal-body').innerHTML=`
@@ -4936,10 +4968,66 @@ function openEditProject(projId){
         <input id="edit-f3" type="date" value="${p.startDate||''}" onchange="_projDatesChanged()">
         <input id="edit-f4" type="date" value="${p.endDate||''}" onchange="_projDatesChanged()"></div>
     </div>
-    <div><label style="${_lbl}">Team Members</label><div id="edit-members" style="display:flex;flex-wrap:wrap;gap:5px;">${_memberChips(_editMembers)}</div></div>`;
+    <div><label style="${_lbl}">Team Members</label><div id="edit-members" style="display:flex;flex-wrap:wrap;gap:5px;">${_memberChips(_editMembers)}</div></div>
+    <div style="border-top:1px dashed var(--border);padding-top:12px;margin-top:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="_toggleProjStructure()">
+        <span style="${_lbl}margin-bottom:0;">Phases, workstreams &amp; tasks</span>
+        <span id="projstruct-chev" style="font-size:11px;color:var(--mid);">Show &#9662;</span>
+      </div>
+      <div id="projstruct-box" style="display:none;margin-top:10px;"></div>
+    </div>`;
   const arch=document.getElementById('edit-archive-btn');
   if(arch){ arch.style.display='inline-flex'; arch.textContent = p.archived ? 'Unarchive' : 'Archive'; }
   document.getElementById('edit-modal').style.display='flex';
+}
+// Inline "phases, workstreams & tasks" editor inside Edit Project
+function _toggleProjStructure(){
+  const box=document.getElementById('projstruct-box');
+  const chev=document.getElementById('projstruct-chev');
+  const showing=box.style.display!=='none';
+  if(showing){ box.style.display='none'; chev.innerHTML='Show &#9662;'; return; }
+  box.style.display='block'; chev.innerHTML='Hide &#9652;';
+  _renderProjStructure();
+}
+function _renderProjStructure(){
+  const p=_findProj(editCtx.projId); const box=document.getElementById('projstruct-box'); if(!p||!box) return;
+  box.innerHTML = (p.phases||[]).map((ph,pi)=>{
+    const wsBlocks = ph.workstreams.map(ws=>{
+      const tasks = ws.tasks.map(t=>{
+        const isDone=taskDoneState[t.id]||t.done;
+        const r=taskDateRange(p,ph,t);
+        return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0 3px 14px;font-size:11px;">
+          <span style="color:${isDone?'#3E9C5F':t.status==='delayed'?'#D9535F':t.status==='at-risk'?'#D19A2E':'#2C9BC4'};font-weight:800;">•</span>
+          <span style="flex:1;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;'}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
+          <span style="font-size:9px;color:var(--muted);white-space:nowrap;">${fmtDate(new Date(r.startISO))}–${fmtDate(new Date(r.endISO))}</span>
+          <button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="openEditTask('${p.id}','${ph.id}','${ws.id}','${t.id}')">&#9998;</button>
+        </div>`;
+      }).join('') || '<div style="font-size:10px;color:var(--muted);padding:2px 0 2px 14px;">No tasks.</div>';
+      const c=wsColour(p,ws.name);
+      return `<div style="margin:4px 0 4px 10px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:9px;height:9px;border-radius:2px;background:${c};flex-shrink:0;"></span>
+          <span style="flex:1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:${c};">${ws.name}</span>
+          <button class="btn-ghost" style="font-size:9px;padding:2px 7px;" onclick="openAddTaskFor('${p.id}','${ph.id}','${ws.id}')">+ Task</button>
+          <button class="edit-btn" title="Edit workstream" onclick="openEditWorkstream('${p.id}','${ph.id}','${ws.id}')">&#9998;</button>
+        </div>
+        ${tasks}
+      </div>`;
+    }).join('');
+    return `<div style="border:1px solid var(--border);border-left:3px solid ${ph.color};border-radius:6px;padding:8px 10px;margin-bottom:8px;background:${ph.color}0C;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span style="width:18px;height:18px;border-radius:50%;border:2px solid ${ph.color};color:${ph.color};font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${pi+1}</span>
+        <span style="flex:1;font-size:12px;font-weight:800;color:#1A1A1A;">${ph.name}</span>
+        <span style="font-size:9px;color:var(--muted);">Wk ${ph.startWk}–${ph.endWk}</span>
+        <button class="edit-btn" title="Edit phase" onclick="openEditPhase('${p.id}','${ph.id}')">&#9998;</button>
+      </div>
+      ${wsBlocks || '<div style="font-size:10px;color:var(--muted);padding-left:10px;">No workstreams.</div>'}
+    </div>`;
+  }).join('') || '<div style="font-size:11px;color:var(--muted);">No phases yet.</div>';
+  box.innerHTML += `<div style="display:flex;gap:6px;margin-top:8px;">
+    <button class="btn-ghost btn-sm" onclick="addPhaseToProject('${p.id}')">+ Phase</button>
+    <button class="btn-ghost btn-sm" onclick="addWorkstreamToProject('${p.id}')">+ Workstream</button>
+  </div>`;
 }
 // Archive / unarchive the project currently open in the edit modal
 function editModalArchive(){
@@ -5082,13 +5170,15 @@ function _renderDownstreamTasks(){
       <div style="font-size:10px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">${ws.name}</div>
       ${ws.tasks.length? ws.tasks.map(t=>{
         const isDone=taskDoneState[t.id]||t.done;
-        const ownerOpts=TEAM.map(m=>`<option value="${m.initials}" ${t.owner===m.initials?'selected':''}>${m.initials}</option>`).join('');
         const r=taskDateRange(p,ph,t);
+        const dur=Math.max(1, (r.endWk||r.startWk||1)-(r.startWk||1)+1) || (t.durWk||1);
         return `<div class="ds-task" data-tid="${t.id}" style="display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
-          <input class="fi ds-name" style="flex:1;min-width:140px;font-size:12px;padding:5px 8px;${isDone?'text-decoration:line-through;color:#aaa;':''}" value="${(t.name||'').replace(/"/g,'&quot;')}">
-          <select class="fs ds-owner" style="width:60px;font-size:12px;padding:5px 4px;"><option value="">—</option>${ownerOpts}</select>
+          <input class="fi ds-name" style="flex:1;min-width:160px;font-size:12px;padding:5px 8px;${isDone?'text-decoration:line-through;color:#aaa;':''}" value="${(t.name||'').replace(/"/g,'&quot;')}">
           <input class="fi ds-start" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.startISO}" title="Start date">
-          <input class="fi ds-end" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.endISO}" title="End date">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <input class="fi ds-dur" type="number" min="1" style="width:52px;font-size:12px;padding:5px 4px;" value="${dur}" title="Duration in weeks">
+            <span style="font-size:10px;color:var(--muted);">wks</span>
+          </div>
           <button onclick="_removeDownstreamTask('${t.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">&#10005;</button>
         </div>`;
       }).join('') : '<div style="font-size:11px;color:var(--muted);margin-bottom:5px;">No tasks yet.</div>'}
@@ -5118,14 +5208,12 @@ function _commitDownstreamTasks(){
   document.querySelectorAll('#downstream-box .ds-task').forEach(row=>{
     const tid=row.dataset.tid;
     const name=row.querySelector('.ds-name').value.trim();
-    const owner=row.querySelector('.ds-owner').value;
     let sISO=row.querySelector('.ds-start').value||todayISO;
-    let eISO=row.querySelector('.ds-end').value||sISO;
-    if(new Date(eISO)<new Date(sISO)) eISO=sISO;
-    const startWk=dateToWk(ps,sISO), endWk=dateToWk(ps,eISO);
+    const startWk=dateToWk(ps,sISO);
+    const dur=Math.max(1, parseInt(row.querySelector('.ds-dur').value)||1);
     ph.workstreams.forEach(ws=>{
       const t=ws.tasks.find(x=>x.id===tid);
-      if(t){ t.name=name||t.name; t.owner=owner; t.due='Wk '+startWk; t.durWk=Math.max(1,endWk-startWk+1); }
+      if(t){ t.name=name||t.name; t.due='Wk '+startWk; t.durWk=dur; }
     });
   });
   ph.workstreams.forEach(ws=>{ ws.tasks=ws.tasks.filter(t=>t.name && t.name.trim()); });
@@ -5144,11 +5232,12 @@ function openEditWorkstream(projId, phaseId, wsId){
   const ws=ph.workstreams.find(x=>x.id===wsId); if(!ws) return;
   editCtx={type:'ws',projId,phaseId,wsId};
   const _ab=document.getElementById('edit-archive-btn'); if(_ab) _ab.style.display='none';
+  _memberPool=[...(p.members||[])]; // workstream members come from the project roster
   _editMembers=[...(ws.members||[])];
   document.getElementById('edit-modal-title').textContent='Edit Workstream';
   document.getElementById('edit-modal-body').innerHTML=`
     <div style="margin-bottom:14px;"><label style="${_lbl}">Workstream Name</label><input id="edit-f1" class="fi" value="${(ws.name||'').replace(/"/g,'&quot;')}"></div>
-    <div style="margin-bottom:6px;"><label style="${_lbl}">Members</label><div id="edit-members" style="display:flex;flex-wrap:wrap;gap:5px;">${_memberChips(_editMembers)}</div></div>
+    <div style="margin-bottom:6px;"><label style="${_lbl}">Members</label><div id="edit-members" style="display:flex;flex-wrap:wrap;gap:5px;">${_memberChips(_editMembers, _memberPool)}</div></div>
     <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mid);cursor:pointer;margin-top:8px;"><input type="checkbox" id="edit-f2" style="accent-color:var(--red);"> Apply name change to this workstream in all phases</label>
     <div style="border-top:1px dashed var(--border);padding-top:12px;margin-top:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="_toggleWsDownstream()">
@@ -5173,13 +5262,15 @@ function _renderWsDownstream(){
   const ws=ph.workstreams.find(x=>x.id===editCtx.wsId);
   const box=document.getElementById('wsds-box');
   box.innerHTML = (ws.tasks.length? ws.tasks.map(t=>{
-    const ownerOpts=TEAM.map(m=>`<option value="${m.initials}" ${t.owner===m.initials?'selected':''}>${m.initials}</option>`).join('');
     const r=taskDateRange(p,ph,t);
+    const dur=Math.max(1, (r.endWk||r.startWk||1)-(r.startWk||1)+1) || (t.durWk||1);
     return `<div class="wsds-task" data-tid="${t.id}" style="display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
-      <input class="fi wsds-name" style="flex:1;min-width:140px;font-size:12px;padding:5px 8px;" value="${(t.name||'').replace(/"/g,'&quot;')}">
-      <select class="fs wsds-owner" style="width:60px;font-size:12px;padding:5px 4px;"><option value="">—</option>${ownerOpts}</select>
+      <input class="fi wsds-name" style="flex:1;min-width:160px;font-size:12px;padding:5px 8px;" value="${(t.name||'').replace(/"/g,'&quot;')}">
       <input class="fi wsds-start" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.startISO}" title="Start date">
-      <input class="fi wsds-end" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.endISO}" title="End date">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <input class="fi wsds-dur" type="number" min="1" style="width:52px;font-size:12px;padding:5px 4px;" value="${dur}" title="Duration in weeks">
+        <span style="font-size:10px;color:var(--muted);">wks</span>
+      </div>
       <button onclick="_removeWsTask('${t.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">&#10005;</button>
     </div>`;
   }).join('') : '<div style="font-size:11px;color:var(--muted);margin-bottom:5px;">No tasks yet.</div>') +
@@ -5212,12 +5303,10 @@ function _commitWsTasks(){
     const t=ws.tasks.find(x=>x.id===tid);
     if(t){
       t.name=row.querySelector('.wsds-name').value.trim()||t.name;
-      t.owner=row.querySelector('.wsds-owner').value;
       let sISO=row.querySelector('.wsds-start').value||todayISO;
-      let eISO=row.querySelector('.wsds-end').value||sISO;
-      if(new Date(eISO)<new Date(sISO)) eISO=sISO;
-      const startWk=dateToWk(ps,sISO), endWk=dateToWk(ps,eISO);
-      t.due='Wk '+startWk; t.durWk=Math.max(1,endWk-startWk+1);
+      const startWk=dateToWk(ps,sISO);
+      const dur=Math.max(1, parseInt(row.querySelector('.wsds-dur').value)||1);
+      t.due='Wk '+startWk; t.durWk=dur;
     }
   });
   ws.tasks=ws.tasks.filter(t=>t.name && t.name.trim());
