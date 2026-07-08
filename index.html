@@ -630,10 +630,10 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
         <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Case Code</label>
           <input id="wp-code" class="fi" placeholder="e.g. CT-0731"></div>
       </div>
-      <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;">
-        <div style="width:140px;flex-shrink:0;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Duration (# of weeks)</label>
+      <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-end;">
+        <div style="width:120px;flex-shrink:0;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;height:26px;line-height:13px;">Duration<br>(# of weeks)</label>
           <input id="wp-weeks" class="fi" type="number" min="1" placeholder="12" oninput="_wpWeeksChanged()"></div>
-        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Project dates</label>
+        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;height:26px;line-height:13px;">Project dates</label>
           <input id="wp-start" type="date" onchange="_wpDatesChanged()">
           <input id="wp-end" type="date" onchange="_wpDatesChanged()"></div>
       </div>
@@ -3598,7 +3598,9 @@ function onTaskPhaseChange(){
   const ph = proj ? proj.phases.find(x=>x.id===phid) : null;
   const wsSel = document.getElementById('task-ws');
   if(!ph){ wsSel.innerHTML=''; return; }
-  wsSel.innerHTML = ph.workstreams.map(ws=>`<option value="${ws.id}">${ws.name}</option>`).join('');
+  wsSel.innerHTML = ph.workstreams.length
+    ? ph.workstreams.map(ws=>`<option value="${ws.id}">${ws.name}</option>`).join('')
+    : '<option value="">Default workstream (created on save)</option>';
   wsSel.onchange = renderTaskOwnerBubbles;
   renderTaskOwnerBubbles();
 }
@@ -3724,7 +3726,17 @@ function saveTask(){
   } else {
     const wsid = document.getElementById('task-ws').value;
     ws = ph.workstreams.find(x=>x.id===wsid);
-    if(!ws){ alert('Please select or create a workstream.'); return; }
+    // If the phase has no workstreams (or none selected), create a default one
+    // so a task can always be added rather than silently blocking.
+    if(!ws){
+      if(ph.workstreams.length){ ws = ph.workstreams[0]; }
+      else {
+        ws = { id:'ws'+Date.now(), name:'Workstream 1', members:[], tasks:[] };
+        ph.workstreams.push(ws);
+        if(!proj.workstreamDefs) proj.workstreamDefs = [];
+        if(!proj.workstreamDefs.some(w=>w.name===ws.name)) proj.workstreamDefs.push({name:ws.name, members:[]});
+      }
+    }
   }
   ws.tasks.push({ id:tid, name, owner, due, durWk:_rd.durWk, status, done:false });
   taskDoneState[tid] = false;
@@ -4404,12 +4416,41 @@ function openEditProject(projId){
   document.getElementById('edit-modal-body').innerHTML=`
     <div style="margin-bottom:14px;"><label style="${_lbl}">Case Name</label><input id="edit-f1" class="fi" value="${(p.name||'').replace(/"/g,'&quot;')}"></div>
     <div style="margin-bottom:14px;"><label style="${_lbl}">Case Code</label><input id="edit-f2" class="fi" value="${(p.caseCode||'').replace(/"/g,'&quot;')}"></div>
-    <div style="display:flex;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><label style="${_lbl}">Start Date</label><input id="edit-f3" class="fi" type="date" value="${p.startDate||''}"></div>
-      <div style="flex:1;"><label style="${_lbl}">End Date</label><input id="edit-f4" class="fi" type="date" value="${p.endDate||''}"></div>
+    <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-end;">
+      <div style="width:120px;flex-shrink:0;"><label style="${_lbl}height:26px;line-height:13px;">Duration<br>(# of weeks)</label>
+        <input id="edit-projdur" class="fi" type="number" min="1" value="${_projDurWks(p)}" oninput="_projDurationChanged()"></div>
+      <div style="flex:1;"><label style="${_lbl}height:26px;line-height:13px;">Project dates</label>
+        <input id="edit-f3" type="date" value="${p.startDate||''}" onchange="_projDatesChanged()">
+        <input id="edit-f4" type="date" value="${p.endDate||''}" onchange="_projDatesChanged()"></div>
     </div>
     <div><label style="${_lbl}">Team Members</label><div id="edit-members" style="display:flex;flex-wrap:wrap;gap:5px;">${_memberChips(_editMembers)}</div></div>`;
   document.getElementById('edit-modal').style.display='flex';
+}
+// Weeks between the project's start and end dates (min 1)
+function _projDurWks(p){
+  if(!p.startDate || !p.endDate) return '';
+  const w=Math.round((new Date(p.endDate)-new Date(p.startDate))/(7*24*60*60*1000));
+  return Math.max(1, w);
+}
+// Duration changed in Edit Project -> recompute end date from start
+function _projDurationChanged(){
+  const s=document.getElementById('edit-f3').value;
+  const wks=parseInt(document.getElementById('edit-projdur').value);
+  if(s && wks){
+    const d=new Date(s); d.setDate(d.getDate()+wks*7-1);
+    const eEl=document.getElementById('edit-f4');
+    eEl.value=d.toISOString().slice(0,10);
+    if(eEl._rcRefresh) eEl._rcRefresh();
+  }
+}
+// Dates changed in Edit Project -> recompute duration
+function _projDatesChanged(){
+  const s=document.getElementById('edit-f3').value;
+  const e=document.getElementById('edit-f4').value;
+  if(s && e){
+    const wks=Math.max(1, Math.round((new Date(e)-new Date(s))/(7*24*60*60*1000)));
+    document.getElementById('edit-projdur').value=wks;
+  }
 }
 
 // ---- PHASE (with date<->week fields + expandable downstream task editor) ----
@@ -4681,32 +4722,27 @@ function openEditTask(projId, phaseId, wsId, taskId){
   const _phLen = ph ? (ph.endWk-ph.startWk+1) : 0;
   document.getElementById('edit-modal-body').innerHTML=`
     <div style="margin-bottom:14px;"><label style="${_lbl}">Task Name</label><input id="edit-f1" class="fi" value="${(task.name||'').replace(/"/g,'&quot;')}"></div>
-    <div style="margin-bottom:14px;"><label style="${_lbl}">Owner</label><select id="edit-f2" class="fs">${ownerOpts}</select></div>
     <div style="margin-bottom:6px;"><label style="${_lbl}">Task dates</label>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+        ${isOther?'':`<div style="width:150px;flex-shrink:0;">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Duration (# of weeks)</div>
+          <input id="edit-tkdur" class="fi" type="number" min="1" value="${Math.max(1,(_ew||_sw||1)-(_sw||1)+1)}" title="Duration in weeks" oninput="_taskEditDurationChanged()">
+        </div>`}
         <div style="flex:1;min-width:200px;">
+          ${isOther?'':`<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Dates</div>`}
           <input id="edit-f3s" type="date" value="${startISO}" onchange="_taskEditDateToWk('start')">
           <input id="edit-f3e" type="date" value="${endISO}" onchange="_taskEditDateToWk('end')">
         </div>
-        ${isOther?'':`<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
-          <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Wk</span>
-          <input id="edit-f3sw" class="fi" type="number" min="1" value="${_sw}" title="Start week" style="width:56px;" oninput="_taskEditWkToDate('start')">
-          <span style="color:var(--muted);">&ndash;</span>
-          <input id="edit-f3ew" class="fi" type="number" min="1" value="${_ew}" title="End week" style="width:56px;" oninput="_taskEditWkToDate('end')">
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
-          <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Duration</span>
-          <input id="edit-tkdur" class="fi" type="number" min="1" value="${Math.max(1,(_ew||_sw||1)-(_sw||1)+1)}" title="Duration in weeks" style="width:56px;" oninput="_taskEditDurationChanged()">
-          <span style="font-size:10px;color:var(--muted);">wks</span>
-        </div>`}
       </div>
+      ${isOther?'':`<input type="hidden" id="edit-f3sw" value="${_sw}"><input type="hidden" id="edit-f3ew" value="${_ew}">`}
     </div>
     ${isOther?'':`<div id="task-phase-share" style="margin-bottom:14px;"></div>`}
-    <div><label style="${_lbl}">Status</label><select id="edit-f4" class="fs">
+    <div style="margin-bottom:14px;"><label style="${_lbl}">Status</label><select id="edit-f4" class="fs">
       <option value="on-track" ${task.status==='on-track'?'selected':''}>On Track</option>
       <option value="at-risk" ${task.status==='at-risk'?'selected':''}>At Risk</option>
       <option value="delayed" ${task.status==='delayed'?'selected':''}>Delayed</option>
-    </select></div>`;
+    </select></div>
+    <div><label style="${_lbl}">Owner</label><select id="edit-f2" class="fs">${ownerOpts}</select></div>`;
   document.getElementById('edit-modal').style.display='flex';
   if(!isOther){ _taskEditPhaseCtx={ projStart:p.startDate, phStartWk:ph?ph.startWk:1, phEndWk:ph?ph.endWk:1, phLen:_phLen }; _updateTaskPhaseShare(); }
 }
