@@ -458,13 +458,17 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
   <div class="tasks-toolbar" style="position:sticky;top:52px;background:var(--surface);z-index:50;padding:12px 0;margin-bottom:10px;">
     <div class="tasks-title">Tasks</div>
     <select class="fsel" id="proj-filter" onchange="renderTasks()"><option value="all">All Projects</option></select>
-    <select class="fsel" id="status-filter" onchange="renderTasks()">
-      <option value="all">All Statuses</option>
-      <option value="on-track">On Track</option>
-      <option value="at-risk">At Risk</option>
-      <option value="delayed">Delayed</option>
-      <option value="done">Done</option>
-    </select>
+    <div style="position:relative;display:inline-block;">
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('status-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="status-filter-set-label">All Statuses</span> &#9662;</button>
+      <div class="filter-menu" id="status-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:160px;" onclick="event.stopPropagation();">
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="on-track" onchange="_toggleFilterVal('status-filter-set','on-track',renderTasks)" style="accent-color:#2C9BC4;"><span style="width:10px;height:10px;border-radius:50%;background:#2C9BC4;flex-shrink:0;"></span> On Track</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="at-risk" onchange="_toggleFilterVal('status-filter-set','at-risk',renderTasks)" style="accent-color:#D19A2E;"><span style="width:10px;height:10px;border-radius:50%;background:#D19A2E;flex-shrink:0;"></span> At Risk</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="delayed" onchange="_toggleFilterVal('status-filter-set','delayed',renderTasks)" style="accent-color:#D9535F;"><span style="width:10px;height:10px;border-radius:50%;background:#D9535F;flex-shrink:0;"></span> Delayed</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="done" onchange="_toggleFilterVal('status-filter-set','done',renderTasks)" style="accent-color:#3E9C5F;"><span style="width:10px;height:10px;border-radius:50%;background:#3E9C5F;flex-shrink:0;"></span> Done</label>
+        <div onclick="_clearFilterSet('status-filter-set',renderTasks);document.querySelectorAll('#status-menu input').forEach(c=>c.checked=false);" style="padding:6px 8px;font-size:11px;color:var(--red);cursor:pointer;border-top:1px solid var(--border);margin-top:4px;">Clear</div>
+      </div>
+      <span id="status-filter-set" data-sel="[]" style="display:none;"></span>
+    </div>
     <select class="fsel" id="task-ws-filter" onchange="renderTasks()">
       <option value="all">All Workstreams</option>
     </select>
@@ -472,14 +476,11 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <option value="phase">Group: Phase</option>
       <option value="ws">Group: Workstream</option>
     </select>
-    <select class="fsel" id="owner-filter" onchange="renderTasks()">
-      <option value="all">All Owners</option>
-      <option value="WZ">Me (WZ)</option>
-      <option value="JL">Jamie Liu</option>
-      <option value="SP">Sam Patel</option>
-      <option value="RC">Riley Chen</option>
-      <option value="DK">Drew Kim</option>
-    </select>
+    <div style="position:relative;display:inline-block;">
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('owner-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="owner-filter-set-label">All Owners</span> &#9662;</button>
+      <div class="filter-menu" id="owner-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:180px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
+      <span id="owner-filter-set" data-sel="[]" style="display:none;"></span>
+    </div>
     <button class="btn-ghost btn-sm" onclick="clearTaskFilters()" title="Reset all filters" style="margin-left:6px;">Clear filters</button>
   </div>
   <div id="tasks-content"></div>
@@ -523,10 +524,9 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       </select>
       <div style="position:relative;display:inline-block;">
         <button class="btn-sm" onclick="toggleExportMenu(event)" style="border-color:var(--red);color:var(--red);font-weight:700;">Export &#9662;</button>
-        <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:200px;">
-          <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export timeline to PowerPoint</div>
-          <div onclick="_exportChoice('collapsed')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export simple view to PowerPoint</div>
-          <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel</div>
+        <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:220px;">
+          <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to PowerPoint (full + simple)</div>
+          <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel (full + simple)</div>
         </div>
       </div>
     </div>
@@ -540,13 +540,17 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
     <select class="fsel" id="gantt-ws-filter" onchange="renderGantt()">
       <option value="all">All Workstreams</option>
     </select>
-    <select class="fsel" id="gantt-status-filter" onchange="renderGantt()">
-      <option value="all">All Statuses</option>
-      <option value="on-track">On Track</option>
-      <option value="at-risk">At Risk</option>
-      <option value="delayed">Delayed</option>
-      <option value="done">Done</option>
-    </select>
+    <div style="position:relative;display:inline-block;">
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-status-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-status-set-label">All Statuses</span> &#9662;</button>
+      <div class="filter-menu" id="gantt-status-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:160px;" onclick="event.stopPropagation();">
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="on-track" onchange="_toggleFilterVal('gantt-status-set','on-track',renderGantt)" style="accent-color:#2C9BC4;"><span style="width:10px;height:10px;border-radius:50%;background:#2C9BC4;flex-shrink:0;"></span> On Track</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="at-risk" onchange="_toggleFilterVal('gantt-status-set','at-risk',renderGantt)" style="accent-color:#D19A2E;"><span style="width:10px;height:10px;border-radius:50%;background:#D19A2E;flex-shrink:0;"></span> At Risk</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="delayed" onchange="_toggleFilterVal('gantt-status-set','delayed',renderGantt)" style="accent-color:#D9535F;"><span style="width:10px;height:10px;border-radius:50%;background:#D9535F;flex-shrink:0;"></span> Delayed</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="done" onchange="_toggleFilterVal('gantt-status-set','done',renderGantt)" style="accent-color:#3E9C5F;"><span style="width:10px;height:10px;border-radius:50%;background:#3E9C5F;flex-shrink:0;"></span> Done</label>
+        <div onclick="_clearFilterSet('gantt-status-set',renderGantt);document.querySelectorAll('#gantt-status-menu input').forEach(c=>c.checked=false);" style="padding:6px 8px;font-size:11px;color:var(--red);cursor:pointer;border-top:1px solid var(--border);margin-top:4px;">Clear</div>
+      </div>
+      <span id="gantt-status-set" data-sel="[]" style="display:none;"></span>
+    </div>
     <button class="btn-ghost btn-sm" onclick="clearGanttFilters()" title="Reset all filters">Clear filters</button>
     </div>
   </div>
@@ -754,6 +758,27 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <button onclick="document.getElementById('member-profile-modal').style.display='none'" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
     </div>
     <div style="padding:20px 24px;" id="member-profile-body"></div>
+  </div>
+</div>
+
+<!-- EXPORT PROJECT PICKER MODAL -->
+<div id="export-pick-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:260;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.13);width:100%;max-width:420px;max-height:88vh;overflow-y:auto;">
+    <div style="padding:18px 22px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:15px;font-weight:800;" id="export-pick-title">Choose projects to export</div>
+      <button onclick="document.getElementById('export-pick-modal').style.display='none'" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
+    </div>
+    <div style="padding:14px 22px;">
+      <div style="font-size:12px;color:var(--mid);margin-bottom:10px;">Each selected project becomes a full-workplan and a simple-view slide/sheet.</div>
+      <div id="export-pick-list" style="display:flex;flex-direction:column;gap:2px;"></div>
+    </div>
+    <div style="padding:12px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <label style="font-size:12px;color:var(--slate);display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="export-pick-all" onchange="_exportPickToggleAll(this.checked)" style="accent-color:var(--red);"> Select all</label>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="document.getElementById('export-pick-modal').style.display='none'">Cancel</button>
+        <button class="btn-red" onclick="_exportPickConfirm()">Export</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1512,7 +1537,7 @@ allFlatTasks().forEach(t=>{
 const taskDoneState = APP.taskDoneState;
 
 function renderFocus(){ renderDashboard(); }
-function toggleFocus(id){taskDoneState[id]=!taskDoneState[id];APP.taskDoneState=taskDoneState;const _t=allFlatTasks().find(x=>x.id===id);pushFeed(`${taskDoneState[id]?'Completed':'Reopened'}: ${_t?_t.name:'A task'}`, taskDoneState[id]?'#1A7F4E':'#D69200');saveData();renderDashboard();}
+function toggleFocus(id){taskDoneState[id]=!taskDoneState[id];APP.taskDoneState=taskDoneState;APP.taskDoneDates=APP.taskDoneDates||{};if(taskDoneState[id])APP.taskDoneDates[id]=new Date().toISOString();else delete APP.taskDoneDates[id];const _t=allFlatTasks().find(x=>x.id===id);pushFeed(`${taskDoneState[id]?'Completed':'Reopened'}: ${_t?_t.name:'A task'}`, taskDoneState[id]?'#1A7F4E':'#D69200');saveData();renderDashboard();}
 
 // ============================================================
 // CONFIGURABLE DASHBOARD
@@ -1578,29 +1603,61 @@ function updateHealthStrip(){
   set('hs-prog-sub', done+' of '+all.length+' tasks done');
 }
 
-function buildFocus(){
-  const mine = allFlatTasks().filter(t=>t.owner==='WZ' || (t.owner&&t.owner.split(',').map(s=>s.trim()).includes('WZ')));
-  if(!mine.length) return '<div style="font-size:13px;color:var(--muted);padding:8px 0;">No tasks assigned to you yet.</div>';
-  const todayISO = new Date().toISOString().slice(0,10);
-  // Determine each task's end date to decide "due today"
-  const withDates = mine.map(t=>{
-    let endISO = t.endDate || t.dueDate || '';
-    if(!endISO && t.projectId!=='__other__'){
-      const proj = PROJECTS.find(p=>p.id===t.projectId);
-      const ph = proj && proj.phases.find(x=>x.workstreams.some(w=>w.tasks.some(tk=>tk.id===t.id)));
-      if(proj && ph){ const r=taskDateRange(proj,ph,ph.workstreams.flatMap(w=>w.tasks).find(tk=>tk.id===t.id)); endISO=r.endISO; }
-    }
-    return {...t, _end:endISO};
+// My tasks (owner = member of the task's workstream), each with a resolved end date
+function _myTasksWithDates(who){
+  who = who || 'WZ';
+  const out=[];
+  PROJECTS.filter(p=>!p.archived).forEach(p=>{
+    p.phases.forEach(ph=>ph.workstreams.forEach(ws=>{
+      ws.tasks.forEach(t=>{
+        if(!_taskOwners(p,ws,t).includes(who)) return;
+        const r=taskDateRange(p,ph,t);
+        out.push({ id:t.id, name:t.name, status:t.status, caseCode:p.caseCode,
+          phaseName:ph.name, wsName:ws.name, _start:r.startISO, _end:r.endISO });
+      });
+    }));
   });
+  // Other (non-casework) tasks keep their own text owner
+  (APP.otherTasks||[]).forEach(t=>{
+    if(!(t.owner && t.owner.split(',').map(s=>s.trim()).includes(who))) return;
+    const endISO = t.endDate || t.dueDate || '';
+    out.push({ id:t.id, name:t.name, status:t.status, caseCode:'Other', phaseName:'', wsName:'', _start:t.startDate||t.dueDate||'', _end:endISO });
+  });
+  return out;
+}
+function buildFocus(){
+  const mine = _myTasksWithDates('WZ');
+  if(!mine.length) return '<div style="font-size:13px;color:var(--muted);padding:8px 0;">No tasks assigned to your workstreams yet.</div>';
   const isDone=t=>!!taskDoneState[t.id];
-  const dueTodaySet = withDates.filter(t=>!isDone(t) && t._end===todayISO);
-  const others = withDates.filter(t=>!isDone(t) && t._end!==todayISO);
-  const completed = withDates.filter(isDone);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayISO=today.toISOString().slice(0,10);
+  const weekEnd=new Date(today); weekEnd.setDate(today.getDate()+(7-((today.getDay()+6)%7)) -1); // end of this week (Sun)
+  const _d=iso=> iso? new Date(iso+'T00:00:00') : null;
 
+  const open = mine.filter(t=>!isDone(t));
+  const completed = mine.filter(isDone);
+  // 1. At Risk / Delayed (mine, open)
+  const risk = open.filter(t=>t.status==='delayed'||t.status==='at-risk')
+    .sort((a,b)=> (a.status===b.status?0:(a.status==='delayed'?-1:1)) || ((_d(a._end)||0)-(_d(b._end)||0)));
+  const riskIds=new Set(risk.map(t=>t.id));
+  // 2. Due today / this week (open, not already in risk), sorted soonest first
+  const dueSoon = open.filter(t=>!riskIds.has(t.id) && _d(t._end) && _d(t._end)<=weekEnd)
+    .sort((a,b)=> (_d(a._end)||0)-(_d(b._end)||0));
+  const dueIds=new Set(dueSoon.map(t=>t.id));
+  // 3. Everything else open (later)
+  const later = open.filter(t=>!riskIds.has(t.id) && !dueIds.has(t.id))
+    .sort((a,b)=> (_d(a._end)||Infinity)-(_d(b._end)||Infinity));
+
+  const dueLabel=(t)=>{
+    const e=_d(t._end); if(!e) return t.status==='delayed'?'Overdue':'';
+    if(e.getTime()===today.getTime()) return 'Due today';
+    if(e<today) return 'Overdue · '+fmtDate(e);
+    return 'Due '+fmtDate(e);
+  };
   const row=(t)=>{
-    const dc=t.status==='delayed'?'urgent':t.status==='at-risk'?'soon':'ok';
-    const dl=t.status==='delayed'?'Overdue':t.status==='at-risk'?'At risk':(t._end?fmtDate(new Date(t._end)):(t.due||''));
     const done=isDone(t);
+    const dc=t.status==='delayed'?'urgent':t.status==='at-risk'?'soon':'ok';
+    const dl=done?'Done':dueLabel(t);
     return `<div class="focus-task" style="${done?'opacity:.6;':''}">
       <div class="chk ${done?'done':''}" onclick="toggleFocus('${t.id}')">${done?'&#10003;':''}</div>
       <div style="flex:1;">
@@ -1608,44 +1665,83 @@ function buildFocus(){
         <div class="f-meta">
           <span class="f-project">${t.caseCode||'Other'}</span>
           <span class="f-ws">${t.phaseName?t.phaseName+' &rsaquo; ':''}${t.wsName||''}</span>
-          ${done?'<span class="due-chip ok">Done</span>':`<span class="due-chip ${dc}">${dl}</span>`}
+          ${done?'<span class="due-chip ok">Done</span>':(dl?`<span class="due-chip ${dc}">${dl}</span>`:'')}
         </div>
       </div>
     </div>`;
   };
-  const seg=(title,arr)=> arr.length? `<div style="font-size:10px;font-weight:800;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 6px;">${title}</div>`+arr.map(row).join('') : '';
+  const seg=(title,arr,color)=> arr.length? `<div style="font-size:10px;font-weight:800;color:${color||'var(--mid)'};text-transform:uppercase;letter-spacing:.06em;margin:8px 0 6px;">${title}</div>`+arr.map(row).join('') : '';
   let html='';
-  html += seg('Due today', dueTodaySet) || (dueTodaySet.length?'':'');
-  html += seg('Other tasks', others);
+  html += seg('At Risk / Delayed', risk, '#C0392B');
+  html += seg('Due Today / This Week', dueSoon, '#2C9BC4');
+  html += seg('Later', later);
   if(completed.length) html += `<div style="border-top:1px dashed var(--border);margin-top:8px;padding-top:6px;">`+seg('Completed', completed)+`</div>`;
-  if(!dueTodaySet.length && !others.length && !completed.length) html='<div style="font-size:13px;color:var(--green);font-weight:600;padding:8px 0;">&#10003; All clear &mdash; nothing pending!</div>';
+  if(!risk.length && !dueSoon.length && !later.length && !completed.length) html='<div style="font-size:13px;color:var(--green);font-weight:600;padding:8px 0;">&#10003; All clear &mdash; nothing pending!</div>';
   return html;
 }
 
 function buildWeekly(){
   const days=['Mon','Tue','Wed','Thu','Fri'];
-  const todayIdx = (new Date().getDay()+6)%7; // Mon=0
-  // Monday of the current week
-  const monday=new Date(); monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
-  // Distribute this-week open tasks across days by a simple hash of id
-  const open = allFlatTasks().filter(t=>!taskDoneState[t.id]);
-  const byDay = {0:[],1:[],2:[],3:[],4:[]};
-  open.forEach(t=>{
-    let h=0; for(const ch of t.id) h=(h*31+ch.charCodeAt(0))%5;
-    byDay[h].push(t);
-  });
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayIdx=(today.getDay()+6)%7; // Mon=0
+  const monday=new Date(today); monday.setDate(today.getDate()-todayIdx);
+  const dayDates=days.map((_,i)=>{ const d=new Date(monday); d.setDate(monday.getDate()+i); return d; });
+  const _d=iso=> iso? new Date(iso+'T00:00:00') : null;
+  const sameDay=(a,b)=> a&&b&&a.getTime()===b.getTime();
+
+  // My tasks (workstream-member ownership), with dates
+  const mine=_myTasksWithDates('WZ');
+  const isDone=t=>!!taskDoneState[t.id];
+  const col=t=> t.status==='delayed'?'#D9535F':t.status==='at-risk'?'#D19A2E':'#2C9BC4';
+
+  // Completion date (if recorded), else fall back to the task end date
+  const doneDate=t=>{ const dd=(APP.taskDoneDates&&APP.taskDoneDates[t.id]); return dd?_d(dd.slice(0,10)):_d(t._end); };
+
+  const open=mine.filter(t=>!isDone(t));
+  const done=mine.filter(isDone);
+  const used=new Set();
+  const byDay=days.map(()=>[]);
+
+  // Past days: completed tasks whose completion (or end) date lands on that day
+  for(let i=0;i<5;i++){
+    if(i>=todayIdx) break;
+    const dd=dayDates[i];
+    done.forEach(t=>{ if(used.has(t.id)) return; const cd=doneDate(t); if(sameDay(cd,dd)){ byDay[i].push({t,done:true}); used.add(t.id); } });
+  }
+  // Today: all my at-risk/delayed + anything due today
+  if(todayIdx<5){
+    open.forEach(t=>{
+      if(used.has(t.id)) return;
+      const e=_d(t._end);
+      if(t.status==='delayed'||t.status==='at-risk'||(e&&e<=today)){ byDay[todayIdx].push({t,done:false}); used.add(t.id); }
+    });
+  }
+  // Future days: tasks whose due (end) date lands on that day
+  for(let i=Math.max(todayIdx,0);i<5;i++){
+    const dd=dayDates[i];
+    open.forEach(t=>{ if(used.has(t.id)) return; const e=_d(t._end); if(sameDay(e,dd)){ byDay[i].push({t,done:false}); used.add(t.id); } });
+  }
+  // Top-up: ensure ≥3 per current/future day by pulling the next unused open tasks
+  // (sorted by soonest due) forward into the earliest under-filled day.
+  const pool=open.filter(t=>!used.has(t.id)).sort((a,b)=> (_d(a._end)||Infinity)-(_d(b._end)||Infinity));
+  for(let i=Math.max(todayIdx,0);i<5;i++){
+    while(byDay[i].length<3 && pool.length){ const t=pool.shift(); byDay[i].push({t,done:false,pulled:true}); used.add(t.id); }
+  }
+
   return days.map((d,i)=>{
-    const tasks=byDay[i]||[];
-    const date=new Date(monday); date.setDate(monday.getDate()+i);
+    const items=byDay[i];
+    const date=dayDates[i];
     const isToday=i===todayIdx;
+    const past=i<todayIdx;
     return `<div class="wk-day">
       <div class="wk-day-lbl ${isToday?'today':''}" style="text-align:center;">${d}<div style="font-size:14px;font-weight:800;color:${isToday?'var(--red)':'var(--ink)'};line-height:1.1;">${date.getDate()}</div></div>
       <div class="wk-tasks">
-        ${tasks.length? tasks.slice(0,3).map(t=>{
-          const col=t.status==='delayed'?'#A52834':t.status==='at-risk'?'#D69200':'#1A7F4E';
-          return `<div class="wk-task"><span class="dot" style="background:${col}"></span>${t.name.length>34?t.name.slice(0,34)+'…':t.name}</div>`;
+        ${items.length? items.slice(0,4).map(({t,done,pulled})=>{
+          const c=done?'#3E9C5F':col(t);
+          const nm=t.name.length>30?t.name.slice(0,30)+'…':t.name;
+          return `<div class="wk-task" style="${done?'opacity:.75;':''}"><span class="dot" style="background:${c}"></span><span style="${done?'text-decoration:line-through;color:#999;':''}">${nm}</span>${pulled?'<span style="font-size:8px;color:var(--muted);margin-left:3px;">(pulled)</span>':''}</div>`;
         }).join('') : '<div class="wk-empty">—</div>'}
-        ${tasks.length>3?`<div class="wk-empty">+${tasks.length-3} more</div>`:''}
+        ${items.length>4?`<div class="wk-empty">+${items.length-4} more</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1884,7 +1980,7 @@ function renderFeed(){
   const el=document.getElementById('drawer-body');
   if(!el) return;
   if(!FEED || !FEED.length){ el.innerHTML='<div style="padding:14px;font-size:12px;color:var(--muted);">No recent activity yet. Completing tasks or changing statuses will show up here.</div>'; return; }
-  el.innerHTML=FEED.map(f=>`
+  el.innerHTML=FEED.slice(0,10).map(f=>`
     <div class="feed-row">
       <div class="feed-dot" style="background:${f.dot}"></div>
       <div class="feed-text">${f.text}</div>
@@ -1894,7 +1990,7 @@ function renderFeed(){
 function pushFeed(text, dot){
   if(!Array.isArray(FEED)) FEED=[];
   FEED.unshift({ text, dot:dot||'#1A7F4E', ts:Date.now() });
-  FEED = FEED.slice(0,40); // keep the most recent 40
+  FEED = FEED.slice(0,10); // keep the most recent 10
   APP.feed = FEED;
   renderFeed();
 }
@@ -1923,13 +2019,15 @@ function tog(id){
 function toggleTaskRow(id,el){
   taskDoneState[id]=!taskDoneState[id];
   APP.taskDoneState=taskDoneState;
-  el.classList.toggle('done',taskDoneState[id]);
-  el.innerHTML=taskDoneState[id]?'&#10003;':'';
-  const nr=el.closest('.t-row').querySelector('.t-name');
-  if(nr)nr.classList.toggle('done',taskDoneState[id]);
+  APP.taskDoneDates=APP.taskDoneDates||{};
+  if(taskDoneState[id]) APP.taskDoneDates[id]=new Date().toISOString(); else delete APP.taskDoneDates[id];
+  const nr=el.closest('.t-row') ? el.closest('.t-row').querySelector('.t-name') : null;
   const nm=nr?nr.textContent.trim():'A task';
   pushFeed(`${taskDoneState[id]?'Completed':'Reopened'}: ${nm}`, taskDoneState[id]?'#1A7F4E':'#D69200');
   saveData();
+  // Re-render so the status chip, ordering and any active filters update right away
+  if(typeof renderTasks==='function' && document.getElementById('page-tasks') && document.getElementById('page-tasks').classList.contains('active')) renderTasks();
+  if(typeof renderGantt==='function' && document.getElementById('page-timeline') && document.getElementById('page-timeline').classList.contains('active')) renderGantt();
   renderDashboard();
 }
 
@@ -2015,8 +2113,9 @@ function renderTasks(){
   let pv=pfEl?pfEl.value:'all';
   // Guard against a stale/empty filter value (e.g. selected id no longer in the list)
   if(pv!=='all' && pv!=='__other__' && !PROJECTS.some(p=>p.id===pv)){ pv='all'; if(pfEl) pfEl.value='all'; }
-  const sv=document.getElementById('status-filter').value;
-  const ov=document.getElementById('owner-filter').value;
+  const sv=_getFilterSet('status-filter-set');
+  const ov=_getFilterSet('owner-filter-set');
+  if(typeof _populateOwnerMenu==='function') _populateOwnerMenu();
   const wvEl=document.getElementById('task-ws-filter'); const wv=wvEl?wvEl.value:'all';
   const gmEl=document.getElementById('task-group'); const gm=gmEl?gmEl.value:'phase';
   const projs=(pv==='all'?PROJECTS:PROJECTS.filter(p=>p.id===pv)).filter(p=>!p.archived);
@@ -2029,15 +2128,16 @@ function renderTasks(){
     wvEl.innerHTML='<option value="all">All Workstreams</option>'+names.map(n=>`<option value="${n}" ${cur===n?'selected':''}>${n}</option>`).join('');
   }
 
-  // Shared filter for a task (status, owner, workstream membership)
+  // Shared filter for a task (multi-status, multi-owner=workstream members, workstream)
   const taskPass=(proj,ph,ws,t)=>{
     const isDone=taskDoneState[t.id]||t.done;
-    if(sv!=='all'){ if(sv==='done'){ if(!isDone) return false; } else if(isDone||t.status!==sv) return false; }
-    if(ov!=='all'&&t.owner!==ov)return false;
+    const st = isDone?'done':(t.status||'on-track');
+    if(sv.length && !sv.includes(st)) return false;
+    if(ov.length){ const mem=_taskOwners(proj,ws,t); if(!ov.some(o=>mem.includes(o))) return false; }
     if(wv!=='all'&&!taskWsNames(ws,t).includes(wv))return false;
     return true;
   };
-  // One task row (with workstream bubbles)
+  // One task row (with workstream bubbles + owner avatars = workstream members)
   const taskRow=(proj,ph,ws,t)=>{
     const isDone=taskDoneState[t.id]||t.done;
     const r=taskDateRange(proj,ph,t);
@@ -2046,7 +2146,7 @@ function renderTasks(){
       <div class="t-main">
         <div class="t-name ${isDone?'done':''}">${t.name}</div>
         <div class="t-chips">
-          ${t.owner?`<span class="ownr">${t.owner}</span>`:''}
+          ${_taskOwnerAvatars(proj,ws,t)}
           <span class="stat-chip ${isDone?'done':t.status}">${isDone?'Done':(t.status==='at-risk'?'At Risk':t.status==='delayed'?'Delayed':'On Track')}</span>
           ${gm==='phase'?wsBubbles(proj,ws,t):''}
           <span class="due-lbl">${fmtDate(new Date(r.startISO))} – ${fmtDate(new Date(r.endISO))}</span>
@@ -2099,8 +2199,8 @@ function renderTasks(){
       }
 
       const allPT=ph.workstreams.flatMap(w=>w.tasks).filter(t=>{
-        if(sv!=='all'&&t.status!==sv)return false;
-        if(ov!=='all'&&t.owner!==ov)return false;
+        const st=(taskDoneState[t.id]||t.done)?'done':(t.status||'on-track');
+        if(sv.length && !sv.includes(st)) return false;
         return true;
       });
       const phDone=allPT.filter(t=>taskDoneState[t.id]||t.done).length;
@@ -2153,8 +2253,9 @@ function renderTasks(){
   if(showOther){
     const others = (APP.otherTasks||[]).filter(t=>{
       const isDone = taskDoneState[t.id]||t.done;
-      if(sv!=='all'){ if(sv==='done'){ if(!isDone) return false; } else if(isDone||t.status!==sv) return false; }
-      if(ov!=='all'&&t.owner!==ov)return false;
+      const st = isDone?'done':(t.status||'on-track');
+      if(sv.length && !sv.includes(st)) return false;
+      if(ov.length && !(t.owner && ov.includes(t.owner))) return false;
       return true;
     });
     if(!('__other__' in openState)) openState['__other__']=true;
@@ -2246,6 +2347,46 @@ function taskWsNames(ws, task){
   if(task && Array.isArray(task.workstreams) && task.workstreams.length) return task.workstreams.slice();
   return ws ? [ws.name] : [];
 }
+// A task's owners = members of its workstream(s) within the project (matches the Workplan owners column)
+function _taskOwners(proj, ws, task){
+  const names = taskWsNames(ws, task);
+  const mem = [];
+  names.forEach(nm=>{ (proj.phases.flatMap(pp=>pp.workstreams).filter(w=>w.name===nm)).forEach(w=>(w.members||[]).forEach(mi=>{ if(!mem.includes(mi)) mem.push(mi); })); });
+  return mem;
+}
+function _taskOwnerAvatars(proj, ws, task){
+  const mem=_taskOwners(proj, ws, task);
+  if(!mem.length) return '';
+  return `<span style="display:inline-flex;gap:2px;">`+mem.map(o=>{
+    const m=TEAM.find(x=>x.initials===o||x.name===o); const c=m?m.color:'#888'; const ini=m?m.initials:o;
+    return `<span title="${(m?m.name:o)}" style="font-size:8px;font-weight:800;background:${c};color:#fff;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;">${ini}</span>`;
+  }).join('')+`</span>`;
+}
+// ---- Multi-select checkbox filters (shared by Tasks + Workplan) ----
+// State lives on a hidden container's dataset; empty set = "all".
+function _getFilterSet(id){ const el=document.getElementById(id); if(!el) return []; try{ return JSON.parse(el.dataset.sel||'[]'); }catch(e){ return []; } }
+function _setFilterSet(id, arr){ const el=document.getElementById(id); if(el) el.dataset.sel=JSON.stringify(arr); }
+function _toggleFilterVal(setId, val, rerender){
+  const cur=_getFilterSet(setId);
+  const i=cur.indexOf(val);
+  if(i>=0) cur.splice(i,1); else cur.push(val);
+  _setFilterSet(setId, cur);
+  const lbl=document.getElementById(setId+'-label');
+  if(lbl) lbl.textContent=_filterLabel(setId, cur);
+  if(typeof rerender==='function') rerender();
+}
+function _clearFilterSet(setId, rerender){ _setFilterSet(setId, []); const lbl=document.getElementById(setId+'-label'); if(lbl) lbl.textContent=_filterLabel(setId, []); if(typeof rerender==='function') rerender(); }
+function _filterLabel(setId, arr){
+  if(!arr.length) return setId.indexOf('owner')>=0?'All Owners':'All Statuses';
+  if(arr.length===1){ const m={'on-track':'On Track','at-risk':'At Risk','delayed':'Delayed','done':'Done'}; if(m[arr[0]]) return m[arr[0]]; const t=TEAM.find(x=>x.initials===arr[0]); return t?t.name.split(' ')[0]:arr[0]; }
+  return arr.length+' selected';
+}
+function _toggleFilterMenu(menuId, e){
+  if(e) e.stopPropagation();
+  document.querySelectorAll('.filter-menu').forEach(m=>{ if(m.id!==menuId) m.style.display='none'; });
+  const m=document.getElementById(menuId); if(m) m.style.display = m.style.display==='block'?'none':'block';
+}
+document.addEventListener('click', ()=>{ document.querySelectorAll('.filter-menu').forEach(m=>m.style.display='none'); });
 // Stable colour for a workstream name within a project.
 function wsColour(proj, name){
   let defs = (proj && proj.workstreamDefs && proj.workstreamDefs.length)
@@ -2497,13 +2638,12 @@ function renderGantt(){
   // Build rows, filtering by workstream
   const allRows = buildGanttRows(projects);
   // For ws filter: hide ws rows and task rows that don't match; hide phases that become empty
-  const statusVal = document.getElementById('gantt-status-filter') ? document.getElementById('gantt-status-filter').value : 'all';
+  const statusSet = _getFilterSet('gantt-status-set');
   const taskMatches = (t) => {
     if(wsVal!=='all' && !taskWsNames(t.ws, t.task).includes(wsVal)) return false;
-    if(statusVal!=='all'){
-      const isDone = taskDoneState[t.task.id] || t.task.done;
-      if(statusVal==='done'){ if(!isDone) return false; }
-      else { if(isDone || t.task.status!==statusVal) return false; }
+    if(statusSet.length){
+      const st = (taskDoneState[t.task.id] || t.task.done) ? 'done' : (t.task.status||'on-track');
+      if(!statusSet.includes(st)) return false;
     }
     return true;
   };
@@ -2808,10 +2948,10 @@ function renderGanttCollapsed(projects){
   const container = document.getElementById('gantt-container');
   if(!projects.length){ container.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">No workplans to show.</div>'; return; }
   const wsVal = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
-  const statusVal = document.getElementById('gantt-status-filter') ? document.getElementById('gantt-status-filter').value : 'all';
+  const statusSet = _getFilterSet('gantt-status-set');
   const _pass = (ws,t)=>{
     if(wsVal!=='all' && !taskWsNames(ws,t).includes(wsVal)) return false;
-    if(statusVal!=='all'){ const d=taskDoneState[t.id]||t.done; if(statusVal==='done'){ if(!d) return false; } else if(d||t.status!==statusVal) return false; }
+    if(statusSet.length){ const st=(taskDoneState[t.id]||t.done)?'done':(t.status||'on-track'); if(!statusSet.includes(st)) return false; }
     return true;
   };
   const _mobile = (typeof window!=='undefined' && window.innerWidth && window.innerWidth<=720);
@@ -3077,15 +3217,23 @@ window.addEventListener('resize', ()=>{
 function clearGanttFilters(){
   const p=document.getElementById('gantt-proj-filter'); if(p) p.value='all';
   const w=document.getElementById('gantt-ws-filter'); if(w) w.value='all';
-  const s=document.getElementById('gantt-status-filter'); if(s) s.value='all';
+  _clearFilterSet('gantt-status-set');
+  document.querySelectorAll('#gantt-status-menu input').forEach(c=>c.checked=false);
   renderGantt();
 }
 function clearTaskFilters(){
   const p=document.getElementById('proj-filter'); if(p) p.value='all';
-  const s=document.getElementById('status-filter'); if(s) s.value='all';
-  const o=document.getElementById('owner-filter'); if(o) o.value='all';
+  _clearFilterSet('status-filter-set'); _clearFilterSet('owner-filter-set');
+  document.querySelectorAll('#status-menu input, #owner-menu input').forEach(c=>c.checked=false);
   const w=document.getElementById('task-ws-filter'); if(w) w.value='all';
   renderTasks();
+}
+// Populate the owner checkbox menu from the current team roster
+function _populateOwnerMenu(){
+  const menu=document.getElementById('owner-menu'); if(!menu) return;
+  const sel=_getFilterSet('owner-filter-set');
+  menu.innerHTML = (TEAM.length? TEAM.map(m=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12px;cursor:pointer;"><input type="checkbox" value="${m.initials}" ${sel.includes(m.initials)?'checked':''} onchange="_toggleFilterVal('owner-filter-set','${m.initials}',renderTasks)" style="accent-color:var(--red);"><span style="width:18px;height:18px;border-radius:50%;background:${m.color};color:#fff;font-size:8px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;">${m.initials}</span> ${m.name}</label>`).join('') : '<div style="padding:8px;font-size:11px;color:var(--muted);">No team members yet.</div>')
+    + `<div onclick="_clearFilterSet('owner-filter-set',renderTasks);document.querySelectorAll('#owner-menu input').forEach(c=>c.checked=false);" style="padding:6px 8px;font-size:11px;color:var(--red);cursor:pointer;border-top:1px solid var(--border);margin-top:4px;">Clear</div>`;
 }
 function toggleExportMenu(e){
   e.stopPropagation();
@@ -3095,108 +3243,150 @@ function toggleExportMenu(e){
   if(!open) setTimeout(()=>document.addEventListener('click',_closeExportMenuOnce,{once:true}),0);
 }
 function _closeExportMenuOnce(){ const m=document.getElementById('export-menu'); if(m) m.style.display='none'; }
+let _exportKind=null; // 'ppt' | 'excel'
 function _exportChoice(kind){
   _closeExportMenuOnce();
-  if(kind==='ppt') exportToPPT();
-  else if(kind==='collapsed') exportCollapsedPPT();
-  else if(kind==='excel') exportToExcel();
+  _exportKind=kind;
+  const projVal=document.getElementById('gantt-proj-filter').value;
+  const avail=(projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
+  if(!avail.length){ alert('No workplans to export.'); return; }
+  if(avail.length===1){ _runExport(kind, avail); return; }
+  // Multiple projects: show the picker
+  const list=document.getElementById('export-pick-list');
+  list.innerHTML=avail.map(p=>`<label style="display:flex;align-items:center;gap:8px;padding:7px 8px;font-size:13px;color:var(--slate);cursor:pointer;border:1px solid var(--border);border-radius:6px;">
+    <input type="checkbox" class="export-pick-cb" value="${p.id}" checked style="accent-color:var(--red);">
+    <span style="width:10px;height:10px;border-radius:2px;background:${p.color};flex-shrink:0;"></span>
+    <b>${p.caseCode}</b> <span style="color:var(--mid);">${p.name}</span>
+  </label>`).join('');
+  const allCb=document.getElementById('export-pick-all'); if(allCb) allCb.checked=true;
+  document.getElementById('export-pick-title').textContent = kind==='ppt'?'Export to PowerPoint':'Export to Excel';
+  document.getElementById('export-pick-modal').style.display='flex';
+}
+function _exportPickToggleAll(on){ document.querySelectorAll('.export-pick-cb').forEach(c=>c.checked=on); }
+function _exportPickConfirm(){
+  const ids=[...document.querySelectorAll('.export-pick-cb:checked')].map(c=>c.value);
+  if(!ids.length){ alert('Pick at least one project.'); return; }
+  const chosen=PROJECTS.filter(p=>ids.includes(p.id));
+  document.getElementById('export-pick-modal').style.display='none';
+  _runExport(_exportKind, chosen);
+}
+function _runExport(kind, projects){
+  if(kind==='ppt') exportWorkplanPPT(projects);
+  else if(kind==='excel') exportWorkplanExcel(projects);
 }
 
-async function exportToExcel(){
-  try { await ensureXlsxLib(); }
-  catch(e){ alert('Could not load the Excel library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
-  if(typeof XLSX==='undefined'){ alert('Excel library unavailable. Please try again.'); return; }
-  const projVal = document.getElementById('gantt-proj-filter').value;
-  const projects = (projVal==='all' ? PROJECTS : PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
-  if(!projects.length){ alert('No workplans to export.'); return; }
-
-  const range = computeDateRange(projects);
+// Build a "full workplan" worksheet (Gantt grid) for one project
+function _buildFullSheet(p){
+  const range = computeDateRange([p]);
   const weeks = buildWeeks(range.start, range.end);
   const LABELS = ['Project / Phase / Workstream / Task','Owner','Status'];
   const fixedCols = LABELS.length;
-
-  // Header rows: month row + week row
-  const monthRow = [...LABELS.map(()=> ''), ];
+  const monthRow = [...LABELS.map(()=> '')];
   const weekRow = [...LABELS];
-  // month labels merged visually by repeating; week labels are dates
   let prevMonth = '';
   weeks.forEach(wk=>{
     const ml = MON_SHORT[wk.getMonth()]+' '+wk.getFullYear();
     monthRow.push(ml===prevMonth?'':ml); prevMonth=ml;
     weekRow.push(fmtDate(wk));
   });
-
   const aoa = [monthRow, weekRow];
-  const cellMeta = []; // {r,c,color}
+  const cellMeta = [];
   const HDR_ROWS = 2;
-
-  function statusColor(t){
-    const isDone = taskDoneState[t.id]||t.done;
-    return isDone?'B0B0B0':t.status==='delayed'?'CC0000':t.status==='at-risk'?'B87000':'1A7F4E';
-  }
-
-  projects.forEach(p=>{
-    // Project row
+  const statusColor=(t)=>{ const isDone=taskDoneState[t.id]||t.done; return isDone?'B0B0B0':t.status==='delayed'?'CC0000':t.status==='at-risk'?'B87000':'1A7F4E'; };
+  const ownerStr=(ws,t)=>_taskOwners(p,ws,t).join(', ');
+  {
     let r = aoa.length;
     aoa.push([p.caseCode+' — '+p.name, '', '', ...weeks.map(()=> '')]);
     cellMeta.push({r, c0:0, c1:fixedCols+weeks.length-1, color:'1A1A1A', font:'FFFFFF', bold:true});
     p.phases.forEach(ph=>{
-      // Phase row with bar
       r = aoa.length;
       const prow = [ph.name+' Phase  ('+fmtDate(wkToDate(p.startDate,ph.startWk))+'–'+fmtDate(wkToDate(p.startDate,ph.endWk))+')','',''];
       const pc = ph.color.replace('#','');
-      weeks.forEach((wk,wi)=>{
-        const wkNum = wi+1; // week index from range start — need project-relative
-        prow.push('');
-      });
+      weeks.forEach(()=>prow.push(''));
       aoa.push(prow);
-      // color phase bar cells (by date overlap)
       const ps = wkToDate(p.startDate, ph.startWk), pe = wkToDate(p.startDate, ph.endWk);
-      weeks.forEach((wk,wi)=>{
-        if(wk>=ps && wk<=pe){ cellMeta.push({r, c0:fixedCols+wi, c1:fixedCols+wi, color:pc}); }
-      });
+      weeks.forEach((wk,wi)=>{ if(wk>=ps && wk<=pe){ cellMeta.push({r, c0:fixedCols+wi, c1:fixedCols+wi, color:pc}); } });
       cellMeta.push({r, c0:0, c1:2, color:'F0F0F0', font:'333333', bold:true});
       ph.workstreams.forEach(ws=>{
         ws.tasks.forEach(t=>{
           r = aoa.length;
           const isDone = taskDoneState[t.id]||t.done;
-          const row = ['      '+ws.name+' › '+t.name, (t.owner||''), isDone?'Done':(t.status||'on-track').replace('-',' '), ...weeks.map(()=> '')];
+          const rr = taskDateRange(p,ph,t);
+          const row = ['      '+ws.name+' › '+t.name, ownerStr(ws,t), isDone?'Done':(t.status||'on-track').replace('-',' '), ...weeks.map(()=> '')];
           aoa.push(row);
-          const dw = parseWkDue(t.due||'Wk 1');
-          const td = wkToDate(p.startDate, dw);
-          // find nearest week column
-          let ci = 0, best = Infinity;
-          weeks.forEach((wk,wi)=>{ const d=Math.abs(wk-td); if(d<best){best=d;ci=wi;} });
-          cellMeta.push({r, c0:fixedCols+ci, c1:fixedCols+ci, color:statusColor(t)});
+          // fill the whole span, not just one cell
+          const sd=new Date(rr.startISO), ed=new Date(rr.endISO);
+          weeks.forEach((wk,wi)=>{ if(wk>=sd && wk<=ed){ cellMeta.push({r, c0:fixedCols+wi, c1:fixedCols+wi, color:statusColor(t)}); } });
         });
       });
     });
-  });
-
+  }
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  // Column widths
-  ws['!cols'] = [{wch:44},{wch:10},{wch:10}, ...weeks.map(()=>({wch:5}))];
-  // Apply fills
-  const setFill=(r,c,color,font,bold)=>{
-    const addr = XLSX.utils.encode_cell({r,c});
-    if(!ws[addr]) ws[addr]={t:'s',v:''};
-    ws[addr].s = { fill:{patternType:'solid',fgColor:{rgb:color}}, font:{color:{rgb:font||'FFFFFF'},bold:!!bold,sz:9}, alignment:{vertical:'center'} };
-  };
+  ws['!cols'] = [{wch:44},{wch:14},{wch:10}, ...weeks.map(()=>({wch:5}))];
+  const setFill=(r,c,color,font,bold)=>{ const addr=XLSX.utils.encode_cell({r,c}); if(!ws[addr]) ws[addr]={t:'s',v:''}; ws[addr].s={ fill:{patternType:'solid',fgColor:{rgb:color}}, font:{color:{rgb:font||'FFFFFF'},bold:!!bold,sz:9}, alignment:{vertical:'center'} }; };
   cellMeta.forEach(m=>{ for(let c=m.c0;c<=m.c1;c++) setFill(m.r,c,m.color,m.font,m.bold); });
-  // Header styling
   for(let c=0;c<fixedCols+weeks.length;c++){
-    [0,1].forEach(rr=>{
-      const addr=XLSX.utils.encode_cell({r:rr,c});
-      if(!ws[addr]) ws[addr]={t:'s',v:''};
-      ws[addr].s={ fill:{patternType:'solid',fgColor:{rgb:rr===0?'2D2D2D':'3A3A3A'}}, font:{color:{rgb:'FFFFFF'},bold:true,sz:8}, alignment:{horizontal:'center',vertical:'center'} };
-    });
+    [0,1].forEach(rr=>{ const addr=XLSX.utils.encode_cell({r:rr,c}); if(!ws[addr]) ws[addr]={t:'s',v:''}; ws[addr].s={ fill:{patternType:'solid',fgColor:{rgb:rr===0?'2D2D2D':'3A3A3A'}}, font:{color:{rgb:'FFFFFF'},bold:true,sz:8}, alignment:{horizontal:'center',vertical:'center'} }; });
   }
   ws['!freeze'] = { xSplit:fixedCols, ySplit:HDR_ROWS };
+  return ws;
+}
+// Build a "simple view" worksheet: phases as columns, tasks listed under each (grouped by workstream)
+function _buildSimpleSheet(p){
+  const cols = p.phases.map((ph,i)=>({ph, idx:i}));
+  // Header: one column per phase
+  const header = cols.map(({ph,idx})=>`${idx+1}. ${ph.name}  (Wk ${ph.startWk}–${ph.endWk})`);
+  // Build per-phase list of lines (workstream headers + task bullets)
+  const phaseLines = cols.map(({ph})=>{
+    const groups={};
+    phaseTasksByDate(p,ph).forEach(z=>{ const k=(taskWsNames(z.ws,z.task)[0])||'—'; (groups[k]=groups[k]||[]).push(z); });
+    const lines=[];
+    Object.keys(groups).forEach(wsName=>{
+      lines.push({t:wsName.toUpperCase(), ws:true});
+      groups[wsName].forEach(z=>{ const done=taskDoneState[z.task.id]||z.task.done; lines.push({t:(done?'✓ ':'• ')+z.task.name, done}); });
+    });
+    if(!lines.length) lines.push({t:'No tasks.', muted:true});
+    return lines;
+  });
+  const maxLen = Math.max(1, ...phaseLines.map(l=>l.length));
+  const aoa=[header];
+  for(let i=0;i<maxLen;i++){ aoa.push(cols.map((_,ci)=> phaseLines[ci][i]? phaseLines[ci][i].t : '')); }
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = cols.map(()=>({wch:34}));
+  // Header styling: phase colour tint
+  cols.forEach(({ph},ci)=>{
+    const addr=XLSX.utils.encode_cell({r:0,c:ci}); if(!ws[addr]) ws[addr]={t:'s',v:''};
+    ws[addr].s={ fill:{patternType:'solid',fgColor:{rgb:ph.color.replace('#','')}}, font:{color:{rgb:'FFFFFF'},bold:true,sz:10}, alignment:{vertical:'center',wrapText:true} };
+  });
+  // Body styling: bold workstream headers, grey done
+  for(let i=0;i<maxLen;i++){
+    cols.forEach((_,ci)=>{
+      const line=phaseLines[ci][i]; if(!line) return;
+      const addr=XLSX.utils.encode_cell({r:i+1,c:ci}); if(!ws[addr]) ws[addr]={t:'s',v:line.t};
+      if(line.ws) ws[addr].s={ font:{bold:true,sz:8,color:{rgb:'666666'}} };
+      else if(line.done) ws[addr].s={ font:{sz:9,italic:true,color:{rgb:'999999'}} };
+      else ws[addr].s={ font:{sz:9,color:{rgb:'333333'}} };
+    });
+  }
+  return ws;
+}
+// Sanitize an Excel sheet name (≤31 chars, no []:*?/\)
+function _sheetName(s){ return (s||'Sheet').replace(/[\[\]:*?\/\\]/g,' ').slice(0,31); }
 
+async function exportWorkplanExcel(projects){
+  try { await ensureXlsxLib(); }
+  catch(e){ alert('Could not load the Excel library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
+  if(typeof XLSX==='undefined'){ alert('Excel library unavailable. Please try again.'); return; }
+  if(!projects||!projects.length){ alert('No workplans to export.'); return; }
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Gantt');
+  const used={};
+  const uniq=(nm)=>{ let n=nm, k=2; while(used[n]){ n=_sheetName(nm.slice(0,28)+' '+(k++)); } used[n]=1; return n; };
+  projects.forEach(p=>{
+    XLSX.utils.book_append_sheet(wb, _buildFullSheet(p),   uniq(_sheetName(p.caseCode+' Full')));
+    XLSX.utils.book_append_sheet(wb, _buildSimpleSheet(p), uniq(_sheetName(p.caseCode+' Simple')));
+  });
   try {
-    XLSX.writeFile(wb, 'GanttChart_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    XLSX.writeFile(wb, 'Workplan_'+new Date().toISOString().slice(0,10)+'.xlsx');
   } catch(err){ console.error(err); alert('Export to Excel failed: '+(err&&err.message?err.message:'unknown error')); }
 }
 
@@ -3232,22 +3422,12 @@ async function ensureXlsxLib(){
   ]);
 }
 
-async function exportToPPT(){
-  try { await ensurePptxLib(); }
-  catch(e){ alert('Could not load the PowerPoint library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
-  if(typeof PptxGenJS==='undefined'){ alert('PowerPoint library unavailable. Please try again.'); return; }
-  const projVal=document.getElementById('gantt-proj-filter').value;
-  const projects=(projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
-  if(!projects.length){ alert('No workplans to export.'); return; }
-
-  const pptx=new PptxGenJS();
-  pptx.layout='LAYOUT_WIDE';
+// Build the "full workplan" table slide for one project (native pptx table, not an image)
+function _addFullSlide(pptx, proj){
   const SW=13.33, SH=7.5, MX=0.3;
-  // Bain theme
-  const MAROON='8A1A1A', MAROON_DK='6E1212', RED='CC0000';
+  const MAROON='8A1A1A', MAROON_DK='6E1212';
   const ST={ 'on-track':'1A7F4E', 'at-risk':'D69200', 'delayed':'A52834', 'done':'8A8A8A' };
-
-  projects.forEach(proj=>{
+  {
     const range=computeDateRange([proj]);
     const weeks=buildWeeks(range.start,range.end);
     const rows=buildGanttRows([proj]);
@@ -3361,41 +3541,25 @@ async function exportToPPT(){
       slide.addShape(pptx.ShapeType.rect,{x:lx,y:ly,w:0.14,h:0.14,fill:{color:li.c},line:{type:'none'}});
       slide.addText(li.l,{x:lx+0.18,y:ly-0.03,w:1.4,h:0.2,fontSize:8,color:'555555',fontFace:'Arial',valign:'middle'});
     });
-  });
-
-  try {
-    await pptx.writeFile({fileName:`GanttChart_${now.toISOString().slice(0,10)}.pptx`});
-  } catch(err){
-    console.error('PPT export failed:', err);
-    alert('Export to PPT failed: '+(err&&err.message?err.message:'unknown error')+'. Please try again.');
   }
 }
 
 // ============================================================
-// COLLAPSED VIEW → PowerPoint (chevron week header + phase columns)
+// SIMPLE VIEW → PowerPoint (chevron week header + phase columns)
 // ============================================================
-async function exportCollapsedPPT(){
-  try { await ensurePptxLib(); }
-  catch(e){ alert('Could not load the PowerPoint library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
-  if(typeof PptxGenJS==='undefined'){ alert('PowerPoint library unavailable. Please try again.'); return; }
-  const projVal=document.getElementById('gantt-proj-filter').value;
-  const projects=(projVal==='all'?PROJECTS:PROJECTS.filter(p=>p.id===projVal)).filter(p=>!p.archived);
-  if(!projects.length){ alert('No workplans to export.'); return; }
+// Build the "simple" (chevron + phase columns) slide for one project
+function _addSimpleSlide(pptx, proj){
   const wsVal = document.getElementById('gantt-ws-filter') ? document.getElementById('gantt-ws-filter').value : 'all';
-  const statusVal = document.getElementById('gantt-status-filter') ? document.getElementById('gantt-status-filter').value : 'all';
+  const statusSet = _getFilterSet('gantt-status-set');
   const _pass = (ws,t)=>{
     if(wsVal!=='all' && !taskWsNames(ws,t).includes(wsVal)) return false;
-    if(statusVal!=='all'){ const d=taskDoneState[t.id]||t.done; if(statusVal==='done'){ if(!d) return false; } else if(d||t.status!==statusVal) return false; }
+    if(statusSet.length){ const st=(taskDoneState[t.id]||t.done)?'done':(t.status||'on-track'); if(!statusSet.includes(st)) return false; }
     return true;
   };
-
-  const pptx=new PptxGenJS();
-  pptx.layout='LAYOUT_WIDE';
   const SW=13.33, SH=7.5, MX=0.35;
   const MAROON='8A1A1A';
   const hexClean=(c)=>(c||'').replace('#','').slice(0,6)||'888888';
-
-  projects.forEach(proj=>{
+  {
     const slide=pptx.addSlide();
     slide.background={color:'FFFFFF'};
     // Title band
@@ -3453,13 +3617,23 @@ async function exportCollapsedPPT(){
       if(!textRuns.length) textRuns.push({text:'No tasks.',options:{fontSize:9,color:'AAAAAA',italic:true,fontFace:'Arial'}});
       slide.addText(textRuns,{x:x+0.12,y:colY+0.68,w:colW-0.24,h:colH-0.8,valign:'top',fontFace:'Arial'});
     });
-  });
+  }
+}
 
+// Orchestrator: one full-workplan slide + one simple slide per chosen project
+async function exportWorkplanPPT(projects){
+  try { await ensurePptxLib(); }
+  catch(e){ alert('Could not load the PowerPoint library. If your browser blocks external scripts, add the lib/ files to your site (see setup guide).'); return; }
+  if(typeof PptxGenJS==='undefined'){ alert('PowerPoint library unavailable. Please try again.'); return; }
+  if(!projects||!projects.length){ alert('No workplans to export.'); return; }
+  const pptx=new PptxGenJS();
+  pptx.layout='LAYOUT_WIDE';
+  projects.forEach(proj=>{ _addFullSlide(pptx, proj); _addSimpleSlide(pptx, proj); });
   try {
-    await pptx.writeFile({fileName:`Workplan_Collapsed_${now.toISOString().slice(0,10)}.pptx`});
+    await pptx.writeFile({fileName:`Workplan_${now.toISOString().slice(0,10)}.pptx`});
   } catch(err){
-    console.error('Collapsed PPT export failed:', err);
-    alert('Export failed: '+(err&&err.message?err.message:'unknown error')+'. Please try again.');
+    console.error('PPT export failed:', err);
+    alert('Export to PPT failed: '+(err&&err.message?err.message:'unknown error')+'. Please try again.');
   }
 }
 PROJECTS.forEach(p=>{
@@ -3549,24 +3723,25 @@ function goToTimeline(code) {
 // Open a member's profile showing their active projects + workstreams
 function openMemberProfile(initials){
   const m = TEAM.find(x=>x.initials===initials); if(!m) return;
-  const allActs = allFlatTasks().filter(a=>a.owner===m.initials);
-  // Build project -> {workstreams set, open/done counts} from membership + tasks
-  const byProj = {};
+  // A member "owns" a task if they're a member of that task's workstream (matches Workplan + Tasks)
+  const _mineTask = (proj,ws,t)=> _taskOwners(proj,ws,t).includes(m.initials);
+  // Build project -> {workstream names set, open/done counts}
+  const byProj = {}; let openCount=0, doneCount=0;
   PROJECTS.filter(p=>!p.archived).forEach(p=>{
     let touched=false; const wsSet=new Set();
     p.phases.forEach(ph=>ph.workstreams.forEach(ws=>{
       const inWs = (ws.members&&ws.members.includes(m.initials));
       if(inWs){ touched=true; if(ws.name!=='General') wsSet.add(ws.name); }
+      // Count this member's tasks (owner = workstream member)
+      ws.tasks.forEach(t=>{ if(_mineTask(p,ws,t)){ if(taskDoneState[t.id]||t.done) doneCount++; else openCount++; } });
     }));
     if(p.members&&p.members.includes(m.initials)) touched=true;
     if(touched) byProj[p.caseCode]={proj:p, ws:[...wsSet]};
   });
-  const openCount = allActs.filter(a=>!(taskDoneState[a.id]||a.done)).length;
-  const doneCount = allActs.filter(a=>taskDoneState[a.id]||a.done).length;
 
   const projBlocks = Object.values(byProj).map(({proj,ws})=>{
     const wsChips = ws.length ? ws.map(w=>{ const c=wsColour(proj,w); return `<span style="font-size:10px;font-weight:600;color:${c};background:${c}18;border:1px solid ${c}55;padding:2px 8px;border-radius:10px;">${w}</span>`; }).join('')
-      : '<span style="font-size:10px;color:var(--muted);">Project member</span>';
+      : '<span style="font-size:10px;color:var(--muted);">Project member (no workstream assigned)</span>';
     return `<div style="border:1px solid var(--border);border-left:3px solid ${proj.color};border-radius:7px;padding:10px 12px;margin-bottom:8px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
         <span style="font-size:9px;font-weight:800;color:#fff;background:${proj.color};padding:2px 7px;border-radius:10px;">${proj.caseCode}</span>
@@ -3970,14 +4145,15 @@ function openAddTask(){
   projSel.innerHTML = PROJECTS.map(p=>`<option value="${p.id}">${p.caseCode} — ${p.name}</option>`).join('')
     + '<option value="__other__">Other Tasks (non-casework)</option>';
   mountWsField('task-ws-field', [], PROJECTS.length?PROJECTS[0].id:'');
+  const _todayISO=new Date().toISOString().slice(0,10);
   document.getElementById('task-name').value='';
   document.getElementById('phase-name-new').value='';
-  document.getElementById('task-start-date').value='';
-  document.getElementById('task-end-date').value='';
+  document.getElementById('task-start-date').value=_todayISO;
+  document.getElementById('task-end-date').value=_todayISO;
   document.getElementById('task-start-wk').value='';
   document.getElementById('task-end-wk').value='';
-  const _dur=document.getElementById('task-duration'); if(_dur) _dur.value='';
-  document.getElementById('task-week-hint').textContent='Pick a date range on the calendar, or set the duration. If start is blank, today is used.';
+  const _dur=document.getElementById('task-duration'); if(_dur) _dur.value='1';
+  document.getElementById('task-week-hint').textContent='Starts today by default — adjust the dates or duration as needed.';
   document.getElementById('task-status').value='on-track';
   setTaskMode('task');
   onTaskProjectChange();
@@ -5279,7 +5455,8 @@ function _addDownstreamTask(wsId){
   const ph=p.phases.find(x=>x.id===editCtx.phaseId);
   const ws=ph.workstreams.find(x=>x.id===wsId);
   const tid='t'+Date.now();
-  ws.tasks.push({id:tid,name:'',owner:'',due:'Wk '+ph.startWk,durWk:1,status:'on-track',done:false});
+  const _sw=Math.max(1, dateToWk(new Date(p.startDate), new Date().toISOString().slice(0,10)));
+  ws.tasks.push({id:tid,name:'',owner:'',due:'Wk '+_sw,durWk:1,status:'on-track',done:false});
   taskDoneState[tid]=false;
   _renderDownstreamTasks();
 }
@@ -5370,9 +5547,10 @@ function _renderWsDownstream(){
     const dur=Math.max(1, (r.endWk||r.startWk||1)-(r.startWk||1)+1) || (t.durWk||1);
     return `<div class="wsds-task" data-tid="${t.id}" style="display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
       <input class="fi wsds-name" style="flex:1;min-width:160px;font-size:12px;padding:5px 8px;" value="${(t.name||'').replace(/"/g,'&quot;')}">
-      <input class="fi wsds-start" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.startISO}" title="Start date">
+      <input class="fi wsds-start" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.startISO}" title="Start date" onchange="_wsdsSyncDur(this)">
+      <input class="fi wsds-end" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.endISO}" title="End date" onchange="_wsdsSyncDur(this)">
       <div style="display:flex;align-items:center;gap:4px;">
-        <input class="fi wsds-dur" type="number" min="1" style="width:52px;font-size:12px;padding:5px 4px;" value="${dur}" title="Duration in weeks">
+        <input class="fi wsds-dur" type="number" min="1" style="width:52px;font-size:12px;padding:5px 4px;" value="${dur}" title="Duration in weeks" oninput="_wsdsSyncEnd(this)">
         <span style="font-size:10px;color:var(--muted);">wks</span>
       </div>
       <button onclick="_removeWsTask('${t.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">&#10005;</button>
@@ -5385,7 +5563,8 @@ function _addWsTask(){
   const ph=p.phases.find(x=>x.id===editCtx.phaseId);
   const ws=ph.workstreams.find(x=>x.id===editCtx.wsId);
   const tid='t'+Date.now();
-  ws.tasks.push({id:tid,name:'',owner:'',due:'Wk '+ph.startWk,durWk:1,status:'on-track',done:false});
+  const _sw=Math.max(1, dateToWk(new Date(p.startDate), new Date().toISOString().slice(0,10)));
+  ws.tasks.push({id:tid,name:'',owner:'',due:'Wk '+_sw,durWk:1,status:'on-track',done:false});
   taskDoneState[tid]=false;
   _renderWsDownstream();
 }
@@ -5409,11 +5588,25 @@ function _commitWsTasks(){
       t.name=row.querySelector('.wsds-name').value.trim()||t.name;
       let sISO=row.querySelector('.wsds-start').value||todayISO;
       const startWk=dateToWk(ps,sISO);
-      const dur=Math.max(1, parseInt(row.querySelector('.wsds-dur').value)||1);
+      const eISOraw=row.querySelector('.wsds-end').value;
+      let dur=Math.max(1, parseInt(row.querySelector('.wsds-dur').value)||1);
+      if(eISOraw){ const endWk=dateToWk(ps,eISOraw); dur=Math.max(1, endWk-startWk+1); }
       t.due='Wk '+startWk; t.durWk=dur;
     }
   });
   ws.tasks=ws.tasks.filter(t=>t.name && t.name.trim());
+}
+// Keep a workstream task row's end date and duration in sync
+function _wsdsSyncDur(el){
+  const row=el.closest('.wsds-task'); if(!row) return;
+  const p=_findProj(editCtx.projId); const ps=new Date(p.startDate);
+  const s=row.querySelector('.wsds-start').value, e=row.querySelector('.wsds-end').value;
+  if(s&&e){ const dur=Math.max(1, dateToWk(ps,e)-dateToWk(ps,s)+1); row.querySelector('.wsds-dur').value=dur; }
+}
+function _wsdsSyncEnd(el){
+  const row=el.closest('.wsds-task'); if(!row) return;
+  const s=row.querySelector('.wsds-start').value; const dur=Math.max(1, parseInt(row.querySelector('.wsds-dur').value)||1);
+  if(s){ const sd=new Date(s); sd.setDate(sd.getDate()+dur*7-1); const eEl=row.querySelector('.wsds-end'); eEl.value=sd.toISOString().slice(0,10); if(eEl._rcRefresh) eEl._rcRefresh(); }
 }
 
 // ---- TASK (start + end dates) ----
