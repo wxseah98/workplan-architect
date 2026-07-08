@@ -503,7 +503,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       </span>
       <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
         <button class="btn-sm" id="gantt-timeline-btn" onclick="setGanttLayout('timeline')" title="Full Gantt timeline" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Full</button>
-        <button class="btn-sm" id="gantt-collapsed-btn" onclick="setGanttLayout('collapsed')" title="Collapsed phase-arrow overview" style="border:none;border-radius:0;font-weight:600;">Collapsed</button>
+        <button class="btn-sm" id="gantt-collapsed-btn" onclick="setGanttLayout('collapsed')" title="Simple phase-arrow overview" style="border:none;border-radius:0;font-weight:600;">Simple</button>
       </span>
       <span style="display:inline-flex;align-items:center;gap:6px;">
         <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Show:</span>
@@ -521,12 +521,11 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
         <option value="weeks">Week view</option>
         <option value="months">Month view</option>
       </select>
-      <button class="btn-sm" onclick="openAddTaskFor(ganttDefaultProj(),'','')" style="border-color:var(--ink);color:var(--ink);font-weight:700;">+ Add</button>
       <div style="position:relative;display:inline-block;">
         <button class="btn-sm" onclick="toggleExportMenu(event)" style="border-color:var(--red);color:var(--red);font-weight:700;">Export &#9662;</button>
         <div id="export-menu" style="display:none;position:absolute;right:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:300;min-width:200px;">
           <div onclick="_exportChoice('ppt')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export timeline to PowerPoint</div>
-          <div onclick="_exportChoice('collapsed')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export collapsed view to PowerPoint</div>
+          <div onclick="_exportChoice('collapsed')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export simple view to PowerPoint</div>
           <div onclick="_exportChoice('excel')" style="padding:9px 12px;font-size:13px;border-radius:5px;cursor:pointer;color:var(--slate);">Export to Excel</div>
         </div>
       </div>
@@ -578,7 +577,7 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
 
 
 <!-- ADD TASK MODAL -->
-<div id="task-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;align-items:center;justify-content:center;padding:20px;">
+<div id="task-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:240;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.13);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
     <div style="padding:20px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
       <div style="font-size:15px;font-weight:800;" id="task-modal-title">Add Task</div>
@@ -958,7 +957,10 @@ Phase 3: Deliver, 4 weeks. Tasks: Rollout plan (Commercial)."></textarea>
 <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:210;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.13);width:100%;max-width:460px;max-height:90vh;overflow-y:auto;">
     <div style="padding:20px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-      <div style="font-size:15px;font-weight:800;" id="edit-modal-title">Edit</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button id="edit-back-btn" onclick="editModalBack()" title="Save and go back" style="display:none;background:none;border:none;font-size:15px;color:var(--slate);cursor:pointer;font-weight:700;">&#8592;</button>
+        <div style="font-size:15px;font-weight:800;" id="edit-modal-title">Edit</div>
+      </div>
       <button onclick="closeEditModal()" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
     </div>
     <div style="padding:20px 24px;" id="edit-modal-body"></div>
@@ -969,7 +971,8 @@ Phase 3: Deliver, 4 weeks. Tasks: Rollout plan (Commercial)."></textarea>
       </div>
       <div style="display:flex;gap:8px;">
         <button class="btn-ghost" onclick="closeEditModal()">Cancel</button>
-        <button class="btn-red" onclick="editModalSave()">Save changes</button>
+        <button class="btn-ghost" id="edit-save-back-btn" onclick="editModalBack()" style="display:none;">Save &amp; back</button>
+        <button class="btn-red" id="edit-save-btn" onclick="editModalSave()">Save changes</button>
       </div>
     </div>
   </div>
@@ -2286,10 +2289,15 @@ function phaseTasksByDate(proj, ph){
 let ganttLabelBars = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_labels')==='1');
 let ganttHideSidebar = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_nosidebar')==='1');
 let ganttShowOwners = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_owners')==='1');
+let ganttShowEdit = false; // edit icons hidden by default; toggled per session via the project row Edit button
 let ganttLayout = (typeof localStorage!=='undefined' && localStorage.getItem('wa_gantt_layout')) || 'timeline';
 function toggleGanttOwners(){
   ganttShowOwners=!ganttShowOwners;
   try{ localStorage.setItem('wa_gantt_owners', ganttShowOwners?'1':'0'); }catch(e){}
+  renderGantt();
+}
+function toggleGanttEdit(){
+  ganttShowEdit=!ganttShowEdit;
   renderGantt();
 }
 function setGanttLayout(mode){
@@ -2587,7 +2595,8 @@ function renderGantt(){
           <div style="font-size:12px;font-weight:800;color:#fff;letter-spacing:.04em;">${row.proj.caseCode}${_dr?` <span style="font-weight:600;color:#e0e0e0;font-size:10px;letter-spacing:0;">· ${_dr}${_wks?` · ${_wks} wk${_wks>1?'s':''}`:''}</span>`:''}</div>
           <div style="font-size:10px;color:#cfcfcf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">${row.proj.name}</div>
         </div>
-        <button class="edit-btn" title="Edit project" style="color:#eee;" onclick="event.stopPropagation();openEditProject('${row.proj.id}')">&#9998;</button>
+        <button title="${ganttShowEdit?'Hide edit controls':'Show edit controls'}" onclick="event.stopPropagation();toggleGanttEdit()" style="font-size:10px;font-weight:700;border:1px solid ${ganttShowEdit?'#fff':'rgba(255,255,255,.5)'};background:${ganttShowEdit?'#fff':'transparent'};color:${ganttShowEdit?'#4A4A4A':'#fff'};border-radius:5px;padding:3px 9px;cursor:pointer;flex-shrink:0;">&#9998; Edit</button>
+        ${ganttShowEdit?`<button class="edit-btn" title="Edit project" style="color:#eee;" onclick="event.stopPropagation();openEditProject('${row.proj.id}')">&#9998;</button>`:''}
       </div>`;
       const allProjTasks = row.proj.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks));
       const projDone = allProjTasks.filter(t=>taskDoneState[t.id]||t.done).length;
@@ -2613,7 +2622,7 @@ function renderGantt(){
         <span style="font-size:9px;color:#555;font-weight:600;white-space:nowrap;">${fmtDate(ps)}&ndash;${fmtDate(pe)} &middot; ${ph.endWk-ph.startWk+1} wk${(ph.endWk-ph.startWk+1)>1?'s':''}</span>
         <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#777;background:#E4E4E4;padding:2px 6px;border-radius:4px;">Phase</span>
-          <button class="edit-btn" title="Edit phase" onclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')">&#9998;</button>
+          ${ganttShowEdit?`<button class="edit-btn" title="Edit phase" onclick="event.stopPropagation();openEditPhase('${proj.id}','${ph.id}')">&#9998;</button>`:''}
         </span>
       </div>`;
       const phTasks = ph.workstreams.flatMap(ws=>ws.tasks);
@@ -2633,7 +2642,7 @@ function renderGantt(){
         <span onclick="event.stopPropagation();toggleGanttWs('${row.ws.id}')" style="cursor:pointer;font-size:11px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.04em;">${row.ws.name}</span>
         <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;background:#EDEDED;padding:2px 6px;border-radius:4px;">Workstream</span>
-          <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${row.proj.id}','${row.ph.id}','${row.ws.id}')">&#9998;</button>
+          ${ganttShowEdit?`<button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${row.proj.id}','${row.ph.id}','${row.ws.id}')">&#9998;</button>`:''}
         </span>
       </div>`;
       if(ganttShowOwners) ownerInner = `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center;align-items:center;padding:0 4px;">${_ownerAvatars(row.ws.members||[])}</div>`;
@@ -2659,7 +2668,7 @@ function renderGantt(){
         <span style="font-size:11px;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;font-weight:600;'}flex:1;min-width:120px;white-space:normal;word-break:break-word;line-height:1.35;">${isDone?'&#10003; ':''}${task.name}</span>
         ${_bubbles}
         <span style="font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0;margin-top:1px;">${_dateLbl}</span>
-        <button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>
+        ${ganttShowEdit?`<button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>`:''}
       </div>`;
       const statLabel = isDone?'Done':task.status==='delayed'?'Delayed':task.status==='at-risk'?'At Risk':'On Track';
       const statCol = isDone?'#3E9C5F':task.status==='delayed'?'#D9535F':task.status==='at-risk'?'#D19A2E':'#2C9BC4';
@@ -2856,7 +2865,10 @@ function renderGanttCollapsed(projects){
       ? `<div style="display:flex;flex-direction:column;gap:10px;">${phaseCols}</div>`
       : `<div style="display:flex;gap:10px;align-items:stretch;overflow-x:auto;">${phaseCols}</div>`;
     return `<div style="margin-bottom:26px;">
-      <div style="font-size:13px;font-weight:800;color:#1A1A1A;margin-bottom:8px;">${proj.caseCode} · ${proj.name}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;font-size:13px;font-weight:800;color:#1A1A1A;">${proj.caseCode} · ${proj.name}</div>
+        <button title="Edit project" onclick="event.stopPropagation();openEditProject('${proj.id}')" style="font-size:10px;font-weight:700;border:1px solid var(--border);background:#fff;color:var(--slate);border-radius:5px;padding:3px 9px;cursor:pointer;flex-shrink:0;">&#9998; Edit</button>
+      </div>
       <div style="display:flex;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;">${chevs}</div>
       ${colsWrap}
     </div>`;
@@ -4375,7 +4387,6 @@ function _renderOwnerField(box){
           onkeydown="if(event.key==='Enter'){event.preventDefault();_ownerAddFromInput(this);}">
         <div class="owner-list" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:70;background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;box-shadow:0 6px 20px rgba(0,0,0,.12);max-height:190px;overflow-y:auto;"></div>
       </div>
-      ${hidePlus?'':`<button type="button" class="btn-ghost owner-add" style="font-size:16px;padding:4px 12px;line-height:1;flex-shrink:0;" onclick="_ownerAddFromInput(this)">+</button>`}
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:5px;${chips?'margin-top:6px;':''}" class="owner-chips">${chips}</div>`;
 }
@@ -4509,7 +4520,6 @@ function _renderWsField(box){
           onkeydown="if(event.key==='Enter'){event.preventDefault();_wsAddFromInput(this);}">
         <div class="ws-list" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:70;background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;box-shadow:0 6px 20px rgba(0,0,0,.12);max-height:190px;overflow-y:auto;"></div>
       </div>
-      <button type="button" class="btn-ghost" style="font-size:16px;padding:4px 12px;line-height:1;flex-shrink:0;" onclick="_wsAddFromInput(this)">+</button>
     </div>`;
 }
 function _wsListItems(box, filter){
@@ -4990,7 +5000,8 @@ async function githubSaveSilent(){
 let editCtx = null;  // {type, projId, phaseId, wsId, taskId}
 
 let _deleteArmed=false;
-function closeEditModal(){ document.getElementById('edit-modal').style.display='none'; editCtx=null; _deleteArmed=false; clearTimeout(window._delTimer); const b=document.getElementById('edit-delete-btn'); if(b){b.classList.remove('confirm');b.textContent='Delete';} }
+let _editReturn = null; // {type:'project', projId} to return to after a nested edit
+function closeEditModal(){ document.getElementById('edit-modal').style.display='none'; editCtx=null; _editReturn=null; if(typeof _showEditBackButtons==='function') _showEditBackButtons(false); _deleteArmed=false; clearTimeout(window._delTimer); const b=document.getElementById('edit-delete-btn'); if(b){b.classList.remove('confirm');b.textContent='Delete';} }
 function _findProj(id){ return PROJECTS.find(p=>p.id===id); }
 
 function _memberChips(selected, pool){
@@ -5064,7 +5075,7 @@ function _renderProjStructure(){
           <span style="color:${isDone?'#3E9C5F':t.status==='delayed'?'#D9535F':t.status==='at-risk'?'#D19A2E':'#2C9BC4'};font-weight:800;">•</span>
           <span style="flex:1;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;'}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
           <span style="font-size:9px;color:var(--muted);white-space:nowrap;">${fmtDate(new Date(r.startISO))}–${fmtDate(new Date(r.endISO))}</span>
-          <button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="openEditTask('${p.id}','${ph.id}','${ws.id}','${t.id}')">&#9998;</button>
+          <button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="_drillEdit('task','${p.id}','${ph.id}','${ws.id}','${t.id}')">&#9998;</button>
         </div>`;
       }).join('') || '<div style="font-size:10px;color:var(--muted);padding:2px 0 2px 14px;">No tasks.</div>';
       const c=wsColour(p,ws.name);
@@ -5073,7 +5084,7 @@ function _renderProjStructure(){
           <span style="width:9px;height:9px;border-radius:2px;background:${c};flex-shrink:0;"></span>
           <span style="flex:1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:${c};">${ws.name}</span>
           <button class="btn-ghost" style="font-size:9px;padding:2px 7px;" onclick="openAddTaskFor('${p.id}','${ph.id}','${ws.id}')">+ Task</button>
-          <button class="edit-btn" title="Edit workstream" onclick="openEditWorkstream('${p.id}','${ph.id}','${ws.id}')">&#9998;</button>
+          <button class="edit-btn" title="Edit workstream" onclick="_drillEdit('ws','${p.id}','${ph.id}','${ws.id}')">&#9998;</button>
         </div>
         ${tasks}
       </div>`;
@@ -5083,7 +5094,7 @@ function _renderProjStructure(){
         <span style="width:18px;height:18px;border-radius:50%;border:2px solid ${ph.color};color:${ph.color};font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${pi+1}</span>
         <span style="flex:1;font-size:12px;font-weight:800;color:#1A1A1A;">${ph.name}</span>
         <span style="font-size:9px;color:var(--muted);">Wk ${ph.startWk}–${ph.endWk}</span>
-        <button class="edit-btn" title="Edit phase" onclick="openEditPhase('${p.id}','${ph.id}')">&#9998;</button>
+        <button class="edit-btn" title="Edit phase" onclick="_drillEdit('phase','${p.id}','${ph.id}')">&#9998;</button>
       </div>
       ${wsBlocks || '<div style="font-size:10px;color:var(--muted);padding-left:10px;">No workstreams.</div>'}
     </div>`;
@@ -5092,6 +5103,19 @@ function _renderProjStructure(){
     <button class="btn-ghost btn-sm" onclick="addPhaseToProject('${p.id}')">+ Phase</button>
     <button class="btn-ghost btn-sm" onclick="addWorkstreamToProject('${p.id}')">+ Workstream</button>
   </div>`;
+}
+// Drill from Edit Project into a phase/workstream/task, remembering to return
+function _drillEdit(kind, projId, phaseId, wsId, taskId){
+  _editReturn = {type:'project', projId};
+  if(kind==='phase') openEditPhase(projId, phaseId);
+  else if(kind==='ws') openEditWorkstream(projId, phaseId, wsId);
+  else if(kind==='task') openEditTask(projId, phaseId, wsId, taskId);
+  _showEditBackButtons(true);
+}
+function _showEditBackButtons(show){
+  const b1=document.getElementById('edit-back-btn'); const b2=document.getElementById('edit-save-back-btn');
+  if(b1) b1.style.display = show?'inline-block':'none';
+  if(b2) b2.style.display = show?'inline-flex':'none';
 }
 // Archive / unarchive the project currently open in the edit modal
 function editModalArchive(){
@@ -5238,9 +5262,10 @@ function _renderDownstreamTasks(){
         const dur=Math.max(1, (r.endWk||r.startWk||1)-(r.startWk||1)+1) || (t.durWk||1);
         return `<div class="ds-task" data-tid="${t.id}" style="display:flex;gap:6px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
           <input class="fi ds-name" style="flex:1;min-width:160px;font-size:12px;padding:5px 8px;${isDone?'text-decoration:line-through;color:#aaa;':''}" value="${(t.name||'').replace(/"/g,'&quot;')}">
-          <input class="fi ds-start" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.startISO}" title="Start date">
+          <input class="fi ds-start" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.startISO}" title="Start date" onchange="_dsSyncDur(this)">
+          <input class="fi ds-end" type="date" style="width:130px;font-size:11px;padding:5px 4px;" value="${r.endISO}" title="End date" onchange="_dsSyncDur(this)">
           <div style="display:flex;align-items:center;gap:4px;">
-            <input class="fi ds-dur" type="number" min="1" style="width:52px;font-size:12px;padding:5px 4px;" value="${dur}" title="Duration in weeks">
+            <input class="fi ds-dur" type="number" min="1" style="width:52px;font-size:12px;padding:5px 4px;" value="${dur}" title="Duration in weeks" oninput="_dsSyncEnd(this)">
             <span style="font-size:10px;color:var(--muted);">wks</span>
           </div>
           <button onclick="_removeDownstreamTask('${t.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">&#10005;</button>
@@ -5274,13 +5299,28 @@ function _commitDownstreamTasks(){
     const name=row.querySelector('.ds-name').value.trim();
     let sISO=row.querySelector('.ds-start').value||todayISO;
     const startWk=dateToWk(ps,sISO);
-    const dur=Math.max(1, parseInt(row.querySelector('.ds-dur').value)||1);
+    const eISOraw=row.querySelector('.ds-end').value;
+    let dur=Math.max(1, parseInt(row.querySelector('.ds-dur').value)||1);
+    if(eISOraw){ const endWk=dateToWk(ps,eISOraw); dur=Math.max(1, endWk-startWk+1); }
     ph.workstreams.forEach(ws=>{
       const t=ws.tasks.find(x=>x.id===tid);
       if(t){ t.name=name||t.name; t.due='Wk '+startWk; t.durWk=dur; }
     });
   });
   ph.workstreams.forEach(ws=>{ ws.tasks=ws.tasks.filter(t=>t.name && t.name.trim()); });
+}
+// Keep a downstream task row's end date and duration in sync
+function _dsSyncDur(el){
+  const row=el.closest('.ds-task'); if(!row) return;
+  const p=_findProj(editCtx.projId); const ps=new Date(p.startDate);
+  const s=row.querySelector('.ds-start').value, e=row.querySelector('.ds-end').value;
+  if(s&&e){ const dur=Math.max(1, dateToWk(ps,e)-dateToWk(ps,s)+1); row.querySelector('.ds-dur').value=dur; }
+}
+function _dsSyncEnd(el){
+  const row=el.closest('.ds-task'); if(!row) return;
+  const p=_findProj(editCtx.projId); const ps=new Date(p.startDate);
+  const s=row.querySelector('.ds-start').value; const dur=Math.max(1, parseInt(row.querySelector('.ds-dur').value)||1);
+  if(s){ const sd=new Date(s); sd.setDate(sd.getDate()+dur*7-1); const eEl=row.querySelector('.ds-end'); eEl.value=sd.toISOString().slice(0,10); if(eEl._rcRefresh) eEl._rcRefresh(); }
 }
 function _pickPhaseColour(col){
   document.getElementById('edit-f4').value=col;
@@ -5496,7 +5536,8 @@ function _taskDateToWk(){
 }
 
 // ---- SAVE ----
-function editModalSave(){
+function editModalBack(){ editModalSave(true); }
+function editModalSave(goBack){
   if(!editCtx) return;
   const val=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
   const p=_findProj(editCtx.projId);
@@ -5591,10 +5632,19 @@ function editModalSave(){
 
   APP.projects=PROJECTS; APP.wpList=WP_LIST; APP.taskDoneState=taskDoneState;
   saveData();
-  closeEditModal();
   renderTasks();
   if(typeof renderGantt==='function' && document.getElementById('page-timeline').classList.contains('active')) renderGantt();
   renderDashboardWidgets();
+  // If we drilled in from a parent editor, save-and-return reopens it
+  if(goBack && _editReturn && _editReturn.type==='project'){
+    const rp=_editReturn.projId; _editReturn=null;
+    openEditProject(rp);
+    // reopen the inline structure section so the user is where they left off
+    const box=document.getElementById('projstruct-box');
+    if(box){ box.style.display='block'; const ch=document.getElementById('projstruct-chev'); if(ch) ch.innerHTML='Hide &#9652;'; _renderProjStructure(); }
+    return;
+  }
+  closeEditModal();
 }
 
 // ---- DELETE ----
