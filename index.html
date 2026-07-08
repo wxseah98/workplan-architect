@@ -747,6 +747,17 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
   </div>
 </div>
 
+<!-- MEMBER PROFILE MODAL -->
+<div id="member-profile-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:210;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.13);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+    <div style="padding:20px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:15px;font-weight:800;" id="member-profile-title">Profile</div>
+      <button onclick="document.getElementById('member-profile-modal').style.display='none'" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
+    </div>
+    <div style="padding:20px 24px;" id="member-profile-body"></div>
+  </div>
+</div>
+
 <!-- SETTINGS MODAL -->
 <div id="settings-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.13);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
@@ -2545,7 +2556,8 @@ function renderGantt(){
   const todayInRange = now>=gridStart && now<=gridEnd;
   const todayOffset = Math.round((now - gridStart) / (7*24*60*60*1000) * WW);
   const _mobile = (typeof window!=='undefined' && window.innerWidth && window.innerWidth<=720);
-  const LW = _mobile ? 190 : (ganttShowOwners ? 560 : 500); // label + progress
+  const OWN_W = ganttShowOwners ? (_mobile ? 70 : 96) : 0; // owners column width (0 when off)
+  const LW = _mobile ? 210 : 520; // label + progress (wider by default)
   const PROG_W = _mobile ? 56 : 70; // progress column width
 
   let tableRows = '';
@@ -2554,7 +2566,12 @@ function renderGantt(){
     const bgLabel = row.type==='project'?'#4A4A4A':row.type==='phase'?'#E4E4E4':row.type==='ws'?'#F2F2F2':'#FFFFFF';
     const bgChart = row.type==='project'?'#4A4A4A':row.type==='phase'?'rgba(0,0,0,.04)':'#FFFFFF';
 
-    let labelInner='', progInner='';
+    let labelInner='', progInner='', ownerInner='';
+    // Helper: coloured initials for a set of member initials/names
+    const _ownerAvatars = (list)=> (list&&list.length) ? list.map(o=>{
+      const m=TEAM.find(x=>x.initials===o||x.name===o); const c=m?m.color:'#888'; const ini=m?m.initials:o;
+      return `<span title="${(m?m.name:o)}" style="font-size:8px;font-weight:800;background:${c};color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;">${ini}</span>`;
+    }).join('') : '<span style="font-size:10px;color:#c8c8c8;">&mdash;</span>';
 
     if (row.type==='project') {
       const _pp = row.proj.phases;
@@ -2582,6 +2599,7 @@ function renderGantt(){
         </div>
         <span style="font-size:10px;font-weight:800;color:#fff;min-width:28px;text-align:right;">${projPct}%</span>
       </div>`;
+      if(ganttShowOwners) ownerInner = `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center;align-items:center;padding:0 4px;">${_ownerAvatars(row.proj.members||[])}</div>`;
     } else if (row.type==='phase') {
       const {ph,proj} = row;
       const ps = wkToDate(proj.startDate, ph.startWk);
@@ -2608,22 +2626,17 @@ function renderGantt(){
         </div>
         <span style="font-size:10px;font-weight:800;color:${phCol};min-width:28px;text-align:right;">${phPct}%</span>
       </div>`;
+      if(ganttShowOwners){ const pm=[]; ph.workstreams.forEach(w=>(w.members||[]).forEach(mi=>{ if(!pm.includes(mi)) pm.push(mi); })); ownerInner = `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center;align-items:center;padding:0 4px;">${_ownerAvatars(pm)}</div>`; }
     } else if (row.type==='ws') {
-      const _wsMem = ganttShowOwners && (row.ws.members||[]).length
-        ? `<span style="display:inline-flex;gap:2px;margin-left:6px;">`+(row.ws.members||[]).map(o=>{
-            const m=TEAM.find(x=>x.initials===o||x.name===o); const c=m?m.color:'#888'; const ini=m?m.initials:o;
-            return `<span title="${(m?m.name:o)}" style="font-size:8px;font-weight:800;background:${c};color:#fff;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;">${ini}</span>`;
-          }).join('')+`</span>`
-        : '';
       labelInner=`<div style="padding:4px 14px 4px 30px;display:flex;align-items:center;gap:6px;">
         <span onclick="event.stopPropagation();toggleGanttWs('${row.ws.id}')" title="Collapse / expand workstream" style="cursor:pointer;font-size:9px;color:var(--mid);display:inline-block;width:11px;transition:transform .15s;transform:rotate(${ganttCollapsed.has(row.ws.id)?'0':'90'}deg);flex-shrink:0;">&#9654;</span>
         <span onclick="event.stopPropagation();toggleGanttWs('${row.ws.id}')" style="cursor:pointer;font-size:11px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.04em;">${row.ws.name}</span>
-        ${_wsMem}
         <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <span style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;background:#EDEDED;padding:2px 6px;border-radius:4px;">Workstream</span>
           <button class="edit-btn" title="Edit workstream" onclick="event.stopPropagation();openEditWorkstream('${row.proj.id}','${row.ph.id}','${row.ws.id}')">&#9998;</button>
         </span>
       </div>`;
+      if(ganttShowOwners) ownerInner = `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center;align-items:center;padding:0 4px;">${_ownerAvatars(row.ws.members||[])}</div>`;
       const wsTasks = row.ws.tasks;
       const wsDone  = wsTasks.filter(t=>taskDoneState[t.id]||t.done).length;
       progInner = `<div style="padding:0 8px;font-size:10px;color:#bbb;text-align:right;">${wsDone}/${wsTasks.length}</div>`;
@@ -2633,16 +2646,12 @@ function renderGantt(){
       const dueDate = wkToDate(proj.startDate, parseWkDue(task.due));
       const _tr = taskDateRange(proj, ph, task);
       const _dateLbl = `${fmtDate(new Date(_tr.startISO))} – ${fmtDate(new Date(_tr.endISO))}`;
-      // Owners = members of the task's workstream(s); shown only when the toggle is on
-      let ownerHTML = '';
+      // Owners column = members of the task's workstream(s)
       if(ganttShowOwners){
         const wsNames = taskWsNames(row.ws, task);
         const mem = [];
         wsNames.forEach(nm=>{ (proj.phases.flatMap(pp=>pp.workstreams).filter(w=>w.name===nm)).forEach(w=>(w.members||[]).forEach(mi=>{ if(!mem.includes(mi)) mem.push(mi); })); });
-        ownerHTML = mem.length ? `<span style="display:inline-flex;gap:2px;flex-shrink:0;">`+mem.map(o=>{
-          const m=TEAM.find(x=>x.initials===o||x.name===o); const c=m?m.color:'#888'; const ini=m?m.initials:o;
-          return `<span title="${(m?m.name:o)}" style="font-size:8px;font-weight:800;background:${c};color:#fff;border-radius:50%;width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;">${ini}</span>`;
-        }).join('')+`</span>` : '<span title="No members on this workstream yet — add them via Edit workstream" style="font-size:10px;color:#c4c4c4;flex-shrink:0;">&mdash;</span>';
+        ownerInner = `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center;align-items:center;padding:0 4px;">${_ownerAvatars(mem)}</div>`;
       }
       const _gm = (typeof document!=='undefined' && document.getElementById('gantt-group')) ? document.getElementById('gantt-group').value : 'phase';
       const _bubbles = _gm==='phase' ? wsBubbles(proj, row.ws, task) : '';
@@ -2650,7 +2659,6 @@ function renderGantt(){
         <span style="font-size:11px;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;font-weight:600;'}flex:1;min-width:120px;white-space:normal;word-break:break-word;line-height:1.35;">${isDone?'&#10003; ':''}${task.name}</span>
         ${_bubbles}
         <span style="font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0;margin-top:1px;">${_dateLbl}</span>
-        ${ownerHTML}
         <button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>
       </div>`;
       const statLabel = isDone?'Done':task.status==='delayed'?'Delayed':task.status==='at-risk'?'At Risk':'On Track';
@@ -2717,9 +2725,11 @@ function renderGantt(){
       return `<div style="width:${WW}px;min-width:${WW}px;height:100%;border-right:${cellBorder};background:${cellBg};"></div>`;
     }).join('');
 
+    const _labelW = LW - PROG_W - OWN_W;
     tableRows += `<tr>
-      ${ganttHideSidebar?'':`<td style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;max-width:${LW-PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:0;z-index:4;">${labelInner}</td>
-      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;position:sticky;left:${LW-PROG_W}px;z-index:4;">${progInner}</td>`}
+      ${ganttHideSidebar?'':`<td style="width:${_labelW}px;min-width:${_labelW}px;max-width:${_labelW}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:0;z-index:4;">${labelInner}</td>
+      ${OWN_W?`<td style="width:${OWN_W}px;min-width:${OWN_W}px;max-width:${OWN_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:${_labelW}px;z-index:4;">${ownerInner}</td>`:''}
+      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;position:sticky;left:${_labelW+OWN_W}px;z-index:4;">${progInner}</td>`}
       <td style="height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};padding:0;vertical-align:middle;position:relative;">
         <div style="display:flex;height:100%;position:relative;">${gridCells}${barHTML}
           ${todayInRange?`<div style="position:absolute;top:0;bottom:0;left:${todayOffset}px;width:2px;background:#CC0000;opacity:.7;pointer-events:none;z-index:3;"></div>`:''}
@@ -2751,14 +2761,16 @@ function renderGantt(){
       <table style="border-collapse:collapse;table-layout:fixed;width:${_sideW+totalWeekW}px;max-width:${_sideW+totalWeekW}px;margin:0;">
         <thead>
           <tr>
-            ${ganttHideSidebar?'':`<th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:0;z-index:8;text-align:left;">Project / Phase / Task</th>
+            ${ganttHideSidebar?'':`<th style="width:${LW-PROG_W-OWN_W}px;min-width:${LW-PROG_W-OWN_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:0;z-index:8;text-align:left;">Project / Phase / Task</th>
+            ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:${LW-PROG_W-OWN_W}px;z-index:8;text-align:center;">Owners</th>`:''}
             <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:${LW-PROG_W}px;z-index:8;text-align:center;">Status</th>`}
             <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;position:sticky;top:0;z-index:7;">
               <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
             </th>
           </tr>
           <tr>
-            ${ganttHideSidebar?'':`<th style="width:${LW-PROG_W}px;min-width:${LW-PROG_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:0;z-index:8;"></th>
+            ${ganttHideSidebar?'':`<th style="width:${LW-PROG_W-OWN_W}px;min-width:${LW-PROG_W-OWN_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:0;z-index:8;"></th>
+            ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:${LW-PROG_W-OWN_W}px;z-index:8;"></th>`:''}
             <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:${LW-PROG_W}px;z-index:8;"></th>`}
             <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:7;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
             </th>
@@ -2898,6 +2910,10 @@ function _parseISO(s){ if(!s) return null; const p=s.split('-'); return new Date
 
 function _linkDatePair(startEl, endEl){
   if(!startEl||!endEl||startEl.dataset.rc) return;
+  // Only link genuine date inputs. In some modals the same ids (e.g. edit-f3/
+  // edit-f4) are reused as hidden week/colour inputs — never turn those into a
+  // date range picker.
+  if(startEl.type!=='date' || endEl.type!=='date') return;
   startEl.dataset.rc='1'; endEl.dataset.rc='1';
   // Hide the native inputs; show a joined display in their place
   startEl.type='hidden'; endEl.type='hidden';
@@ -3518,6 +3534,53 @@ function goToTimeline(code) {
 }
 
 // ---- TEAM PAGE ----
+// Open a member's profile showing their active projects + workstreams
+function openMemberProfile(initials){
+  const m = TEAM.find(x=>x.initials===initials); if(!m) return;
+  const allActs = allFlatTasks().filter(a=>a.owner===m.initials);
+  // Build project -> {workstreams set, open/done counts} from membership + tasks
+  const byProj = {};
+  PROJECTS.filter(p=>!p.archived).forEach(p=>{
+    let touched=false; const wsSet=new Set();
+    p.phases.forEach(ph=>ph.workstreams.forEach(ws=>{
+      const inWs = (ws.members&&ws.members.includes(m.initials));
+      if(inWs){ touched=true; if(ws.name!=='General') wsSet.add(ws.name); }
+    }));
+    if(p.members&&p.members.includes(m.initials)) touched=true;
+    if(touched) byProj[p.caseCode]={proj:p, ws:[...wsSet]};
+  });
+  const openCount = allActs.filter(a=>!(taskDoneState[a.id]||a.done)).length;
+  const doneCount = allActs.filter(a=>taskDoneState[a.id]||a.done).length;
+
+  const projBlocks = Object.values(byProj).map(({proj,ws})=>{
+    const wsChips = ws.length ? ws.map(w=>{ const c=wsColour(proj,w); return `<span style="font-size:10px;font-weight:600;color:${c};background:${c}18;border:1px solid ${c}55;padding:2px 8px;border-radius:10px;">${w}</span>`; }).join('')
+      : '<span style="font-size:10px;color:var(--muted);">Project member</span>';
+    return `<div style="border:1px solid var(--border);border-left:3px solid ${proj.color};border-radius:7px;padding:10px 12px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:9px;font-weight:800;color:#fff;background:${proj.color};padding:2px 7px;border-radius:10px;">${proj.caseCode}</span>
+        <span style="font-size:12px;font-weight:700;color:var(--ink);flex:1;">${proj.name}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">${wsChips}</div>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--muted);">Not assigned to any active projects or workstreams yet.</div>';
+
+  document.getElementById('member-profile-title').textContent = m.name;
+  document.getElementById('member-profile-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:${m.color};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0;">${m.initials}</div>
+      <div style="flex:1;">
+        <div style="font-size:16px;font-weight:800;color:var(--ink);">${m.name}</div>
+        <div style="font-size:12px;color:var(--mid);">${m.role||'Team member'}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:var(--slate);"><b>${openCount}</b> open</div>
+        <div style="font-size:12px;color:var(--green);"><b>${doneCount}</b> done</div>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Active projects &amp; workstreams</div>
+    ${projBlocks}`;
+  document.getElementById('member-profile-modal').style.display='flex';
+}
 function renderTeam() {
   const el = document.getElementById('team-content');
   if (!el) return;
@@ -3586,7 +3649,7 @@ function renderTeam() {
       const wsNames = [...wsSet];
       return `<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:4px;">
         <span style="font-size:9px;font-weight:800;color:#fff;background:${projCol};padding:2px 7px;border-radius:10px;">${code}</span>
-        ${wsNames.map(w=>`<span style="font-size:9px;font-weight:600;color:${projCol};background:${projCol}18;border:1px solid ${projCol}33;padding:2px 7px;border-radius:10px;">${w}</span>`).join('')}
+        ${wsNames.map(w=>{ const wc=proj?wsColour(proj,w):projCol; return `<span style="font-size:9px;font-weight:600;color:${wc};background:${wc}18;border:1px solid ${wc}55;padding:2px 7px;border-radius:10px;">${w}</span>`; }).join('')}
       </div>`;
     }).join('');
 
@@ -3607,6 +3670,7 @@ function renderTeam() {
         ${caseBlocks || '<div style="font-size:12px;color:var(--green);font-weight:600;">&#10003; No tasks assigned</div>'}
       </div>
       <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;gap:6px;justify-content:flex-end;">
+        <button class="btn-ghost" style="font-size:10px;padding:3px 10px;" onclick="event.stopPropagation();openMemberProfile('${m.initials}')">View profile</button>
         <button class="btn-ghost" style="font-size:10px;padding:3px 10px;" onclick="event.stopPropagation();openEditMember(${TEAM.indexOf(m)})">Edit</button>
       </div>
     </div>`;
