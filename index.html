@@ -567,19 +567,22 @@ select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;
       <div style="margin-bottom:14px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Phase Name</label>
         <input id="phase-name-new" class="fi" placeholder="e.g. Diagnose"></div>
       </div>
-      <div style="display:flex;gap:12px;">
-        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Start</label>
-          <div style="display:flex;gap:6px;">
-            <input id="task-start-date" class="fi" type="date" style="flex:1;" onchange="_tkDateToWk('start')">
-            <input id="task-start-wk" class="fi" type="number" min="1" placeholder="Wk" title="Start week" style="width:58px;" oninput="_tkWkToDate('start')">
-          </div></div>
-        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">End</label>
-          <div style="display:flex;gap:6px;">
-            <input id="task-end-date" class="fi" type="date" style="flex:1;" onchange="_tkDateToWk('end')">
-            <input id="task-end-wk" class="fi" type="number" min="1" placeholder="Wk" title="End week" style="width:58px;" oninput="_tkWkToDate('end')">
-          </div></div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Task dates</label>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <input id="task-start-date" type="date" onchange="_tkDateToWk('start')">
+            <input id="task-end-date" type="date" onchange="_tkDateToWk('end')">
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+            <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Wk</span>
+            <input id="task-start-wk" class="fi" type="number" min="1" placeholder="Start" title="Start week" style="width:60px;" oninput="_tkWkToDate('start')">
+            <span style="color:var(--muted);">&ndash;</span>
+            <input id="task-end-wk" class="fi" type="number" min="1" placeholder="End" title="End week" style="width:60px;" oninput="_tkWkToDate('end')">
+          </div>
+        </div>
       </div>
-      <div id="task-week-hint" style="font-size:10px;color:var(--mid);margin-top:5px;min-height:12px;">Weeks are relative to the project start. If start is blank, today is used.</div>
+      <div id="task-week-hint" style="font-size:10px;color:var(--mid);margin-top:5px;min-height:12px;">Pick a date range on the calendar, or set weeks (relative to the project start). If start is blank, today is used.</div>
       <div id="task-status-wrap" style="margin-top:10px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Status</label>
         <select id="task-status" class="fs">
           <option value="on-track">On Track</option>
@@ -2265,6 +2268,8 @@ function renderGantt(){
   // The week grid starts at the Monday of range.start's week (see buildWeeks),
   // so measure the today line from that same snapped Monday, not range.start.
   const gridStart = weeks.length ? weeks[0] : range.start;
+  const gridEnd = weeks.length ? new Date(weeks[weeks.length-1].getTime()+7*24*60*60*1000) : range.end;
+  const todayInRange = now>=gridStart && now<=gridEnd;
   const todayOffset = Math.round((now - gridStart) / (7*24*60*60*1000) * WW);
   const _mobile = (typeof window!=='undefined' && window.innerWidth && window.innerWidth<=720);
   const LW = _mobile ? 190 : 380; // label + progress
@@ -2416,7 +2421,7 @@ function renderGantt(){
       <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;position:sticky;left:${LW-PROG_W}px;z-index:4;">${progInner}</td>
       <td style="height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};padding:0;vertical-align:middle;position:relative;">
         <div style="display:flex;height:100%;position:relative;">${gridCells}${barHTML}
-          <div style="position:absolute;top:0;bottom:0;left:${todayOffset}px;width:2px;background:#CC0000;opacity:.7;pointer-events:none;z-index:3;"></div>
+          ${todayInRange?`<div style="position:absolute;top:0;bottom:0;left:${todayOffset}px;width:2px;background:#CC0000;opacity:.7;pointer-events:none;z-index:3;"></div>`:''}
         </div>
       </td>
     </tr>`;
@@ -2463,7 +2468,7 @@ function renderGantt(){
 
   setTimeout(()=>{
     const sc = document.getElementById('gantt-scroll');
-    if (sc) sc.scrollLeft = Math.max(0, todayOffset - sc.clientWidth/2 + LW);
+    if (sc) sc.scrollLeft = todayInRange ? Math.max(0, todayOffset - sc.clientWidth/2 + LW) : 0;
   }, 80);
 }
 
@@ -2541,7 +2546,7 @@ function _linkDatePair(startEl, endEl){
 function _openRangeCalendar(startEl,endEl,disp,refresh){
   _closeRangeCalendar();
   const s=_parseISO(startEl.value), e=_parseISO(endEl.value);
-  _rcState={ startISO:startEl.value||'', endISO:endEl.value||'', view:(s||new Date()), dragging:false, startEl, endEl, disp, refresh };
+  _rcState={ startISO:startEl.value||'', endISO:endEl.value||'', hoverISO:'', view:(s||new Date()), startEl, endEl, disp, refresh };
   const pop=document.createElement('div');
   pop.id='rc-pop';
   pop.style.cssText='position:fixed;z-index:500;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.2);padding:12px;width:280px;user-select:none;';
@@ -2552,10 +2557,10 @@ function _openRangeCalendar(startEl,endEl,disp,refresh){
   if(top+340>window.innerHeight) top=Math.max(8,r.top-340);
   pop.style.top=top+'px'; pop.style.left=left+'px';
   _renderRangeCalendar();
-  setTimeout(()=>document.addEventListener('mousedown', _rcOutside),0);
+  setTimeout(()=>document.addEventListener('click', _rcOutside),0);
 }
 function _rcOutside(e){ const p=document.getElementById('rc-pop'); if(p && !p.contains(e.target)) _closeRangeCalendar(); }
-function _closeRangeCalendar(){ const p=document.getElementById('rc-pop'); if(p) p.remove(); document.removeEventListener('mousedown', _rcOutside); _rcState=null; }
+function _closeRangeCalendar(){ const p=document.getElementById('rc-pop'); if(p) p.remove(); document.removeEventListener('click', _rcOutside); _rcState=null; }
 function _rcMonthLabel(d){ return d.toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
 function _renderRangeCalendar(){
   const st=_rcState; if(!st) return;
@@ -2565,16 +2570,21 @@ function _renderRangeCalendar(){
   const first=new Date(year,month,1);
   const startDow=(first.getDay()+6)%7; // Mon=0
   const daysInMonth=new Date(year,month+1,0).getDate();
-  const sIso=st.startISO, eIso=st.endISO;
+  const sIso=st.startISO, eIso=st.endISO, hIso=st.hoverISO;
   let cells='';
   for(let i=0;i<startDow;i++) cells+='<div></div>';
   for(let d=1; d<=daysInMonth; d++){
     const iso=_isoOf(new Date(year,month,d));
-    const inRange = sIso && eIso && iso>=sIso && iso<=eIso;
+    // Range highlight: committed range, or preview between start and hovered day
+    let lo=sIso, hi=eIso;
+    if(sIso && !eIso && hIso){ lo = sIso<hIso?sIso:hIso; hi = sIso<hIso?hIso:sIso; }
+    const inRange = lo && hi && iso>=lo && iso<=hi;
     const isEnd = iso===sIso || iso===eIso;
-    const bg = isEnd?'var(--red)':inRange?'rgba(204,0,0,.12)':'transparent';
+    const bg = isEnd?'var(--red)':inRange?'rgba(204,0,0,.14)':'transparent';
     const col = isEnd?'#fff':'var(--ink)';
-    cells+=`<div class="rc-day" data-iso="${iso}" style="text-align:center;padding:7px 0;font-size:12px;border-radius:6px;cursor:pointer;background:${bg};color:${col};">${d}</div>`;
+    cells+=`<div class="rc-day" data-iso="${iso}"
+      onclick="_rcDayClick('${iso}')" onmouseenter="_rcDayHover('${iso}')"
+      style="text-align:center;padding:7px 0;font-size:12px;border-radius:6px;cursor:pointer;background:${bg};color:${col};transition:background .08s;">${d}</div>`;
   }
   pop.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -2586,24 +2596,35 @@ function _renderRangeCalendar(){
       ${['M','T','W','T','F','S','S'].map(d=>`<div style="text-align:center;font-size:9px;font-weight:700;color:var(--muted);padding:2px 0;">${d}</div>`).join('')}
     </div>
     <div class="rc-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">${cells}</div>
-    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center;">Click a day to set the start, then click (or drag to) the end.</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center;">Click the start day, then click the end day.</div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
       <button type="button" class="btn-ghost" style="font-size:12px;padding:6px 14px;" onclick="_closeRangeCalendar()">Cancel</button>
       <button type="button" class="btn-red" style="font-size:12px;padding:6px 16px;" onclick="_rcCommit()">OK</button>
     </div>`;
-  // wire day interactions (click to set start; drag to set end)
-  pop.querySelectorAll('.rc-day').forEach(cell=>{
-    cell.addEventListener('mousedown',e=>{ e.preventDefault(); st.startISO=cell.dataset.iso; st.endISO=cell.dataset.iso; st.dragging=true; _renderRangeCalendar(); });
-    cell.addEventListener('mouseenter',()=>{ if(st.dragging){ const iso=cell.dataset.iso; if(iso>=st.startISO){ st.endISO=iso; } else { st.endISO=st.startISO; st.startISO=iso; } _renderRangeCalendar(); } });
-    cell.addEventListener('mouseup',()=>{ st.dragging=false; });
-  });
+}
+function _rcDayClick(iso){
+  const st=_rcState; if(!st) return;
+  if(!st.startISO || (st.startISO && st.endISO)){
+    // start a new selection
+    st.startISO=iso; st.endISO=''; st.hoverISO=iso;
+  } else {
+    // second click sets the end (swap if earlier)
+    if(iso>=st.startISO){ st.endISO=iso; }
+    else { st.endISO=st.startISO; st.startISO=iso; }
+    st.hoverISO='';
+  }
+  _renderRangeCalendar();
+}
+function _rcDayHover(iso){
+  const st=_rcState; if(!st) return;
+  if(st.startISO && !st.endISO){ st.hoverISO=iso; _renderRangeCalendar(); }
 }
 function _rcNav(delta){ if(!_rcState) return; _rcState.view=new Date(_rcState.view.getFullYear(), _rcState.view.getMonth()+delta, 1); _renderRangeCalendar(); }
-document.addEventListener('mouseup',()=>{ if(_rcState) _rcState.dragging=false; });
 function _rcCommit(){
   const st=_rcState; if(!st) return;
   if(st.startISO){ st.startEl.value=st.startISO; }
   if(st.endISO){ st.endEl.value=st.endISO; }
+  else if(st.startISO){ st.endEl.value=st.startISO; }
   _fireChange(st.startEl); _fireChange(st.endEl);
   if(st.refresh) st.refresh();
   _closeRangeCalendar();
