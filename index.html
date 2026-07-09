@@ -649,7 +649,7 @@ select.fsel:hover{border-color:var(--mid);}
         <select id="task-status" class="fs">
           <option value="on-track">On Track</option>
           <option value="at-risk">At Risk</option>
-          <option value="delayed">Delayed</option>
+          <option value="delayed">Due</option>
         </select></div>
     </div>
     <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
@@ -1691,7 +1691,7 @@ function buildFocus(){
 
   const open = mine.filter(t=>!isDone(t));
   const completed = mine.filter(isDone);
-  // 1. At Risk / Delayed (mine, open)
+  // 1. At Risk / Due (mine, open)
   const risk = open.filter(t=>t.status==='delayed'||t.status==='at-risk')
     .sort((a,b)=> (a.status===b.status?0:(a.status==='delayed'?-1:1)) || ((_d(a._end)||0)-(_d(b._end)||0)));
   const riskIds=new Set(risk.map(t=>t.id));
@@ -1727,7 +1727,7 @@ function buildFocus(){
   };
   const seg=(title,arr,color)=> arr.length? `<div style="font-size:10px;font-weight:800;color:${color||'var(--mid)'};text-transform:uppercase;letter-spacing:.06em;margin:8px 0 6px;">${title}</div>`+arr.map(row).join('') : '';
   let html='';
-  html += seg('At Risk / Delayed', risk, '#C0392B');
+  html += seg('At Risk / Due', risk, '#C0392B');
   html += seg('Due Today / This Week', dueSoon, '#3E9C5F');
   html += seg('Later', later);
   if(completed.length) html += `<div style="border-top:1px dashed var(--border);margin-top:8px;padding-top:6px;">`+seg('Completed', completed)+`</div>`;
@@ -2193,7 +2193,7 @@ function renderTasks(){
         <div class="t-name ${isDone?'done':''}">${t.name}</div>
         <div class="t-chips">
           ${_taskOwnerAvatars(proj,ws,t)}
-          <span class="stat-chip ${isDone?'done':t.status}">${isDone?'Done':(t.status==='at-risk'?'At Risk':t.status==='delayed'?'Delayed':'On Track')}</span>
+          <span class="stat-chip ${isDone?'done':t.status}">${isDone?'Done':(t.status==='at-risk'?'At Risk':t.status==='delayed'?'Due':'On Track')}</span>
           ${gm==='phase'?wsBubbles(proj,ws,t):''}
           <span class="due-lbl">${fmtDate(new Date(r.startISO))} – ${fmtDate(new Date(r.endISO))}</span>
         </div>
@@ -2408,7 +2408,7 @@ function _filterLabel(setId, arr){
   const allText = setId.indexOf('owner')>=0?'All Owners' : setId.indexOf('proj')>=0?'All Projects' : setId.indexOf('ws')>=0?'All Workstreams' : 'All Statuses';
   if(!arr.length) return allText;
   if(arr.length===1){
-    const m={'on-track':'On Track','at-risk':'At Risk','delayed':'Delayed','done':'Done'}; if(m[arr[0]]) return m[arr[0]];
+    const m={'on-track':'On Track','at-risk':'At Risk','delayed':'Due','done':'Done'}; if(m[arr[0]]) return m[arr[0]];
     const t=TEAM.find(x=>x.initials===arr[0]); if(t) return t.name.split(' ')[0];
     const p=PROJECTS.find(x=>x.id===arr[0]); if(p) return p.caseCode;
     return arr[0];
@@ -2441,7 +2441,7 @@ function _allWorkstreamNames(projs){
   });
   return names;
 }
-const _STATUS_OPTS=[{val:'on-track',label:'On Track',dot:'#3E9C5F',round:true},{val:'at-risk',label:'At Risk',dot:'#E08A1E',round:true},{val:'delayed',label:'Delayed',dot:'#8E2434',round:true},{val:'done',label:'Done',dot:'#1E6B3A',round:true}];
+const _STATUS_OPTS=[{val:'on-track',label:'On Track',dot:'#3E9C5F',round:true},{val:'at-risk',label:'At Risk',dot:'#E08A1E',round:true},{val:'delayed',label:'Due',dot:'#8E2434',round:true},{val:'done',label:'Done',dot:'#1E6B3A',round:true}];
 // Stable colour for a workstream name within a project.
 function wsColour(proj, name){
   let defs = (proj && proj.workstreamDefs && proj.workstreamDefs.length)
@@ -2616,7 +2616,7 @@ function setGanttStatus(projId, phaseId, wsId, taskId, choice){
     task.status = choice;
   }
   task.statusManual = true; // user picked this explicitly — lock out deadline automation
-  const _lbl = choice==='done'?'Completed':choice==='delayed'?'marked Delayed':choice==='at-risk'?'marked At Risk':'marked On Track';
+  const _lbl = choice==='done'?'Completed':choice==='delayed'?'marked Due':choice==='at-risk'?'marked At Risk':'marked On Track';
   const _dot = choice==='done'?'#1A7F4E':choice==='delayed'?'#A52834':choice==='at-risk'?'#D69200':'#1A7F4E';
   pushFeed(`${task.name} — ${_lbl}`, _dot);
   APP.projects = PROJECTS; APP.taskDoneState = taskDoneState;
@@ -2632,7 +2632,7 @@ function openGanttStatusMenu(projId, phaseId, wsId, taskId){
   const opts = [
     {v:'on-track', label:'On Track', col:'#3E9C5F'},
     {v:'at-risk', label:'At Risk', col:'#E08A1E'},
-    {v:'delayed', label:'Delayed', col:'#8E2434'},
+    {v:'delayed', label:'Due', col:'#8E2434'},
     {v:'done', label:'Done', col:'#1E6B3A'}
   ];
   const menu=document.createElement('div');
@@ -2669,7 +2669,7 @@ function renderGantt(){
   if(legend) legend.innerHTML=[
     {color:'#3E9C5F',label:'On Track'},
     {color:'#E08A1E',label:'At Risk'},
-    {color:'#8E2434',label:'Delayed'},
+    {color:'#8E2434',label:'Due'},
     {color:'#1E6B3A',label:'Done'}
   ].map(l=>`<div class="legend-item"><div class="legend-swatch" style="background:${l.color}"></div>${l.label}</div>`).join('');
 
@@ -2872,7 +2872,7 @@ function renderGantt(){
         <span style="font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0;margin-top:1px;">${_dateLbl}</span>
         ${ganttShowEdit?`<button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>`:''}
       </div>`;
-      const statLabel = isDone?'Done':task.status==='delayed'?'Delayed':task.status==='at-risk'?'At Risk':'On Track';
+      const statLabel = isDone?'Done':task.status==='delayed'?'Due':task.status==='at-risk'?'At Risk':'On Track';
       const statCol = isDone?'#1E6B3A':task.status==='delayed'?'#8E2434':task.status==='at-risk'?'#E08A1E':'#3E9C5F';
       progInner = `<div style="padding:0 8px;display:flex;align-items:center;justify-content:flex-end;">
         <span title="Click to change status" onclick="event.stopPropagation();cycleGanttStatus('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')" style="font-size:9px;font-weight:800;color:${statCol};white-space:nowrap;cursor:pointer;user-select:none;">${statLabel}</span>
@@ -2937,13 +2937,13 @@ function renderGantt(){
     }).join('');
 
     const _labelW = LW - PROG_W - OWN_W;
-    frozenRows += `<tr>
-      ${ganttHideSidebar?'':`<td style="width:${_labelW}px;min-width:${_labelW}px;max-width:${_labelW}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;">${labelInner}</td>
-      ${OWN_W?`<td style="width:${OWN_W}px;min-width:${OWN_W}px;max-width:${OWN_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;">${ownerInner}</td>`:''}
-      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;">${progInner}</td>`}
+    frozenRows += `<tr style="height:${rh}px;">
+      ${ganttHideSidebar?'':`<td style="width:${_labelW}px;min-width:${_labelW}px;max-width:${_labelW}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;overflow:hidden;">${labelInner}</td>
+      ${OWN_W?`<td style="width:${OWN_W}px;min-width:${OWN_W}px;max-width:${OWN_W}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;overflow:hidden;">${ownerInner}</td>`:''}
+      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;overflow:hidden;">${progInner}</td>`}
     </tr>`;
-    tableRows += `<tr>
-      <td style="width:${weeks.length*WW}px;min-width:${weeks.length*WW}px;max-width:${weeks.length*WW}px;height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};padding:0;vertical-align:middle;position:relative;">
+    tableRows += `<tr style="height:${rh}px;">
+      <td style="width:${weeks.length*WW}px;min-width:${weeks.length*WW}px;max-width:${weeks.length*WW}px;height:${rh}px;box-sizing:border-box;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};padding:0;vertical-align:middle;position:relative;">
         <div style="display:flex;height:100%;position:relative;">${gridCells}${barHTML}
           ${todayInRange?`<div style="position:absolute;top:0;bottom:0;left:${todayOffset}px;width:2px;background:#CC0000;opacity:.7;pointer-events:none;z-index:3;"></div>`:''}
         </div>
@@ -2970,20 +2970,21 @@ function renderGantt(){
 
   const _sideW = ganttHideSidebar ? 0 : LW;
   const _labelHdrW = LW - PROG_W - OWN_W;
+  const _H1 = 29, _H2 = 24; // fixed header-row heights, identical on both panels
   document.getElementById('gantt-container').innerHTML=`
     <div style="display:flex;align-items:flex-start;max-width:100%;position:relative;">
       ${ganttHideSidebar?'':`<div id="gantt-frozen" style="flex-shrink:0;width:${_sideW}px;position:relative;z-index:6;">
         <table style="border-collapse:collapse;table-layout:fixed;width:${_sideW}px;">
           <thead>
-            <tr>
-              <th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:left;">Project / Phase / Task<span onmousedown="_ganttStartColResize(event)" title="Drag to resize columns" style="position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;z-index:9;"></span></th>
-              ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:center;">Owners</th>`:''}
-              <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:center;">Status</th>
+            <tr style="height:${_H1}px;">
+              <th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;height:${_H1}px;box-sizing:border-box;padding:6px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:left;overflow:hidden;">Project / Phase / Task<span onmousedown="_ganttStartColResize(event)" title="Drag to resize columns" style="position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;z-index:9;"></span></th>
+              ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;height:${_H1}px;box-sizing:border-box;padding:6px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:center;">Owners</th>`:''}
+              <th style="width:${PROG_W}px;min-width:${PROG_W}px;height:${_H1}px;box-sizing:border-box;padding:6px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:center;">Status</th>
             </tr>
-            <tr>
-              <th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:8;"></th>
-              ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:8;"></th>`:''}
-              <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:8;"></th>
+            <tr style="height:${_H2}px;">
+              <th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:8;"></th>
+              ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:8;"></th>`:''}
+              <th style="width:${PROG_W}px;min-width:${PROG_W}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:8;"></th>
             </tr>
           </thead>
           <tbody>${frozenRows}</tbody>
@@ -2992,13 +2993,13 @@ function renderGantt(){
       <div id="gantt-scroll" style="overflow-x:auto;overflow-y:visible;position:relative;flex:1;min-width:0;">
         <table style="border-collapse:collapse;table-layout:fixed;width:${totalWeekW}px;max-width:${totalWeekW}px;margin:0;">
           <thead>
-            <tr>
-              <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;position:sticky;top:0;z-index:7;">
-                <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
+            <tr style="height:${_H1}px;">
+              <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;height:${_H1}px;box-sizing:border-box;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;position:sticky;top:0;z-index:7;">
+                <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;height:${_H1}px;"><tr style="height:${_H1}px;">${monthHdr}</tr></table>
               </th>
             </tr>
-            <tr>
-              <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:7;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
+            <tr style="height:${_H2}px;">
+              <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;height:${_H2}px;box-sizing:border-box;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:7;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;height:${_H2}px;"><tr style="height:${_H2}px;">${weekHdr}</tr></table>
               </th>
             </tr>
           </thead>
@@ -3589,7 +3590,7 @@ function _addFullSlide(pptx, proj){
         labelText=`      ${done?'✓ ':''}${t.name}`;
         labelOpts.color=done?'AAAAAA':'333333'; labelOpts.italic=!!done; labelOpts.fontSize=7.5;
         const stKey=done?'done':(t.status||'on-track');
-        statusText=done?'Done':(t.status==='delayed'?'Delayed':t.status==='at-risk'?'At Risk':'On Track');
+        statusText=done?'Done':(t.status==='delayed'?'Due':t.status==='at-risk'?'At Risk':'On Track');
         statusOpts.color=ST[stKey]; 
         const dw=parseWkDue(t.due), dur=Math.max(1,t.durWk||1);
         barStart=dw; barLen=dur; barColor=ST[stKey];
@@ -3625,7 +3626,7 @@ function _addFullSlide(pptx, proj){
 
     // Legend (Bain colours)
     const ly=Math.min(SH-0.35, 0.75+tblRows.length*rowH+0.12);
-    [{c:ST['on-track'],l:'On Track'},{c:ST['at-risk'],l:'At Risk'},{c:ST['delayed'],l:'Delayed'},{c:ST['done'],l:'Completed'}].forEach((li,i)=>{
+    [{c:ST['on-track'],l:'On Track'},{c:ST['at-risk'],l:'At Risk'},{c:ST['delayed'],l:'Due'},{c:ST['done'],l:'Completed'}].forEach((li,i)=>{
       const lx=MX+i*1.7;
       slide.addShape(pptx.ShapeType.rect,{x:lx,y:ly,w:0.14,h:0.14,fill:{color:li.c},line:{type:'none'}});
       slide.addText(li.l,{x:lx+0.18,y:ly-0.03,w:1.4,h:0.2,fontSize:8,color:'555555',fontFace:'Arial',valign:'middle'});
@@ -5873,9 +5874,9 @@ function openEditTask(projId, phaseId, wsId, taskId){
       <option value="__auto__" ${!task.statusManual?'selected':''}>Auto (by deadline)</option>
       <option value="on-track" ${task.statusManual&&task.status==='on-track'?'selected':''}>On Track</option>
       <option value="at-risk" ${task.statusManual&&task.status==='at-risk'?'selected':''}>At Risk</option>
-      <option value="delayed" ${task.statusManual&&task.status==='delayed'?'selected':''}>Delayed</option>
+      <option value="delayed" ${task.statusManual&&task.status==='delayed'?'selected':''}>Due</option>
     </select>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px;">Auto = On Track until the deadline nears (At Risk within 1 day, Delayed once passed). Pick a specific status to override.</div></div>`;
+    <div style="font-size:10px;color:var(--muted);margin-top:4px;">Auto = On Track until the deadline nears (At Risk within 1 day, Due once passed). Pick a specific status to override.</div></div>`;
   document.getElementById('edit-modal').style.display='flex';
   if(!isOther){ mountWsField('edit-ws-field', taskWsNames(ph&&ph.workstreams.find(x=>x.id===wsId), task), projId); }
   if(!isOther){ _taskEditPhaseCtx={ projStart:p.startDate, phStartWk:ph?ph.startWk:1, phEndWk:ph?ph.endWk:1, phLen:_phLen }; _updateTaskPhaseShare(); }
