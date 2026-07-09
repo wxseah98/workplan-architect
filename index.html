@@ -736,16 +736,18 @@ select.fsel:hover{border-color:var(--mid);}
       <button onclick="closeMeetingModal()" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
     </div>
     <div style="padding:16px 20px;">
+      <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Day (this week)</label>
+        <select id="mtg-day-select" class="fs"></select></div>
       <div style="display:flex;gap:10px;margin-bottom:12px;">
-        <div style="width:90px;flex-shrink:0;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Day</label>
-          <input id="mtg-day" class="fi" placeholder="TUE" maxlength="3"></div>
-        <div style="width:70px;flex-shrink:0;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Date</label>
-          <input id="mtg-date" class="fi" placeholder="9"></div>
+        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Start</label>
+          <input id="mtg-start" class="fi" type="time"></div>
+        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">End</label>
+          <input id="mtg-end" class="fi" type="time"></div>
       </div>
       <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Title</label>
         <input id="mtg-name" class="fi" placeholder="e.g. Client Steering Committee"></div>
       <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Details</label>
-        <input id="mtg-meta" class="fi" placeholder="e.g. Apex Corp · 2:00 PM · 90min"></div>
+        <input id="mtg-meta" class="fi" placeholder="e.g. Apex Corp (optional)"></div>
       <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--slate);cursor:pointer;">
         <input type="checkbox" id="mtg-prep" style="accent-color:var(--red);cursor:pointer;">Prep needed before this item</label>
     </div>
@@ -755,6 +757,22 @@ select.fsel:hover{border-color:var(--mid);}
         <button class="btn-ghost" style="font-size:12px;padding:6px 14px;" onclick="closeMeetingModal()">Cancel</button>
         <button class="btn-red" style="font-size:12px;padding:6px 16px;" onclick="saveMeeting()">Save</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT WHOLE WEEK MODAL -->
+<div id="week-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:210;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.13);width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:14px;font-weight:800;">Edit This Week</div>
+      <button onclick="closeWeekEditor()" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
+    </div>
+    <div style="padding:8px 20px 4px;font-size:11px;color:var(--mid);">Dates fill in automatically. Add items to any day and set start/end times. Manual items are kept when Outlook syncs.</div>
+    <div id="week-editor-body" style="padding:12px 20px;overflow-y:auto;"></div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn-ghost" style="font-size:12px;padding:6px 14px;" onclick="closeWeekEditor()">Cancel</button>
+      <button class="btn-red" style="font-size:12px;padding:6px 16px;" onclick="saveWeekEditor()">Save week</button>
     </div>
   </div>
 </div>
@@ -1359,12 +1377,16 @@ const DEFAULT_DATA = {
     {initials:'RC',name:'Riley Chen',role:'Associate',  color:'#8B5CF6'},
     {initials:'DK',name:'Drew Kim',  role:'Associate',  color:'#B87000'}
   ],
-  meetings: [
-    {id:'m1',day:'TUE',date:'8', name:'Weekly Case Team Sync',     meta:'Apex Corp · 9:00 AM · 1hr',   prep:false},
-    {id:'m2',day:'WED',date:'9', name:'Client Steering Committee', meta:'Apex Corp · 2:00 PM · 90min', prep:true},
-    {id:'m3',day:'FRI',date:'11',name:'Peer Review — GTM Deck',meta:'Internal · 4:00 PM · 45min', prep:false},
-    {id:'m4',day:'MON',date:'14',name:'Kickoff — Phase 2',    meta:'Apex Corp · 10:00 AM · 2hr',  prep:false}
-  ],
+  meetings: (function(){
+    // Seed items anchored to the current week (Mon-based), with real times + source.
+    const t=new Date(); const mon=new Date(t); mon.setDate(t.getDate()-((t.getDay()+6)%7)); mon.setHours(0,0,0,0);
+    const iso=n=>{ const d=new Date(mon); d.setDate(mon.getDate()+n); return d.toISOString().slice(0,10); };
+    return [
+      {id:'m1',dateISO:iso(1),start:'09:00',end:'10:00',name:'Weekly Case Team Sync',   meta:'Apex Corp',prep:false,prepDone:false,source:'outlook'},
+      {id:'m2',dateISO:iso(2),start:'14:00',end:'15:30',name:'Client Steering Committee',meta:'Apex Corp',prep:true, prepDone:false,source:'outlook'},
+      {id:'m3',dateISO:iso(4),start:'16:00',end:'16:45',name:'Peer Review — GTM Deck',   meta:'Internal', prep:false,prepDone:false,source:'outlook'}
+    ];
+  })(),
   feed: [
     {text:'Riley Chen marked "Build competitor matrix" complete',dot:'#1A7F4E',time:'12m ago'},
     {text:'Sam Patel flagged "Market sizing model" as at-risk',   dot:'#B87000',time:'1h ago'},
@@ -1655,7 +1677,10 @@ function renderDashboard(){
     if(!def) return '';
     const body = def.build();
     const actionHtml = item.id==='focus'
-      ? `<span class="card-action" onclick="showPage('tasks')">View all &rarr;</span>` : '';
+      ? `<span class="card-action" onclick="showPage('tasks')">View all &rarr;</span>`
+      : item.id==='upcoming'
+      ? `<button class="card-action" title="Edit this week" onclick="event.stopPropagation();openWeekEditor()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:13px;padding:0;">&#9998;</button>`
+      : '';
     return `<div class="dash-w w-${item.w}" data-idx="${idx}" draggable="false">
       <div class="widget-ctrls">
         <button class="wc-btn move" title="Drag to move" onmousedown="startWidgetMove(event,${idx})">&#10021;</button>
@@ -1887,22 +1912,51 @@ function buildWpProgress(){
   }).join('');
 }
 
+// Monday (00:00) of the current week
+function _weekMonday(){
+  const t=new Date(); const mon=new Date(t); mon.setDate(t.getDate()-((t.getDay()+6)%7)); mon.setHours(0,0,0,0); return mon;
+}
+const _WK_DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function _fmtTime(hhmm){
+  if(!hhmm) return '';
+  const [h,m]=hhmm.split(':').map(Number); const ap=h<12?'AM':'PM'; const h12=((h+11)%12)+1;
+  return `${h12}:${String(m).padStart(2,'0')} ${ap}`;
+}
 function buildUpcoming(){
-  const rows = MEETINGS.map(m=>{
-    const prepCtl = m.prep
-      ? `<label title="Prep done?" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:${m.prepDone?'var(--green)':'#E08A1E'};cursor:pointer;margin-top:3px;">
-           <input type="checkbox" ${m.prepDone?'checked':''} onchange="_toggleMeetingPrep('${m.id}')" style="accent-color:var(--green);cursor:pointer;">
-           ${m.prepDone?'&#10003; Prep done':'&#9888; Prep needed'}
-         </label>`
-      : '';
-    return `<div class="meeting-row" style="position:relative;">
-      <div class="m-day-block"><div class="m-day">${m.day}</div><div class="m-date">${m.date}</div></div>
-      <div style="flex:1;min-width:0;"><div class="m-name">${m.name}</div><div class="m-meta">${m.meta}</div>${prepCtl}</div>
-      <button class="edit-btn" title="Edit item" onclick="event.stopPropagation();openMeetingEdit('${m.id}')" style="flex-shrink:0;align-self:flex-start;">&#9998;</button>
+  const mon=_weekMonday();
+  const dayISO=n=>{ const d=new Date(mon); d.setDate(mon.getDate()+n); return d.toISOString().slice(0,10); };
+  const todayISO=new Date().toISOString().slice(0,10);
+  // Only show Mon–Fri by default, but include any weekend items that exist
+  let maxDay=4; MEETINGS.forEach(m=>{ const idx=Math.round((new Date(m.dateISO)-mon)/864e5); if(idx>maxDay && idx<=6) maxDay=idx; });
+  let html='';
+  for(let n=0;n<=maxDay;n++){
+    const iso=dayISO(n);
+    const items=MEETINGS.filter(m=>m.dateISO===iso).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    if(!items.length) continue;
+    const d=new Date(iso); const isToday=iso===todayISO;
+    html+=`<div style="margin-bottom:10px;">
+      <div style="font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:${isToday?'var(--red)':'var(--muted)'};margin-bottom:5px;">${_WK_DAYS[n]} ${d.getDate()} ${MON_SHORT[d.getMonth()]}${isToday?' · Today':''}</div>`;
+    html+=items.map(m=>{
+      const prepCtl = m.prep
+        ? `<label title="Prep done?" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:${m.prepDone?'var(--green)':'#E08A1E'};cursor:pointer;margin-top:3px;">
+             <input type="checkbox" ${m.prepDone?'checked':''} onchange="_toggleMeetingPrep('${m.id}')" style="accent-color:var(--green);cursor:pointer;">
+             ${m.prepDone?'&#10003; Prep done':'&#9888; Prep needed'}</label>`
+        : '';
+      const timeLbl = m.start?`${_fmtTime(m.start)}${m.end?'–'+_fmtTime(m.end):''}`:'';
+      const srcBadge = m.source==='manual'?'<span title="Manually added" style="font-size:8px;font-weight:700;color:var(--mid);border:1px solid var(--border);border-radius:8px;padding:0 5px;margin-left:6px;">MANUAL</span>':'<span title="From Outlook" style="font-size:8px;font-weight:700;color:#0F6CBD;border:1px solid #0F6CBD55;border-radius:8px;padding:0 5px;margin-left:6px;">OUTLOOK</span>';
+      return `<div class="meeting-row" style="position:relative;padding-left:4px;">
+        <div style="width:74px;flex-shrink:0;font-size:10px;font-weight:700;color:var(--slate);line-height:1.3;">${timeLbl||'<span style="color:var(--muted);">All day</span>'}</div>
+        <div style="flex:1;min-width:0;"><div class="m-name">${m.name}${srcBadge}</div>${m.meta?`<div class="m-meta">${m.meta}</div>`:''}${prepCtl}</div>
+        <button class="edit-btn" title="Edit item" onclick="event.stopPropagation();openMeetingEdit('${m.id}')" style="flex-shrink:0;align-self:flex-start;">&#9998;</button>
+      </div>`;
+    }).join('');
+    html+=`</div>`;
+  }
+  if(!html) html='<div style="font-size:12px;color:var(--muted);padding:8px 0;">No items this week.</div>';
+  return html + `<div style="margin-top:6px;display:flex;gap:6px;">
+      <button class="btn-ghost btn-sm" onclick="openMeetingEdit()" style="flex:1;">+ Add item</button>
+      <button class="btn-ghost btn-sm" onclick="_syncFromOutlook()" title="Refresh Outlook items (manual items are kept)" style="flex:1;">&#8635; Sync Outlook</button>
     </div>`;
-  }).join('');
-  return (rows || '<div style="font-size:12px;color:var(--muted);padding:8px 0;">No upcoming items.</div>')
-    + `<div style="margin-top:8px;"><button class="btn-ghost btn-sm" onclick="openMeetingEdit()" style="width:100%;">+ Add item</button></div>`;
 }
 // Toggle the prep-done state of an upcoming item
 function _toggleMeetingPrep(id){
@@ -1911,33 +1965,51 @@ function _toggleMeetingPrep(id){
   APP.meetings=MEETINGS; saveData();
   renderDashboard();
 }
-// Open the add/edit modal for an upcoming item (no id = add new)
+// Outlook sync placeholder. Real integration needs a Microsoft Graph connector
+// (OAuth + backend), which a static app can't do on its own — so for now this
+// refreshes the view and keeps all manual overrides intact.
+function _syncFromOutlook(){
+  alert("Outlook sync isn't connected yet.\n\nWhen a Microsoft 365 connector is set up, this will pull your calendar for the week. Until then, add or edit items manually — your manual items are always kept.");
+  renderDashboard();
+}
+
+// ---- SINGLE ITEM ADD/EDIT (from a specific day) ----
 let _meetingEditId=null;
-function openMeetingEdit(id){
+function openMeetingEdit(id, presetISO){
   _meetingEditId = id || null;
   const m = id ? MEETINGS.find(x=>x.id===id) : null;
+  const mon=_weekMonday();
+  // Build the day dropdown from this week's auto-dates (no manual day/date entry)
+  const dayOpts=[];
+  for(let n=0;n<7;n++){ const d=new Date(mon); d.setDate(mon.getDate()+n); const iso=d.toISOString().slice(0,10);
+    const sel = (m?m.dateISO:presetISO)===iso ? 'selected' : '';
+    dayOpts.push(`<option value="${iso}" ${sel}>${_WK_DAYS[n]} ${d.getDate()} ${MON_SHORT[d.getMonth()]}</option>`);
+  }
   document.getElementById('meeting-modal-title').textContent = m ? 'Edit Item' : 'Add Item';
-  document.getElementById('mtg-day').value  = m ? (m.day||'')  : '';
-  document.getElementById('mtg-date').value = m ? (m.date||'') : '';
-  document.getElementById('mtg-name').value = m ? (m.name||'') : '';
-  document.getElementById('mtg-meta').value = m ? (m.meta||'') : '';
+  document.getElementById('mtg-day-select').innerHTML = dayOpts.join('');
+  document.getElementById('mtg-start').value = m ? (m.start||'') : '09:00';
+  document.getElementById('mtg-end').value   = m ? (m.end||'')   : '10:00';
+  document.getElementById('mtg-name').value  = m ? (m.name||'') : '';
+  document.getElementById('mtg-meta').value  = m ? (m.meta||'') : '';
   document.getElementById('mtg-prep').checked = m ? !!m.prep : false;
   document.getElementById('mtg-delete-btn').style.display = m ? 'inline-flex' : 'none';
   document.getElementById('meeting-modal').style.display='flex';
 }
 function closeMeetingModal(){ document.getElementById('meeting-modal').style.display='none'; _meetingEditId=null; }
 function saveMeeting(){
-  const day=document.getElementById('mtg-day').value.trim().toUpperCase().slice(0,3);
-  const date=document.getElementById('mtg-date').value.trim();
+  const dateISO=document.getElementById('mtg-day-select').value;
+  const start=document.getElementById('mtg-start').value;
+  const end=document.getElementById('mtg-end').value;
   const name=document.getElementById('mtg-name').value.trim();
   const meta=document.getElementById('mtg-meta').value.trim();
   const prep=document.getElementById('mtg-prep').checked;
   if(!name){ alert('Enter a title for the item.'); return; }
+  if(end && start && end<start){ alert("End time can't be before the start time."); return; }
   if(_meetingEditId){
     const m=MEETINGS.find(x=>x.id===_meetingEditId);
-    if(m){ m.day=day; m.date=date; m.name=name; m.meta=meta; m.prep=prep; if(!prep) m.prepDone=false; }
+    if(m){ m.dateISO=dateISO; m.start=start; m.end=end; m.name=name; m.meta=meta; m.prep=prep; if(!prep) m.prepDone=false; }
   } else {
-    MEETINGS.push({ id:'m'+Date.now(), day, date, name, meta, prep, prepDone:false });
+    MEETINGS.push({ id:'m'+Date.now(), dateISO, start, end, name, meta, prep, prepDone:false, source:'manual' });
   }
   APP.meetings=MEETINGS; saveData();
   closeMeetingModal(); renderDashboard();
@@ -1948,6 +2020,73 @@ function deleteMeeting(){
   if(i>=0) MEETINGS.splice(i,1);
   APP.meetings=MEETINGS; saveData();
   closeMeetingModal(); renderDashboard();
+}
+
+// ---- WHOLE-WEEK EDITOR ----
+// Edits the entire week at once: each day (auto-dated) with its items, times, prep.
+function openWeekEditor(){
+  _renderWeekEditor();
+  document.getElementById('week-modal').style.display='flex';
+}
+function closeWeekEditor(){ document.getElementById('week-modal').style.display='none'; }
+function _renderWeekEditor(){
+  const mon=_weekMonday();
+  const body=document.getElementById('week-editor-body');
+  let html='';
+  for(let n=0;n<7;n++){
+    const d=new Date(mon); d.setDate(mon.getDate()+n); const iso=d.toISOString().slice(0,10);
+    const items=MEETINGS.filter(m=>m.dateISO===iso).sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+    const isWeekend=n>4;
+    html+=`<div style="margin-bottom:14px;${isWeekend&&!items.length?'opacity:.6;':''}">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:3px;">${_WK_DAYS[n]} · ${d.getDate()} ${MON_SHORT[d.getMonth()]}</div>
+      <div id="wk-day-${iso}">`;
+    html+=items.map(m=>_weekEditorRow(m)).join('');
+    html+=`</div>
+      <button class="btn-ghost btn-sm" onclick="_weekAddRow('${iso}')" style="font-size:11px;margin-top:4px;">+ Add to ${_WK_DAYS[n]}</button>
+    </div>`;
+  }
+  body.innerHTML=html;
+}
+function _weekEditorRow(m){
+  return `<div class="wk-edit-row" data-id="${m.id}" style="display:flex;gap:5px;align-items:center;margin-bottom:5px;flex-wrap:wrap;">
+    <input class="fi wk-name" placeholder="Title" value="${(m.name||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:130px;font-size:12px;padding:5px 8px;">
+    <input class="fi wk-start" type="time" value="${m.start||''}" title="Start" style="width:110px;font-size:12px;padding:5px 6px;">
+    <input class="fi wk-end" type="time" value="${m.end||''}" title="End" style="width:110px;font-size:12px;padding:5px 6px;">
+    <input class="fi wk-meta" placeholder="Details" value="${(m.meta||'').replace(/"/g,'&quot;')}" style="width:130px;font-size:12px;padding:5px 8px;">
+    <label title="Prep needed" style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--slate);cursor:pointer;"><input type="checkbox" class="wk-prep" ${m.prep?'checked':''} style="accent-color:var(--red);">Prep</label>
+    <span style="font-size:8px;font-weight:700;color:${m.source==='manual'?'var(--mid)':'#0F6CBD'};">${m.source==='manual'?'MANUAL':'OUTLOOK'}</span>
+    <button onclick="this.closest('.wk-edit-row').remove()" title="Remove" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">&#10005;</button>
+  </div>`;
+}
+function _weekAddRow(iso){
+  const box=document.getElementById('wk-day-'+iso);
+  box.insertAdjacentHTML('beforeend', _weekEditorRow({id:'new'+Date.now()+Math.floor(Math.random()*999), name:'', start:'09:00', end:'10:00', meta:'', prep:false, source:'manual'}));
+}
+function saveWeekEditor(){
+  const mon=_weekMonday();
+  const kept=[];
+  // Keep any items outside this week untouched
+  const weekISOs=new Set(); for(let n=0;n<7;n++){ const d=new Date(mon); d.setDate(mon.getDate()+n); weekISOs.add(d.toISOString().slice(0,10)); }
+  MEETINGS.forEach(m=>{ if(!weekISOs.has(m.dateISO)) kept.push(m); });
+  // Rebuild this week's items from the editor rows
+  document.querySelectorAll('#week-editor-body > div').forEach(dayBlock=>{
+    const dayBox=dayBlock.querySelector('[id^="wk-day-"]'); if(!dayBox) return;
+    const iso=dayBox.id.replace('wk-day-','');
+    dayBox.querySelectorAll('.wk-edit-row').forEach(row=>{
+      const name=row.querySelector('.wk-name').value.trim(); if(!name) return;
+      const id=row.dataset.id.startsWith('new') ? 'm'+Date.now()+Math.floor(Math.random()*999) : row.dataset.id;
+      const existing=MEETINGS.find(x=>x.id===row.dataset.id);
+      let start=row.querySelector('.wk-start').value, end=row.querySelector('.wk-end').value;
+      if(end&&start&&end<start) end=start;
+      const prep=row.querySelector('.wk-prep').checked;
+      kept.push({ id, dateISO:iso, start, end, name, meta:row.querySelector('.wk-meta').value.trim(),
+        prep, prepDone: existing?(prep?existing.prepDone:false):false,
+        source: existing?existing.source:'manual' });
+    });
+  });
+  MEETINGS.length=0; kept.forEach(m=>MEETINGS.push(m));
+  APP.meetings=MEETINGS; saveData();
+  closeWeekEditor(); renderDashboard();
 }
 
 // ---- EDIT LAYOUT ----
@@ -5698,9 +5837,17 @@ function _updatePhaseProjShare(){
   const sw=parseInt(document.getElementById('edit-f2').value)||1;
   const ew=parseInt(document.getElementById('edit-f3').value)||sw;
   const span=Math.max(1, ew-sw+1);
-  // Project length = furthest phase end, but use THIS phase's live-edited end
-  // (not its saved value) so the % updates as you change the duration/dates.
-  const projLen = Math.max(1, span, ...p.phases.map(x=> x.id===editCtx.phaseId ? ew : x.endWk));
+  // Denominator = the FULL project duration in weeks (from the project's start/end
+  // dates), so "this phase within the project" is a % of the whole project — not of
+  // the phases. Fall back to the furthest phase end only if no project end date is set.
+  let projLen;
+  if(p.startDate && p.endDate){
+    projLen = Math.max(1, Math.round((new Date(p.endDate) - new Date(p.startDate))/(7*864e5)) + 1);
+  } else {
+    projLen = Math.max(1, ...p.phases.map(x=> x.id===editCtx.phaseId ? ew : x.endWk));
+  }
+  // Never let the phase span exceed the project length in the bar maths
+  projLen = Math.max(projLen, ew);
   el.innerHTML=spanBarHTML(sw, span, projLen, (ph&&ph.color)||'#1A4F8F', 'This phase within the project');
 }
 function _phaseWkToDate(which){
