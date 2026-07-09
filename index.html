@@ -1371,7 +1371,7 @@ const DEFAULT_DATA = {
   }
   ],
   team: [
-    {initials:'WZ',name:'Wen Zhang', role:'Manager',   color:'#CC0000'},
+    {initials:'WZ',name:'Wen Zhang', role:'Manager',   color:'#CC0000', self:true},
     {initials:'JL',name:'Jamie Liu', role:'Associate',  color:'#1A4F8F'},
     {initials:'SP',name:'Sam Patel', role:'Associate',  color:'#1A7F4E'},
     {initials:'RC',name:'Riley Chen',role:'Associate',  color:'#8B5CF6'},
@@ -1540,6 +1540,21 @@ let MEETINGS  = APP.meetings;
 let FEED      = APP.feed;
 let WP_LIST   = APP.wpList;
 let FILES     = APP.files || [];
+
+// The signed-in user ("You"). One team member is flagged self:true and cannot be
+// deleted. For older saved data with no self flag, fall back to WZ, then the first member.
+function currentUser(){
+  return TEAM.find(m=>m.self) || TEAM.find(m=>m.initials==='WZ') || TEAM[0] || null;
+}
+function currentUserInitials(){ const u=currentUser(); return u?u.initials:'WZ'; }
+// Migration: make sure exactly one member is marked as self.
+(function _ensureSelfMember(){
+  if(!Array.isArray(TEAM) || !TEAM.length) return;
+  if(!TEAM.some(m=>m.self)){
+    const you = TEAM.find(m=>m.initials==='WZ') || TEAM[0];
+    if(you){ you.self=true; APP.team=TEAM; }
+  }
+})();
 const fileStates = APP.fileStates || {};
 FILES.forEach(f => f.stickies.forEach(s => { if (!(s.id in fileStates)) fileStates[s.id] = s.open; }));
 
@@ -1713,7 +1728,7 @@ function updateHealthStrip(){
 
 // My tasks (owner = member of the task's workstream), each with a resolved end date
 function _myTasksWithDates(who){
-  who = who || 'WZ';
+  who = who || currentUserInitials();
   const out=[];
   PROJECTS.filter(p=>!p.archived).forEach(p=>{
     p.phases.forEach(ph=>ph.workstreams.forEach(ws=>{
@@ -1734,7 +1749,7 @@ function _myTasksWithDates(who){
   return out;
 }
 function buildFocus(){
-  const mine = _myTasksWithDates('WZ');
+  const mine = _myTasksWithDates(currentUserInitials());
   if(!mine.length) return '<div style="font-size:13px;color:var(--muted);padding:8px 0;">No tasks assigned to your workstreams yet.</div>';
   const isDone=t=>!!taskDoneState[t.id];
   const today=new Date(); today.setHours(0,0,0,0);
@@ -1798,7 +1813,7 @@ function buildWeekly(){
   const sameDay=(a,b)=> a&&b&&a.getTime()===b.getTime();
 
   // My tasks (workstream-member ownership), with dates
-  const mine=_myTasksWithDates('WZ');
+  const mine=_myTasksWithDates(currentUserInitials());
   const isDone=t=>!!taskDoneState[t.id];
   const col=t=> t.status==='delayed'?'#8E2434':t.status==='at-risk'?'#E08A1E':'#3E9C5F';
 
@@ -4151,7 +4166,7 @@ function renderTeam() {
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
         <div style="width:44px;height:44px;border-radius:50%;background:${m.color};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0;">${m.initials}</div>
         <div style="flex:1;">
-          <div style="font-size:14px;font-weight:700;color:var(--ink);">${m.name}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--ink);">${m.name}${m.self?' <span style="font-size:9px;font-weight:800;color:#fff;background:var(--red);padding:1px 6px;border-radius:8px;vertical-align:middle;margin-left:4px;">YOU</span>':''}</div>
           <div style="font-size:11px;color:var(--mid);">${m.role||''}</div>
         </div>
         <span style="font-size:20px;font-weight:800;color:${col};">${pct}%</span>
@@ -4170,7 +4185,8 @@ function renderTeam() {
     </div>`;
   };
 
-  el.innerHTML = TEAM.map(m => memberCard(m)).join('');
+  const _ordered = TEAM.slice().sort((a,b)=>(b.self?1:0)-(a.self?1:0));
+  el.innerHTML = _ordered.map(m => memberCard(m)).join('');
 }
 
 // ---- SETTINGS ----
@@ -4389,7 +4405,7 @@ function openEditMember(idx){
   document.getElementById('member-initials').value=m.initials;
   document.getElementById('member-role').value=m.role||'';
   const delBtn=document.getElementById('member-delete-btn');
-  delBtn.style.display='inline-block';
+  delBtn.style.display = m.self ? 'none' : 'inline-block';
   delBtn.classList.remove('confirm');
   delBtn.textContent='Delete member';
   _memberDelArmed=false;
@@ -4440,6 +4456,7 @@ let _memberDelArmed=false;
 function deleteMemberFromForm(){
   const idx=parseInt(document.getElementById('member-edit-idx').value);
   if(isNaN(idx)||idx<0) return;
+  if(TEAM[idx] && TEAM[idx].self){ alert('This is your own profile and can\'t be deleted.'); return; }
   const btn=document.getElementById('member-delete-btn');
   if(!_memberDelArmed){
     _memberDelArmed=true;
@@ -5724,11 +5741,26 @@ function _renderProjStructure(){
 }
 // Drill from Edit Project into a phase/workstream/task, remembering to return
 function _drillEdit(kind, projId, phaseId, wsId, taskId){
+  // Persist any in-progress Edit Project field changes (esp. duration/dates) BEFORE
+  // drilling into a phase/ws/task, so the sub-form sees the latest project length.
+  if(editCtx && editCtx.type==='project'){ _commitProjectFields(); }
   _editReturn = {type:'project', projId};
   if(kind==='phase') openEditPhase(projId, phaseId);
   else if(kind==='ws') openEditWorkstream(projId, phaseId, wsId);
   else if(kind==='task') openEditTask(projId, phaseId, wsId, taskId);
   _showEditBackButtons(true);
+}
+// Commit the Edit Project form's live fields to the project object (without closing)
+function _commitProjectFields(){
+  const p=_findProj(editCtx.projId); if(!p) return;
+  const n=document.getElementById('edit-f1'), c=document.getElementById('edit-f2'),
+        s=document.getElementById('edit-f3'), e=document.getElementById('edit-f4');
+  if(n && n.value) p.name=n.value;
+  if(c && c.value) p.caseCode=c.value;
+  if(s) p.startDate=s.value;
+  if(e) p.endDate=e.value;
+  if(Array.isArray(_editMembers)) p.members=[..._editMembers];
+  APP.projects=PROJECTS; saveData();
 }
 function _showEditBackButtons(show){
   const b1=document.getElementById('edit-back-btn'); const b2=document.getElementById('edit-save-back-btn');
@@ -5747,29 +5779,29 @@ function editModalArchive(){
   if(typeof renderGantt==='function') renderGantt();
   if(typeof renderWorkplans==='function') renderWorkplans();
 }
-// Weeks between the project's start and end dates (min 1)
+// Weeks between the project's start and end dates, inclusive (min 1)
 function _projDurWks(p){
   if(!p.startDate || !p.endDate) return '';
-  const w=Math.round((new Date(p.endDate)-new Date(p.startDate))/(7*24*60*60*1000));
+  const w=Math.round((new Date(p.endDate)-new Date(p.startDate))/(7*24*60*60*1000))+1;
   return Math.max(1, w);
 }
-// Duration changed in Edit Project -> recompute end date from start
+// Duration changed in Edit Project -> recompute end date from start (inclusive)
 function _projDurationChanged(){
   const s=document.getElementById('edit-f3').value;
   const wks=parseInt(document.getElementById('edit-projdur').value);
   if(s && wks){
-    const d=new Date(s); d.setDate(d.getDate()+wks*7-1);
+    const d=new Date(s); d.setDate(d.getDate()+(wks-1)*7);
     const eEl=document.getElementById('edit-f4');
     eEl.value=d.toISOString().slice(0,10);
     if(eEl._rcRefresh) eEl._rcRefresh();
   }
 }
-// Dates changed in Edit Project -> recompute duration
+// Dates changed in Edit Project -> recompute duration (inclusive)
 function _projDatesChanged(){
   const s=document.getElementById('edit-f3').value;
   const e=document.getElementById('edit-f4').value;
   if(s && e){
-    const wks=Math.max(1, Math.round((new Date(e)-new Date(s))/(7*24*60*60*1000)));
+    const wks=Math.max(1, Math.round((new Date(e)-new Date(s))/(7*24*60*60*1000))+1);
     document.getElementById('edit-projdur').value=wks;
   }
 }
@@ -6209,6 +6241,11 @@ function editModalSave(goBack){
     const sw=parseInt(val('edit-f2'))||ph.startWk;
     const ew=parseInt(val('edit-f3'))||ph.endWk;
     if(ew<sw){ alert('End week cannot be before start week.'); return; }
+    // Warn if the phase falls outside the project's date range
+    const _projWks=_projDurWks(p);
+    if(_projWks && (sw<1 || ew>_projWks)){
+      if(!confirm(`\u26A0 This phase (weeks ${sw}\u2013${ew}) extends beyond the project timeline (1\u2013${_projWks} weeks).\n\nSave anyway?`)) return;
+    }
     ph.name=nm; ph.startWk=sw; ph.endWk=ew; ph.color=val('edit-f4')||ph.color;
     // commit downstream task edits if the section was opened
     if(document.getElementById('downstream-box') && document.getElementById('downstream-box').style.display!=='none'){
@@ -6255,6 +6292,11 @@ function editModalSave(goBack){
       let startWk = (swEl && swEl.value) ? Math.max(1,parseInt(swEl.value)) : dateToWk(ps,sISO);
       let endWk = (ewEl && ewEl.value) ? Math.max(1,parseInt(ewEl.value)) : dateToWk(ps,eISO);
       if(endWk<startWk) endWk=startWk;
+      // Warn if the task falls outside its phase's week range
+      const _ph=p.phases.find(x=>x.id===editCtx.phaseId);
+      if(_ph && (startWk<_ph.startWk || endWk>_ph.endWk)){
+        if(!confirm(`\u26A0 This task (weeks ${startWk}\u2013${endWk}) extends beyond its phase "${_ph.name}" (weeks ${_ph.startWk}\u2013${_ph.endWk}).\n\nSave anyway?`)) return;
+      }
       task.due='Wk '+startWk;
       task.durWk=Math.max(1,endWk-startWk+1);
     }
