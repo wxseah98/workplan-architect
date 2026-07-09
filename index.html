@@ -520,13 +520,10 @@ select.fsel:hover{border-color:var(--mid);}
         <button class="btn-sm" id="gantt-timeline-btn" onclick="setGanttLayout('timeline')" title="Full Gantt timeline" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Full</button>
         <button class="btn-sm" id="gantt-collapsed-btn" onclick="setGanttLayout('collapsed')" title="Simple phase-arrow overview" style="border:none;border-radius:0;font-weight:600;">Simple</button>
       </span>
-      <span style="display:inline-flex;align-items:center;gap:6px;">
-        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Show:</span>
-        <span style="display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;">
-          <button class="btn-sm" id="gantt-label-btn" onclick="toggleGanttLabels()" title="Show task/phase names on the bars" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Labels</button>
-          <button class="btn-sm" id="gantt-owners-btn" onclick="toggleGanttOwners()" title="Show an owners column with workstream members" style="border:none;border-right:1px solid var(--border);border-radius:0;font-weight:600;">Owners</button>
-          <button class="btn-sm" id="gantt-sidebar-btn" onclick="toggleGanttSidebar()" title="Toggle the left label columns" style="border:none;border-radius:0;font-weight:600;">Sidebar</button>
-        </span>
+      <span style="display:inline-flex;align-items:center;gap:14px;">
+        <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--slate);cursor:pointer;" title="Show task/phase names on the bars"><input type="checkbox" id="gantt-label-cb" onchange="toggleGanttLabels()" style="accent-color:var(--red);cursor:pointer;">Labels</label>
+        <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--slate);cursor:pointer;" title="Show an owners column with workstream members"><input type="checkbox" id="gantt-owners-cb" onchange="toggleGanttOwners()" style="accent-color:var(--red);cursor:pointer;">Owners</label>
+        <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--slate);cursor:pointer;" title="Toggle the left label columns"><input type="checkbox" id="gantt-sidebar-cb" onchange="toggleGanttSidebar()" style="accent-color:var(--red);cursor:pointer;">Sidebar</label>
       </span>
       <select class="fsel" id="gantt-group" onchange="renderGantt()" style="display:none;">
         <option value="phase">Group: Phase</option>
@@ -2520,12 +2517,12 @@ function toggleGanttSidebar(){
   renderGantt();
 }
 function _syncGanttToggleButtons(){
-  const lb=document.getElementById('gantt-label-btn');
-  if(lb){ lb.style.background=ganttLabelBars?'var(--red)':'#fff'; lb.style.color=ganttLabelBars?'#fff':'var(--slate)'; lb.style.borderColor=ganttLabelBars?'var(--red)':'var(--border)'; }
-  const sb=document.getElementById('gantt-sidebar-btn');
-  if(sb){ const on=!ganttHideSidebar; sb.style.background=on?'var(--red)':'#fff'; sb.style.color=on?'#fff':'var(--slate)'; sb.style.borderColor=on?'var(--red)':'var(--border)'; }
-  const ob=document.getElementById('gantt-owners-btn');
-  if(ob){ ob.style.background=ganttShowOwners?'var(--red)':'#fff'; ob.style.color=ganttShowOwners?'#fff':'var(--slate)'; ob.style.borderColor=ganttShowOwners?'var(--red)':'var(--border)'; }
+  const lb=document.getElementById('gantt-label-cb');
+  if(lb){ lb.checked=ganttLabelBars; }
+  const sb=document.getElementById('gantt-sidebar-cb');
+  if(sb){ sb.checked=!ganttHideSidebar; }
+  const ob=document.getElementById('gantt-owners-cb');
+  if(ob){ ob.checked=ganttShowOwners; }
   const tb=document.getElementById('gantt-timeline-btn'), cb=document.getElementById('gantt-collapsed-btn');
   if(tb){ const on=ganttLayout==='timeline'; tb.style.background=on?'var(--red)':'#fff'; tb.style.color=on?'#fff':'var(--slate)'; }
   if(cb){ const on=ganttLayout==='collapsed'; cb.style.background=on?'var(--red)':'#fff'; cb.style.color=on?'#fff':'var(--slate)'; }
@@ -2766,12 +2763,15 @@ function renderGantt(){
   const _mobile = (typeof window!=='undefined' && window.innerWidth && window.innerWidth<=720);
   const OWN_W = ganttShowOwners ? (_mobile ? 70 : 96) : 0; // owners column width (0 when off)
   const _savedLW = (typeof localStorage!=='undefined') ? parseInt(localStorage.getItem('wa_gantt_lw')||'') : NaN;
-  const LW = _mobile ? 210 : (!isNaN(_savedLW) ? Math.max(240, Math.min(680, _savedLW)) : 420); // label + progress (resizable)
+  const _baseLW = _mobile ? 210 : (!isNaN(_savedLW) ? Math.max(240, Math.min(680, _savedLW)) : 420);
+  // The owners column adds to the sidebar width rather than stealing from the
+  // task-name column, so names/dates/edit buttons never get clipped when Owners is on.
+  const LW = _baseLW + OWN_W; // label + owners + progress
   const PROG_W = _mobile ? 56 : 70; // progress column width
 
   let tableRows = '';
   rows.forEach(row => {
-    const rh = row.type==='project'?44:row.type==='phase'?36:row.type==='ws'?30:48;
+    const rh = row.type==='project'?44:row.type==='phase'?36:row.type==='ws'?30:52;
     const bgLabel = row.type==='project'?'#4A4A4A':row.type==='phase'?'#E4E4E4':row.type==='ws'?'#F2F2F2':'#FFFFFF';
     const bgChart = row.type==='project'?'#4A4A4A':row.type==='phase'?'rgba(0,0,0,.04)':'#FFFFFF';
 
@@ -2865,11 +2865,15 @@ function renderGantt(){
       }
       const _gm = (typeof document!=='undefined' && document.getElementById('gantt-group')) ? document.getElementById('gantt-group').value : 'phase';
       const _bubbles = _gm==='phase' ? wsBubbles(proj, row.ws, task) : '';
-      labelInner=`<div style="padding:5px 10px 5px 22px;display:flex;align-items:flex-start;gap:6px;">
-        <span style="font-size:11px;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;font-weight:600;'}flex:1;min-width:120px;white-space:normal;word-break:break-word;line-height:1.35;">${isDone?'&#10003; ':''}${task.name}</span>
-        ${_bubbles}
-        <span style="font-size:9px;color:var(--muted);white-space:nowrap;flex-shrink:0;margin-top:1px;">${_dateLbl}</span>
-        ${ganttShowEdit?`<button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>`:''}
+      labelInner=`<div style="padding:5px 8px 5px 22px;display:flex;align-items:flex-start;gap:6px;">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+          <div style="display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;font-weight:600;'}white-space:normal;word-break:break-word;line-height:1.3;">${isDone?'&#10003; ':''}${task.name}</span>
+            ${_bubbles}
+          </div>
+          <span style="font-size:9px;color:var(--muted);white-space:nowrap;">${_dateLbl}</span>
+        </div>
+        ${ganttShowEdit?`<button class="edit-btn" title="Edit task" style="flex-shrink:0;align-self:center;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>`:''}
       </div>`;
       const statLabel = isDone?'Done':task.status==='delayed'?'Due':task.status==='at-risk'?'At Risk':'On Track';
       const statCol = isDone?'#1E6B3A':task.status==='delayed'?'#8E2434':task.status==='at-risk'?'#E08A1E':'#3E9C5F';
