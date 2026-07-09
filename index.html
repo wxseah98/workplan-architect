@@ -38,13 +38,15 @@ nav{background:#fff;border-bottom:2px solid var(--red);display:flex;align-items:
 main{max-width:1240px;margin:0 auto;padding:24px 28px 60px;}
 .page{display:none;}.page.active{display:block;}
 .hidden{display:none!important;}
-.fi{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:8px 11px;font-size:13px;color:var(--ink);background:#fff;}
+.fi{width:100%;border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:13px;color:var(--ink);background:#fff;transition:border-color .15s;}
 .fi:focus{outline:none;border-color:var(--red);}
-.fs{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:8px 11px;font-size:13px;color:var(--ink);background:#fff;cursor:pointer;}
+.fs{width:100%;border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:13px;color:var(--ink);background:#fff;cursor:pointer;transition:border-color .15s;}
 .fs:focus{outline:none;border-color:var(--red);}
+input[type=date]{border:1px solid var(--border);border-radius:5px;padding:6px 9px;font-size:13px;color:var(--ink);background:#fff;font-family:inherit;transition:border-color .15s;}
+input[type=date]:focus{outline:none;border-color:var(--red);}
 /* New Workplan form: slimmer inputs + tighter spacing for a shorter, cleaner page */
-#wp-form-body .fi, #wp-form-body .fs{padding:6px 9px;font-size:12px;}
-#wp-form-body input[type=date]{padding:6px 8px;font-size:12px;}
+#wp-form-body .fi, #wp-form-body .fs{padding:5px 8px;font-size:12px;}
+#wp-form-body input[type=date]{padding:5px 7px;font-size:12px;}
 #wp-form-body > div[style*="margin-bottom:14px"]{margin-bottom:10px !important;}
 #wp-form-body label{margin-bottom:3px !important;}
 .mock-note{background:var(--blue-lt);border:1px solid #C0D4F5;border-radius:6px;padding:10px 14px;font-size:12px;color:var(--blue);margin-bottom:20px;display:flex;gap:8px;}
@@ -237,7 +239,7 @@ main{max-width:1240px;margin:0 auto;padding:24px 28px 60px;}
 /* TASKS PAGE */
 .tasks-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
 .tasks-title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.02em;flex:1;}
-select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
+select.fsel{border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
 /* Filter dropdown buttons (multi-select triggers) — styled like the View by / Show buttons but thinner */
 button.fsel{border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:8px;}
 button.fsel:hover{background:var(--surface);border-color:var(--mid);}
@@ -4066,8 +4068,10 @@ function saveSettingsModal(){
 
 // ---- TEAM MEMBER MANAGEMENT ----
 let selectedColour = '#CC0000';
-function openAddMember(){
-  document.getElementById('member-modal-title').textContent='Add Team Member';
+let _memberSavedCb = null;
+function openAddMember(onSaved){
+  _memberSavedCb = (typeof onSaved==='function') ? onSaved : null;
+  document.getElementById('member-modal-title').textContent = _memberSavedCb ? 'Add New Profile' : 'Add Team Member';
   document.getElementById('member-edit-idx').value='-1';
   document.getElementById('member-name').value='';
   document.getElementById('member-initials').value='';
@@ -4076,6 +4080,8 @@ function openAddMember(){
   _memberDelArmed=false;
   buildColourPicker();
   selectColour('#CC0000');
+  // Layer above the edit modal (z-index 210) when opened from within it
+  document.getElementById('member-modal').style.zIndex = _memberSavedCb ? '250' : '200';
   document.getElementById('member-modal').style.display='flex';
 }
 function openEditMember(idx){
@@ -4094,7 +4100,7 @@ function openEditMember(idx){
   selectColour(m.color);
   document.getElementById('member-modal').style.display='flex';
 }
-function closeMemberModal(){ document.getElementById('member-modal').style.display='none'; _memberDelArmed=false; clearTimeout(window._memberDelTimer); }
+function closeMemberModal(){ document.getElementById('member-modal').style.display='none'; _memberSavedCb=null; _memberDelArmed=false; clearTimeout(window._memberDelTimer); }
 const MEMBER_COLOURS = ['#D5495A','#3F72B0','#3E9C74','#9B7ED9','#E0A83E','#E67FB0','#3FA9B5','#5C6B7A'];
 const WS_COLOURS = ['#E8933A','#7A4FC7','#D94F8C','#0E8C8C','#B5651D','#5C6B7A','#C4913A','#8E44AD'];
 function buildColourPicker(){
@@ -4115,14 +4121,23 @@ function selectColour(col){
 }
 function saveMember(){
   const name=document.getElementById('member-name').value.trim();
-  const initials=document.getElementById('member-initials').value.trim().toUpperCase();
+  let initials=document.getElementById('member-initials').value.trim().toUpperCase();
   const role=document.getElementById('member-role').value.trim();
   const color=document.getElementById('member-color').value||selectedColour;
-  if(!name||!initials){alert('Name and initials are required.');return;}
+  if(!name){alert('Name is required.');return;}
   const idx=parseInt(document.getElementById('member-edit-idx').value);
+  // Auto-generate unique initials from the name if left blank
+  if(!initials){
+    const base=name.split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase() || name.slice(0,2).toUpperCase();
+    let uniq=base, n=1; while(TEAM.some((m,i)=>m.initials===uniq && i!==idx)){ uniq=base+(++n); }
+    initials=uniq;
+  }
   if(idx>=0){ TEAM[idx]={...TEAM[idx],name,initials,role,color}; }
   else { TEAM.push({initials,name,role,color}); }
-  APP.team=TEAM; saveData(); closeMemberModal(); renderTeam();
+  APP.team=TEAM; saveData();
+  const cb=_memberSavedCb; _memberSavedCb=null;
+  closeMemberModal(); renderTeam();
+  if(cb) cb(initials);
 }
 let _memberDelArmed=false;
 function deleteMemberFromForm(){
@@ -5213,9 +5228,8 @@ function _renderProjMembers(){
       <select id="edit-member-add" class="fsel" style="flex:1;min-width:0;">${avail.length?'<option value="">+ Add existing member…</option>'+opts:'<option value="">All team members added</option>'}</select>
       <button type="button" class="btn-ghost btn-sm" onclick="_addProjMemberFromSelect()">Add</button>
     </div>
-    <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
-      <input id="edit-member-new" class="fi" placeholder="Or type a new member's name" style="flex:1;font-size:12px;padding:6px 9px;" onkeydown="if(event.key==='Enter'){event.preventDefault();_addProjMemberNew();}">
-      <button type="button" class="btn-ghost btn-sm" onclick="_addProjMemberNew()">Add new</button>
+    <div style="margin-top:6px;">
+      <button type="button" class="btn-ghost btn-sm" onclick="_addProjMemberNewProfile()" style="width:100%;">+ Add new profile</button>
     </div>`;
 }
 function _addProjMemberFromSelect(){
@@ -5223,12 +5237,12 @@ function _addProjMemberFromSelect(){
   if(!_editMembers.includes(sel.value)) _editMembers.push(sel.value);
   _renderProjMembers();
 }
-function _addProjMemberNew(){
-  const el=document.getElementById('edit-member-new'); if(!el) return;
-  const name=(el.value||'').trim(); if(!name) return;
-  const init=_ensureTeamMember(name);
-  if(init && !_editMembers.includes(init)) _editMembers.push(init);
-  el.value=''; _renderProjMembers();
+// Open the full new-member form (name, level/position, colour); add the created profile to the project
+function _addProjMemberNewProfile(){
+  openAddMember(function(initials){
+    if(initials && !_editMembers.includes(initials)) _editMembers.push(initials);
+    _renderProjMembers();
+  });
 }
 // Find or create a team member by name; returns their initials
 function _ensureTeamMember(name){
