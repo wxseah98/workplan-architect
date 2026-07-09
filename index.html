@@ -173,8 +173,8 @@ input[type=date]:focus{outline:none;border-color:var(--red);}
 .wk-empty{font-size:11px;color:var(--muted);}
 /* CARD */
 .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
-.card-hd{padding:8px 20px;background:#D8D8D8;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.card-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);}
+.card-hd{padding:8px 20px;background:#6B6B6B;border-bottom:1px solid #5A5A5A;display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;}
 .card-action{font-size:11px;font-weight:600;color:var(--red);cursor:pointer;}
 .card-action:hover{text-decoration:underline;}
 .card-bd{padding:16px 20px;}
@@ -1802,20 +1802,20 @@ function buildWpProgress(){
     const allTasks = proj.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks));
     const done = allTasks.filter(t=>taskDoneState[t.id]||t.done).length;
     const overall = allTasks.length ? Math.round(done/allTasks.length*100) : 0;
-    const ocol = overall>=70?'#1E6B3A':overall>=40?'#E08A1E':'#8E2434';
-    // Case header — light grey bar
+    const ocol = overall>=70?'#1E6B3A':overall>=40?'#E08A1E':'#A63A48';
+    // Case header — lighter grey bar (distinct from the darker widget title bar)
     let html = `<div class="wp-case-group" style="margin-bottom:14px;">
-      <div style="display:flex;align-items:center;gap:8px;margin:0 -20px 8px;background:#D8D8D8;padding:6px 20px;">
-        <span style="font-size:11px;font-weight:800;color:#fff;background:${proj.color||'#5C6B7A'};padding:2px 8px;border-radius:10px;">${proj.caseCode}</span>
-        <span style="font-size:13px;font-weight:700;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${proj.name}</span>
-        <span style="font-size:13px;font-weight:800;color:${ocol};">${overall}%</span>
+      <div style="display:flex;align-items:center;gap:8px;margin:0 -20px 8px;background:#ECECEC;padding:5px 20px;">
+        <span style="font-size:10px;font-weight:800;color:#fff;background:${proj.color||'#5C6B7A'};padding:2px 7px;border-radius:9px;">${proj.caseCode}</span>
+        <span style="font-size:12px;font-weight:700;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${proj.name}</span>
+        <span style="font-size:12px;font-weight:800;color:${ocol};">${overall}%</span>
       </div>`;
     // Per-phase progress
     html += proj.phases.map(ph=>{
       const pTasks = ph.workstreams.flatMap(ws=>ws.tasks);
       const pDone = pTasks.filter(t=>taskDoneState[t.id]||t.done).length;
       const pProg = pTasks.length ? Math.round(pDone/pTasks.length*100) : 0;
-      const col=pProg>=70?'#1E6B3A':pProg>=40?'#E08A1E':'#8E2434';
+      const col=pProg>=70?'#1E6B3A':pProg>=40?'#E08A1E':'#A63A48';
       return `<div style="padding-left:6px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
           <span style="width:8px;height:8px;border-radius:2px;background:${ph.color};display:inline-block;flex-shrink:0;"></span>
@@ -2738,6 +2738,7 @@ function renderGantt(){
   const PROG_W = _mobile ? 56 : 70; // progress column width
 
   let tableRows = '';
+  let frozenRows = '';
   rows.forEach(row => {
     const rh = row.type==='project'?44:row.type==='phase'?36:row.type==='ws'?30:48;
     const bgLabel = row.type==='project'?'#4A4A4A':row.type==='phase'?'#E4E4E4':row.type==='ws'?'#F2F2F2':'#FFFFFF';
@@ -2904,11 +2905,13 @@ function renderGantt(){
     }).join('');
 
     const _labelW = LW - PROG_W - OWN_W;
+    frozenRows += `<tr>
+      ${ganttHideSidebar?'':`<td style="width:${_labelW}px;min-width:${_labelW}px;max-width:${_labelW}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;">${labelInner}</td>
+      ${OWN_W?`<td style="width:${OWN_W}px;min-width:${OWN_W}px;max-width:${OWN_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;">${ownerInner}</td>`:''}
+      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;">${progInner}</td>`}
+    </tr>`;
     tableRows += `<tr>
-      ${ganttHideSidebar?'':`<td style="width:${_labelW}px;min-width:${_labelW}px;max-width:${_labelW}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:0;z-index:4;">${labelInner}</td>
-      ${OWN_W?`<td style="width:${OWN_W}px;min-width:${OWN_W}px;max-width:${OWN_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;position:sticky;left:${_labelW}px;z-index:4;">${ownerInner}</td>`:''}
-      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;position:sticky;left:${_labelW+OWN_W}px;z-index:4;">${progInner}</td>`}
-      <td style="height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};padding:0;vertical-align:middle;position:relative;">
+      <td style="width:${weeks.length*WW}px;min-width:${weeks.length*WW}px;max-width:${weeks.length*WW}px;height:${rh}px;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};padding:0;vertical-align:middle;position:relative;">
         <div style="display:flex;height:100%;position:relative;">${gridCells}${barHTML}
           ${todayInRange?`<div style="position:absolute;top:0;bottom:0;left:${todayOffset}px;width:2px;background:#CC0000;opacity:.7;pointer-events:none;z-index:3;"></div>`:''}
         </div>
@@ -2934,33 +2937,41 @@ function renderGantt(){
   }).join('');
 
   const _sideW = ganttHideSidebar ? 0 : LW;
-  // Outer table width counts ONLY the week grid. The frozen label/owner/status
-  // columns are position:sticky and overlay the left edge, so they must NOT add
-  // to the scrollable width — otherwise the scrollbar overshoots past the last week.
-  const _tableW = totalWeekW + _sideW;
+  const _labelHdrW = LW - PROG_W - OWN_W;
   document.getElementById('gantt-container').innerHTML=`
-    <div id="gantt-scroll" style="overflow-x:auto;overflow-y:visible;position:relative;max-width:100%;">
-      <div id="gantt-scroll-inner" style="width:${totalWeekW}px;padding-left:${_sideW}px;box-sizing:content-box;">
-      <table style="border-collapse:collapse;table-layout:fixed;width:${_tableW}px;max-width:${_tableW}px;margin:0 0 0 -${_sideW}px;">
-        <thead>
-          <tr>
-            ${ganttHideSidebar?'':`<th style="width:${LW-PROG_W-OWN_W}px;min-width:${LW-PROG_W-OWN_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:0;z-index:8;text-align:left;">Project / Phase / Task<span onmousedown="_ganttStartColResize(event)" title="Drag to resize columns" style="position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;z-index:9;"></span></th>
-            ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:${LW-PROG_W-OWN_W}px;z-index:8;text-align:center;">Owners</th>`:''}
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:${LW-PROG_W}px;z-index:8;text-align:center;">Status</th>`}
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;position:sticky;top:0;z-index:7;">
-              <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
-            </th>
-          </tr>
-          <tr>
-            ${ganttHideSidebar?'':`<th style="width:${LW-PROG_W-OWN_W}px;min-width:${LW-PROG_W-OWN_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:0;z-index:8;"></th>
-            ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:${LW-PROG_W-OWN_W}px;z-index:8;"></th>`:''}
-            <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;top:29px;left:${LW-PROG_W}px;z-index:8;"></th>`}
-            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:7;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
-            </th>
-          </tr>
-        </thead>
-        <tbody>${tableRows}</tbody>
-      </table>
+    <div style="display:flex;align-items:flex-start;max-width:100%;position:relative;">
+      ${ganttHideSidebar?'':`<div id="gantt-frozen" style="flex-shrink:0;width:${_sideW}px;position:relative;z-index:6;">
+        <table style="border-collapse:collapse;table-layout:fixed;width:${_sideW}px;">
+          <thead>
+            <tr>
+              <th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:left;">Project / Phase / Task<span onmousedown="_ganttStartColResize(event)" title="Drag to resize columns" style="position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;z-index:9;"></span></th>
+              ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:center;">Owners</th>`:''}
+              <th style="width:${PROG_W}px;min-width:${PROG_W}px;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:center;">Status</th>
+            </tr>
+            <tr>
+              <th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:8;"></th>
+              ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:8;"></th>`:''}
+              <th style="width:${PROG_W}px;min-width:${PROG_W}px;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:8;"></th>
+            </tr>
+          </thead>
+          <tbody>${frozenRows}</tbody>
+        </table>
+      </div>`}
+      <div id="gantt-scroll" style="overflow-x:auto;overflow-y:visible;position:relative;flex:1;min-width:0;">
+        <table style="border-collapse:collapse;table-layout:fixed;width:${totalWeekW}px;max-width:${totalWeekW}px;margin:0;">
+          <thead>
+            <tr>
+              <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;position:sticky;top:0;z-index:7;">
+                <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${monthHdr}</tr></table>
+              </th>
+            </tr>
+            <tr>
+              <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:sticky;top:29px;z-index:7;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;"><tr>${weekHdr}</tr></table>
+              </th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
       </div>
     </div>`;
   _syncGanttToggleButtons();
@@ -2968,10 +2979,10 @@ function renderGantt(){
   setTimeout(()=>{
     const sc = document.getElementById('gantt-scroll');
     if (sc){
-      // Scrollable width now equals the week grid exactly (frozen columns live in
-      // the wrapper's padding), so no clamp is needed — just set the initial view.
-      const maxScroll = Math.max(0, sc.scrollWidth - sc.clientWidth);
-      sc.scrollLeft = todayInRange ? Math.min(maxScroll, Math.max(0, todayOffset - (sc.clientWidth - _sideW)/2)) : 0;
+      // The grid panel scrolls independently of the frozen columns, so its
+      // scrollWidth is exactly the week grid — the scrollbar can't run past it.
+      const maxScroll = Math.max(0, totalWeekW - sc.clientWidth);
+      sc.scrollLeft = todayInRange ? Math.min(maxScroll, Math.max(0, todayOffset - sc.clientWidth/2)) : 0;
     }
   }, 80);
 }
@@ -4616,25 +4627,29 @@ function _ownerListItems(box, filter){
   }
   return html;
 }
-// Add the currently-typed name as a member (persists to TEAM) or non-member (owner only)
+// Add the currently-typed name as a member (opens the profile popup) or non-member (owner only)
 function _ownerAddTyped(el, kind){
   const box=el.closest('.owner-field');
   const input=box.querySelector('.owner-text');
   const val=(input.value||'').trim(); if(!val) return;
-  let store=val;
   if(kind==='member'){
-    // Create initials from the name and add to the team roster
-    const initials=val.split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase() || val.slice(0,2).toUpperCase();
-    let uniq=initials, n=1;
-    while(TEAM.some(m=>m.initials===uniq)){ uniq=initials+(++n); }
-    const color=MEMBER_COLOURS[TEAM.length % MEMBER_COLOURS.length];
-    TEAM.push({ name:val, initials:uniq, color, role:'' });
-    APP.team=TEAM; saveData();
-    if(typeof renderTeam==='function') renderTeam();
-    store=uniq;
+    // Open the full profile form (title/level, colour) — same as adding in the Team tab.
+    const boxId = box.id || ('ownerfld-'+Math.random().toString(36).slice(2));
+    box.id = boxId;
+    input.value='';
+    const listEl=box.querySelector('.owner-list'); if(listEl) listEl.style.display='none';
+    openAddMember(function(initials){
+      const b=document.getElementById(boxId); if(!b) return;
+      const owners=JSON.parse(b.dataset.owners||'[]');
+      if(initials && !owners.includes(initials)){ owners.push(initials); b.dataset.owners=JSON.stringify(owners); }
+      _renderOwnerField(b);
+    });
+    const nameEl=document.getElementById('member-name'); if(nameEl){ nameEl.value=val; }
+    return;
   }
+  // Non-member: store the free-text name on this plan only
   const owners=JSON.parse(box.dataset.owners||'[]');
-  if(!owners.includes(store)){ owners.push(store); box.dataset.owners=JSON.stringify(owners); }
+  if(!owners.includes(val)){ owners.push(val); box.dataset.owners=JSON.stringify(owners); }
   input.value='';
   _renderOwnerField(box);
 }
@@ -4663,11 +4678,15 @@ function _ownerAddFromInput(el){
   let val = (input.value||'').trim();
   if(!val) return;
   const m = TEAM.find(x=>x.name.toLowerCase()===val.toLowerCase() || x.initials.toLowerCase()===val.toLowerCase() || (`${x.name} (${x.initials})`).toLowerCase()===val.toLowerCase());
-  const store = m ? m.initials : val;
-  const owners = JSON.parse(box.dataset.owners||'[]');
-  if(!owners.includes(store)){ owners.push(store); box.dataset.owners=JSON.stringify(owners); }
-  input.value='';
-  _renderOwnerField(box);
+  if(m){
+    const owners = JSON.parse(box.dataset.owners||'[]');
+    if(!owners.includes(m.initials)){ owners.push(m.initials); box.dataset.owners=JSON.stringify(owners); }
+    input.value='';
+    _renderOwnerField(box);
+  } else {
+    // New name → open the profile popup (title/level, colour), same as the Team tab
+    _ownerAddTyped(el, 'member');
+  }
 }
 function _ownerRemove(el){
   const box = el.closest('.owner-field');
@@ -4821,7 +4840,7 @@ function addPhaseRow(name, wks, startWk){
       <div class="wp-phase-swatch" onclick="_toggleWpPhasePalette(this)" style="width:20px;height:20px;border-radius:4px;background:${colour};flex-shrink:0;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--border);position:relative;" data-colour="${colour}" title="Click to change colour"></div>
       <input class="fi wp-phase-name" style="flex:2;min-width:80px;" placeholder="Phase name" value="${name||''}">
       <button type="button" onclick="togglePhaseTasks(this)" class="btn-ghost" style="font-size:10px;padding:4px 8px;white-space:nowrap;">Tasks &#9662;</button>
-      <button onclick="this.closest('.wp-phase-row').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;flex-shrink:0;">&#10005;</button>
+      <button onclick="this.closest('.wp-phase-row').remove();_refreshPhasePctBars()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;flex-shrink:0;">&#10005;</button>
     </div>
     <div style="display:flex;gap:12px;align-items:flex-start;margin-top:8px;padding-left:24px;">
       <div style="width:140px;flex-shrink:0;">
@@ -4836,9 +4855,30 @@ function addPhaseRow(name, wks, startWk){
       </div>
       <input class="wp-phase-start" type="hidden" value="${startWk||''}">
     </div>
+    <div style="margin-top:8px;padding-left:24px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="flex:1;height:7px;background:#ECECEC;border-radius:4px;overflow:hidden;">
+          <div class="wp-phase-pctbar" style="width:0%;height:100%;background:${colour};border-radius:4px;transition:width .2s;"></div>
+        </div>
+        <span class="wp-phase-pctlabel" style="font-size:10px;font-weight:700;color:var(--muted);min-width:74px;text-align:right;">0% of project</span>
+      </div>
+    </div>
     <div class="wp-phase-tasks" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"></div>`;
   document.getElementById('phase-rows').appendChild(row);
   _syncPhaseDatesFromWeeks(row);
+  _refreshPhasePctBars();
+}
+// Update each phase row's "% of total project" bar based on its weeks vs the sum
+function _refreshPhasePctBars(){
+  const rows=[...document.querySelectorAll('.wp-phase-row')];
+  const durs=rows.map(r=>{ const v=parseInt(r.querySelector('.wp-phase-wks').value); return (!isNaN(v)&&v>0)?v:0; });
+  const total=durs.reduce((a,b)=>a+b,0);
+  rows.forEach((r,i)=>{
+    const pct = total>0 ? Math.round(durs[i]/total*100) : 0;
+    const bar=r.querySelector('.wp-phase-pctbar'), lbl=r.querySelector('.wp-phase-pctlabel');
+    if(bar) bar.style.width=pct+'%';
+    if(lbl) lbl.textContent=pct+'% of project';
+  });
 }
 // Colour palette popover for a phase row swatch in the New Workplan form
 function _toggleWpPhasePalette(swatch){
@@ -4903,6 +4943,7 @@ function _phaseWkChanged(el){
   // clear the derived start so downstream phases recompute
   document.querySelectorAll('.wp-phase-row').forEach(r=>{ if(r!==row) r.querySelector('.wp-phase-start').value=''; });
   _refreshAllPhaseDates();
+  _refreshPhasePctBars();
 }
 // Workplan start date changed -> refresh every phase row's date fields
 function _refreshAllPhaseDates(){
@@ -4933,31 +4974,38 @@ function togglePhaseTasks(btn){
   renderPhaseTaskEditor(row);
 }
 function refreshPhaseWsHints(){
-  // Re-render any open phase task editors so new workstreams appear
+  // Re-render phase task editors so newly-added workstreams appear in the dropdowns.
   document.querySelectorAll('.wp-phase-row').forEach(row=>{
     const box = row.querySelector('.wp-phase-tasks');
-    if(box && box.style.display!=='none') renderPhaseTaskEditor(row, true);
+    if(box && box.innerHTML.trim()) renderPhaseTaskEditor(row, true);
   });
 }
 function renderPhaseTaskEditor(row, preserve){
   const box = row.querySelector('.wp-phase-tasks');
-  // preserve existing typed tasks
-  const existing = preserve ? [...box.querySelectorAll('.wp-task-row')].map(tr=>({
-    ws: tr.querySelector('.wp-task-ws') ? tr.querySelector('.wp-task-ws').value : (tr.dataset.ws||''),
-    name: tr.querySelector('.wp-task-name').value,
-    sw: tr.querySelector('.wp-task-sw') ? tr.querySelector('.wp-task-sw').value : '',
-    dur: tr.querySelector('.wp-task-dur') ? tr.querySelector('.wp-task-dur').value : ''
-  })) : [];
+  const projStart = document.getElementById('wp-start') ? document.getElementById('wp-start').value : '';
+  // preserve existing typed tasks (start date + duration)
+  const existing = preserve ? [...box.querySelectorAll('.wp-task-row')].map(tr=>{
+    const startVal = tr.querySelector('.wp-task-start') ? tr.querySelector('.wp-task-start').value : '';
+    let sw='';
+    if(startVal && projStart){ sw = Math.max(1, Math.round((new Date(startVal)-new Date(projStart))/(7*864e5))+1); }
+    return {
+      ws: tr.querySelector('.wp-task-ws') ? tr.querySelector('.wp-task-ws').value : (tr.dataset.ws||''),
+      name: tr.querySelector('.wp-task-name').value,
+      sw: sw,
+      dur: tr.querySelector('.wp-task-dur') ? tr.querySelector('.wp-task-dur').value : ''
+    };
+  }) : [];
   box.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
       <span style="font-size:10px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.05em;">Tasks in this phase</span>
       <button type="button" class="btn-ghost" style="font-size:10px;padding:2px 8px;" onclick="addWpTaskRow(this)">+ Task</button>
     </div>
-    <div style="display:flex;gap:6px;align-items:center;margin-bottom:3px;padding-right:24px;">
-      <span style="flex:1;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Task</span>
-      <span style="width:130px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Workstream</span>
-      <span style="width:56px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Start wk</span>
-      <span style="width:56px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Dur wks</span>
+    <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px;padding-right:24px;">
+      <span style="flex:1;min-width:120px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Task</span>
+      <span style="width:110px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Workstream</span>
+      <span style="width:66px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Dur wks</span>
+      <span style="width:120px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Start date</span>
+      <span style="width:120px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">End date</span>
     </div>
     <div class="wp-task-bucket"></div>`;
   const bucket = box.querySelector('.wp-task-bucket');
@@ -4973,7 +5021,8 @@ function _appendWpTaskRow(container, ws, name, sw, dur){
   tr.className = 'wp-task-row';
   tr.style.cssText = 'display:flex;gap:5px;align-items:center;margin-bottom:4px;flex-wrap:wrap;';
   const wsList = getDefinedWorkstreams().map(w=>w.name);
-  const wsOpts = wsList.map(n=>`<option value="${n}" ${ws===n?'selected':''}>${n}</option>`).join('');
+  const _wsChosen = ws || (wsList.length ? wsList[0] : '');
+  const wsOpts = wsList.map(n=>`<option value="${n}" ${_wsChosen===n?'selected':''}>${n}</option>`).join('');
   // Resolve default start/end ISO dates from the project start + week/duration
   const projStart = document.getElementById('wp-start') ? document.getElementById('wp-start').value : '';
   const _todayISO = new Date().toISOString().slice(0,10);
@@ -4987,25 +5036,34 @@ function _appendWpTaskRow(container, ws, name, sw, dur){
   tr.innerHTML = `
     <input class="fi wp-task-name" style="flex:1;min-width:120px;font-size:11px;padding:4px 7px;" placeholder="Task name" value="${(name||'').replace(/"/g,'&quot;')}">
     <select class="fs wp-task-ws" style="width:110px;font-size:11px;padding:4px 5px;"><option value="">(no workstream)</option>${wsOpts}</select>
-    <input class="fi wp-task-start" type="date" style="width:120px;font-size:11px;padding:4px 4px;" title="Start date" value="${startISO}" onchange="_wpTaskSyncDur(this)">
-    <input class="fi wp-task-end" type="date" style="width:120px;font-size:11px;padding:4px 4px;" title="End date" value="${endISO}" onchange="_wpTaskSyncDur(this)">
-    <div style="display:flex;align-items:center;gap:3px;">
-      <input class="fi wp-task-dur" type="number" min="1" style="width:46px;font-size:11px;padding:4px 4px;" placeholder="1" value="${dur||1}" title="Duration in weeks" oninput="_wpTaskSyncEnd(this)">
+    <div style="display:flex;align-items:center;gap:3px;width:66px;">
+      <input class="fi wp-task-dur" type="number" min="1" style="width:44px;font-size:11px;padding:4px 4px;" placeholder="1" value="${dur||1}" title="Duration in weeks" oninput="_wpTaskSyncEnd(this)">
       <span style="font-size:10px;color:var(--muted);">wks</span>
     </div>
+    <input class="fi wp-task-start" type="date" style="width:120px;font-size:11px;padding:4px 4px;" title="Start date" value="${startISO}" max="${endISO}" onchange="_wpTaskSyncEnd(this)">
+    <input class="fi wp-task-end" type="date" style="width:120px;font-size:11px;padding:4px 4px;" title="End date" value="${endISO}" min="${startISO}" onchange="_wpTaskSyncDur(this)">
     <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">&#10005;</button>`;
   container.appendChild(tr);
 }
-// Keep a New-Workplan task row's end date and duration in sync (uses project start as week anchor)
+// End date changed → recompute duration (clamp end >= start), refresh guards
 function _wpTaskSyncDur(el){
   const row=el.closest('.wp-task-row'); if(!row) return;
-  const s=row.querySelector('.wp-task-start').value, e=row.querySelector('.wp-task-end').value;
-  if(s&&e){ const dur=Math.max(1, Math.round((new Date(e)-new Date(s))/(7*864e5))+1); row.querySelector('.wp-task-dur').value=dur; }
+  const sEl=row.querySelector('.wp-task-start'), eEl=row.querySelector('.wp-task-end'), dEl=row.querySelector('.wp-task-dur');
+  let s=sEl.value, e=eEl.value;
+  if(s&&e){
+    if(new Date(e)<new Date(s)){ e=s; eEl.value=e; } // end can't precede start
+    const dur=Math.max(1, Math.round((new Date(e)-new Date(s))/(7*864e5))+1);
+    dEl.value=dur;
+  }
+  sEl.max=eEl.value||''; eEl.min=sEl.value||'';
 }
+// Start date or duration changed → recompute end, refresh guards
 function _wpTaskSyncEnd(el){
   const row=el.closest('.wp-task-row'); if(!row) return;
-  const s=row.querySelector('.wp-task-start').value; const dur=Math.max(1, parseInt(row.querySelector('.wp-task-dur').value)||1);
-  if(s){ const sd=new Date(s); sd.setDate(sd.getDate()+dur*7-1); row.querySelector('.wp-task-end').value=sd.toISOString().slice(0,10); }
+  const sEl=row.querySelector('.wp-task-start'), eEl=row.querySelector('.wp-task-end'), dEl=row.querySelector('.wp-task-dur');
+  const s=sEl.value; const dur=Math.max(1, parseInt(dEl.value)||1);
+  if(s){ const sd=new Date(s); sd.setDate(sd.getDate()+dur*7-1); eEl.value=sd.toISOString().slice(0,10); }
+  sEl.max=eEl.value||''; eEl.min=sEl.value||'';
 }
 
 
