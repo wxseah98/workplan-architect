@@ -12,8 +12,8 @@
   --amber-lt:#FFF3DC;--blue:#1A4F8F;--blue-lt:#E8F0FB;--red-lt:#FFF0F0;
   --purple:#6B3FA0;--purple-lt:#F3EEFF;
   --danger:#C64450;--danger-lt:#FCEBEC;--warn:#C79020;--warn-lt:#FBF1D9;
-  --st-done:#3E9C5F;--st-done-lt:#E6F4EB;--st-ontrack:#2C9BC4;--st-ontrack-lt:#E4F4FA;
-  --st-risk:#D19A2E;--st-risk-lt:#FBF1D9;--st-delayed:#D9535F;--st-delayed-lt:#FCEBEC;
+  --st-done:#1E6B3A;--st-done-lt:#DDEEE2;--st-ontrack:#3E9C5F;--st-ontrack-lt:#E6F4EB;
+  --st-risk:#E08A1E;--st-risk-lt:#FBEDD4;--st-delayed:#8E2434;--st-delayed-lt:#F3E0E3;
   --radius:8px;--shadow:0 1px 3px rgba(0,0,0,0.06),0 3px 12px rgba(0,0,0,0.05);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -171,8 +171,8 @@ main{max-width:1240px;margin:0 auto;padding:24px 28px 60px;}
 .wk-empty{font-size:11px;color:var(--muted);}
 /* CARD */
 .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
-.card-hd{padding:15px 20px 11px;border-bottom:1px solid #F0F0F0;display:flex;align-items:center;justify-content:space-between;}
-.card-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.card-hd{padding:11px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);}
 .card-action{font-size:11px;font-weight:600;color:var(--red);cursor:pointer;}
 .card-action:hover{text-decoration:underline;}
 .card-bd{padding:16px 20px;}
@@ -1697,7 +1697,7 @@ function buildFocus(){
   const seg=(title,arr,color)=> arr.length? `<div style="font-size:10px;font-weight:800;color:${color||'var(--mid)'};text-transform:uppercase;letter-spacing:.06em;margin:8px 0 6px;">${title}</div>`+arr.map(row).join('') : '';
   let html='';
   html += seg('At Risk / Delayed', risk, '#C0392B');
-  html += seg('Due Today / This Week', dueSoon, '#2C9BC4');
+  html += seg('Due Today / This Week', dueSoon, '#3E9C5F');
   html += seg('Later', later);
   if(completed.length) html += `<div style="border-top:1px dashed var(--border);margin-top:8px;padding-top:6px;">`+seg('Completed', completed)+`</div>`;
   if(!risk.length && !dueSoon.length && !later.length && !completed.length) html='<div style="font-size:13px;color:var(--green);font-weight:600;padding:8px 0;">&#10003; All clear &mdash; nothing pending!</div>';
@@ -1716,7 +1716,7 @@ function buildWeekly(){
   // My tasks (workstream-member ownership), with dates
   const mine=_myTasksWithDates('WZ');
   const isDone=t=>!!taskDoneState[t.id];
-  const col=t=> t.status==='delayed'?'#D9535F':t.status==='at-risk'?'#D19A2E':'#2C9BC4';
+  const col=t=> t.status==='delayed'?'#8E2434':t.status==='at-risk'?'#E08A1E':'#3E9C5F';
 
   // Completion date (if recorded), else fall back to the task end date
   const doneDate=t=>{ const dd=(APP.taskDoneDates&&APP.taskDoneDates[t.id]); return dd?_d(dd.slice(0,10)):_d(t._end); };
@@ -1761,7 +1761,7 @@ function buildWeekly(){
       <div class="wk-day-lbl ${isToday?'today':''}" style="text-align:center;">${d}<div style="font-size:14px;font-weight:800;color:${isToday?'var(--red)':'var(--ink)'};line-height:1.1;">${date.getDate()}</div></div>
       <div class="wk-tasks">
         ${items.length? items.slice(0,4).map(({t,done,pulled})=>{
-          const c=done?'#3E9C5F':col(t);
+          const c=done?'#1E6B3A':col(t);
           const nm=t.name.length>30?t.name.slice(0,30)+'…':t.name;
           return `<div class="wk-task" style="${done?'opacity:.75;':''}"><span class="dot" style="background:${c}"></span><span style="${done?'text-decoration:line-through;color:#999;':''}">${nm}</span>${pulled?'<span style="font-size:8px;color:var(--muted);margin-left:3px;">(pulled)</span>':''}</div>`;
         }).join('') : '<div class="wk-empty">—</div>'}
@@ -1800,11 +1800,11 @@ function buildWpProgress(){
     const allTasks = proj.phases.flatMap(ph=>ph.workstreams.flatMap(ws=>ws.tasks));
     const done = allTasks.filter(t=>taskDoneState[t.id]||t.done).length;
     const overall = allTasks.length ? Math.round(done/allTasks.length*100) : 0;
-    const ocol = overall>=70?'#1A7F4E':overall>=40?'#D69200':'#A52834';
-    // Case header
+    const ocol = overall>=70?'#1E6B3A':overall>=40?'#E08A1E':'#8E2434';
+    // Case header — light grey bar
     let html = `<div class="wp-case-group" style="margin-bottom:14px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <span style="font-size:11px;font-weight:800;color:#fff;background:${proj.color||'#A52834'};padding:2px 8px;border-radius:10px;">${proj.caseCode}</span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;">
+        <span style="font-size:11px;font-weight:800;color:#fff;background:${proj.color||'#5C6B7A'};padding:2px 8px;border-radius:10px;">${proj.caseCode}</span>
         <span style="font-size:13px;font-weight:700;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${proj.name}</span>
         <span style="font-size:13px;font-weight:800;color:${ocol};">${overall}%</span>
       </div>`;
@@ -1813,7 +1813,7 @@ function buildWpProgress(){
       const pTasks = ph.workstreams.flatMap(ws=>ws.tasks);
       const pDone = pTasks.filter(t=>taskDoneState[t.id]||t.done).length;
       const pProg = pTasks.length ? Math.round(pDone/pTasks.length*100) : 0;
-      const col=pProg>=70?'#1A7F4E':pProg>=40?'#D69200':'#A52834';
+      const col=pProg>=70?'#1E6B3A':pProg>=40?'#E08A1E':'#8E2434';
       return `<div style="padding-left:6px;margin-bottom:8px;">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
           <span style="width:8px;height:8px;border-radius:2px;background:${ph.color};display:inline-block;flex-shrink:0;"></span>
@@ -2409,7 +2409,7 @@ function _allWorkstreamNames(projs){
   });
   return names;
 }
-const _STATUS_OPTS=[{val:'on-track',label:'On Track',dot:'#2C9BC4',round:true},{val:'at-risk',label:'At Risk',dot:'#D19A2E',round:true},{val:'delayed',label:'Delayed',dot:'#D9535F',round:true},{val:'done',label:'Done',dot:'#3E9C5F',round:true}];
+const _STATUS_OPTS=[{val:'on-track',label:'On Track',dot:'#3E9C5F',round:true},{val:'at-risk',label:'At Risk',dot:'#E08A1E',round:true},{val:'delayed',label:'Delayed',dot:'#8E2434',round:true},{val:'done',label:'Done',dot:'#1E6B3A',round:true}];
 // Stable colour for a workstream name within a project.
 function wsColour(proj, name){
   let defs = (proj && proj.workstreamDefs && proj.workstreamDefs.length)
@@ -2597,10 +2597,10 @@ function openGanttStatusMenu(projId, phaseId, wsId, taskId){
   _closeGanttStatusMenu();
   const anchor = event && event.currentTarget ? event.currentTarget : null;
   const opts = [
-    {v:'on-track', label:'On Track', col:'#2C9BC4'},
-    {v:'at-risk', label:'At Risk', col:'#D19A2E'},
-    {v:'delayed', label:'Delayed', col:'#D9535F'},
-    {v:'done', label:'Done', col:'#3E9C5F'}
+    {v:'on-track', label:'On Track', col:'#3E9C5F'},
+    {v:'at-risk', label:'At Risk', col:'#E08A1E'},
+    {v:'delayed', label:'Delayed', col:'#8E2434'},
+    {v:'done', label:'Done', col:'#1E6B3A'}
   ];
   const menu=document.createElement('div');
   menu.id='gantt-status-menu';
@@ -2633,10 +2633,10 @@ function renderGantt(){
 
   const legend=document.getElementById('gantt-legend');
   if(legend) legend.innerHTML=[
-    {color:'#2C9BC4',label:'On Track'},
-    {color:'#D19A2E',label:'At Risk'},
-    {color:'#D9535F',label:'Delayed'},
-    {color:'#3E9C5F',label:'Done'}
+    {color:'#3E9C5F',label:'On Track'},
+    {color:'#E08A1E',label:'At Risk'},
+    {color:'#8E2434',label:'Delayed'},
+    {color:'#1E6B3A',label:'Done'}
   ].map(l=>`<div class="legend-item"><div class="legend-swatch" style="background:${l.color}"></div>${l.label}</div>`).join('');
 
   // Collapsed (phase-arrow) layout is a separate renderer
@@ -2837,7 +2837,7 @@ function renderGantt(){
         ${ganttShowEdit?`<button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="event.stopPropagation();openEditTask('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')">&#9998;</button>`:''}
       </div>`;
       const statLabel = isDone?'Done':task.status==='delayed'?'Delayed':task.status==='at-risk'?'At Risk':'On Track';
-      const statCol = isDone?'#3E9C5F':task.status==='delayed'?'#D9535F':task.status==='at-risk'?'#D19A2E':'#2C9BC4';
+      const statCol = isDone?'#1E6B3A':task.status==='delayed'?'#8E2434':task.status==='at-risk'?'#E08A1E':'#3E9C5F';
       progInner = `<div style="padding:0 8px;display:flex;align-items:center;justify-content:flex-end;">
         <span title="Click to change status" onclick="event.stopPropagation();cycleGanttStatus('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')" style="font-size:9px;font-weight:800;color:${statCol};white-space:nowrap;cursor:pointer;user-select:none;">${statLabel}</span>
       </div>`;
@@ -2867,7 +2867,7 @@ function renderGantt(){
       const x1 = Math.round((dd-gridStart)/(7*24*60*60*1000)*WW);
       const taskDur = Math.max(1, task.durWk||1);
       const taskBarW = Math.max(taskDur*WW - 8, 12);
-      const bc = task.done?'#3E9C5F':task.status==='delayed'?'#D9535F':task.status==='at-risk'?'#D19A2E':'#2C9BC4';
+      const bc = task.done?'#1E6B3A':task.status==='delayed'?'#8E2434':task.status==='at-risk'?'#E08A1E':'#3E9C5F';
       const outline = '';
       const member = TEAM.find(m=>m.initials===task.owner);
       const tipOwner = member ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${member.color};margin-right:3px;"></span>${member.name}` : task.owner;
@@ -3007,7 +3007,7 @@ function renderGanttCollapsed(projects){
         body += `<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:${c};margin:8px 0 4px;display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:${c};"></span>${wsName}</div>`;
         groups[wsName].forEach(x=>{
           const done=taskDoneState[x.task.id]||x.task.done;
-          const sc=done?'#3E9C5F':x.task.status==='delayed'?'#D9535F':x.task.status==='at-risk'?'#D19A2E':'#2C9BC4';
+          const sc=done?'#1E6B3A':x.task.status==='delayed'?'#8E2434':x.task.status==='at-risk'?'#E08A1E':'#3E9C5F';
           body += `<div style="display:flex;gap:6px;font-size:11px;color:#333;line-height:1.35;margin-bottom:5px;">
             <span style="color:${sc};font-weight:800;flex-shrink:0;">•</span>
             <span style="${done?'text-decoration:line-through;color:#999;':''}">${x.task.name}</span>
@@ -4038,7 +4038,7 @@ function restoreArchivedProject(projId){
   const p=_findProj(projId); if(!p) return;
   p.archived=false;
   APP.projects=PROJECTS; saveData();
-  if(typeof pushFeed==='function') pushFeed('Restored '+p.caseCode+' · '+p.name, '#3E9C5F');
+  if(typeof pushFeed==='function') pushFeed('Restored '+p.caseCode+' · '+p.name, '#1E6B3A');
   renderArchivedProjects();
   renderTasks(); renderDashboardWidgets();
   if(typeof renderGantt==='function') renderGantt();
@@ -5295,7 +5295,7 @@ function _renderProjStructure(){
         const isDone=taskDoneState[t.id]||t.done;
         const r=taskDateRange(p,ph,t);
         return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0 3px 14px;font-size:11px;">
-          <span style="color:${isDone?'#3E9C5F':t.status==='delayed'?'#D9535F':t.status==='at-risk'?'#D19A2E':'#2C9BC4'};font-weight:800;">•</span>
+          <span style="color:${isDone?'#1E6B3A':t.status==='delayed'?'#8E2434':t.status==='at-risk'?'#E08A1E':'#3E9C5F'};font-weight:800;">•</span>
           <span style="flex:1;${isDone?'text-decoration:line-through;color:#aaa;':'color:#333;'}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
           <span style="font-size:9px;color:var(--muted);white-space:nowrap;">${fmtDate(new Date(r.startISO))}–${fmtDate(new Date(r.endISO))}</span>
           <button class="edit-btn" title="Edit task" style="flex-shrink:0;" onclick="_drillEdit('task','${p.id}','${ph.id}','${ws.id}','${t.id}')">&#9998;</button>
@@ -5346,7 +5346,7 @@ function editModalArchive(){
   const p=_findProj(editCtx.projId); if(!p) return;
   p.archived = !p.archived;
   APP.projects=PROJECTS; saveData();
-  if(typeof pushFeed==='function') pushFeed((p.archived?'Archived ':'Restored ')+p.caseCode+' · '+p.name, p.archived?'#9B9B9B':'#3E9C5F');
+  if(typeof pushFeed==='function') pushFeed((p.archived?'Archived ':'Restored ')+p.caseCode+' · '+p.name, p.archived?'#9B9B9B':'#1E6B3A');
   closeEditModal();
   renderTasks(); renderDashboardWidgets();
   if(typeof renderGantt==='function') renderGantt();
