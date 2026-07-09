@@ -42,6 +42,11 @@ main{max-width:1240px;margin:0 auto;padding:24px 28px 60px;}
 .fi:focus{outline:none;border-color:var(--red);}
 .fs{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:8px 11px;font-size:13px;color:var(--ink);background:#fff;cursor:pointer;}
 .fs:focus{outline:none;border-color:var(--red);}
+/* New Workplan form: slimmer inputs + tighter spacing for a shorter, cleaner page */
+#wp-form-body .fi, #wp-form-body .fs{padding:6px 9px;font-size:12px;}
+#wp-form-body input[type=date]{padding:6px 8px;font-size:12px;}
+#wp-form-body > div[style*="margin-bottom:14px"]{margin-bottom:10px !important;}
+#wp-form-body label{margin-bottom:3px !important;}
 .mock-note{background:var(--blue-lt);border:1px solid #C0D4F5;border-radius:6px;padding:10px 14px;font-size:12px;color:var(--blue);margin-bottom:20px;display:flex;gap:8px;}
 /* GREETING */
 .greeting{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;}
@@ -290,11 +295,11 @@ select.fsel:hover{border-color:var(--mid);}
 .t-name.done{text-decoration:line-through;color:var(--muted);font-weight:400;}
 .t-chips{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;}
 .ownr{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:600;color:var(--slate);}
-.stat-chip{font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;}
-.stat-chip.on-track{background:var(--st-ontrack-lt);color:var(--st-ontrack);}
-.stat-chip.at-risk{background:var(--st-risk-lt);color:var(--st-risk);}
-.stat-chip.delayed{background:var(--st-delayed-lt);color:var(--st-delayed);}
-.stat-chip.done{background:var(--st-done-lt);color:var(--st-done);}
+.stat-chip{font-size:11px;font-weight:800;}
+.stat-chip.on-track{color:var(--st-ontrack);}
+.stat-chip.at-risk{color:var(--st-risk);}
+.stat-chip.delayed{color:var(--st-delayed);}
+.stat-chip.done{color:var(--st-done);}
 .due-lbl{font-size:11.5px;color:var(--slate);font-weight:600;}
 
 /* ── TIMELINE / GANTT ── */
@@ -692,9 +697,6 @@ select.fsel:hover{border-color:var(--mid);}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--red);">
           <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;">Workstreams</div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <select class="fsel" id="wp-existing-ws" style="font-size:11px;padding:4px 8px;" onchange="addExistingWs(this.value); this.value='';">
-              <option value="">Add existing…</option>
-            </select>
             <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addWsRow()">+ Add Workstream</button>
           </div>
         </div>
@@ -707,9 +709,6 @@ select.fsel:hover{border-color:var(--mid);}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--red);">
           <div style="font-size:12px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.07em;">Phases &amp; Tasks</div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <select class="fsel" id="wp-existing-phase" style="font-size:11px;padding:4px 8px;" onchange="addExistingPhase(this.value); this.value='';">
-              <option value="">Add existing…</option>
-            </select>
             <button class="btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="addPhaseRow()">+ Add Phase</button>
           </div>
         </div>
@@ -951,11 +950,26 @@ select.fsel:hover{border-color:var(--mid);}
       </div>
       <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Name</label>
         <input id="wpv-item-name" class="fi" placeholder="e.g. Diagnose or Draft analysis"></div>
+      <div id="wpv-date-fields" style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-end;">
+        <div style="flex:1;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Dates</label>
+          <div style="display:flex;gap:5px;align-items:center;">
+            <input id="wpv-item-startdate" type="date" class="fi" style="font-size:11px;padding:5px 4px;" onchange="_wpvSyncDur()">
+            <span style="color:var(--muted);">–</span>
+            <input id="wpv-item-enddate" type="date" class="fi" style="font-size:11px;padding:5px 4px;" onchange="_wpvSyncDur()">
+          </div>
+        </div>
+        <div style="width:78px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Weeks</label>
+          <input id="wpv-item-durwks" type="number" min="1" class="fi" style="font-size:11px;padding:5px 5px;" value="1" oninput="_wpvSyncEnd()"></div>
+      </div>
       <div id="wpv-task-fields" style="display:none;">
         <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Workstream</label>
         <select id="wpv-item-ws" class="fs"></select>
       </div>
-      <div id="wpv-ws-note" style="display:none;font-size:11px;color:var(--mid);line-height:1.5;">This adds a new workstream to the workplan. It becomes available in every phase, so you can then add tasks under it.</div>
+      <div id="wpv-ws-fields" style="display:none;margin-top:4px;">
+        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Members</label>
+        <div id="wpv-item-members" data-owner-field="wpv"></div>
+      </div>
+      <div id="wpv-ws-note" style="display:none;font-size:11px;color:var(--mid);line-height:1.5;margin-top:8px;">This adds a new workstream to the workplan. It becomes available in every phase, so you can then add tasks under it.</div>
     </div>
     <div style="padding:12px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;">
       <button class="btn-ghost" onclick="closeWpvItem()">Cancel</button>
@@ -2583,10 +2597,10 @@ function openGanttStatusMenu(projId, phaseId, wsId, taskId){
   _closeGanttStatusMenu();
   const anchor = event && event.currentTarget ? event.currentTarget : null;
   const opts = [
-    {v:'on-track', label:'On Track', col:'#1A7F4E'},
-    {v:'at-risk', label:'At Risk', col:'#D69200'},
-    {v:'delayed', label:'Delayed', col:'#A52834'},
-    {v:'done', label:'Done', col:'#6B6B6B'}
+    {v:'on-track', label:'On Track', col:'#2C9BC4'},
+    {v:'at-risk', label:'At Risk', col:'#D19A2E'},
+    {v:'delayed', label:'Delayed', col:'#D9535F'},
+    {v:'done', label:'Done', col:'#3E9C5F'}
   ];
   const menu=document.createElement('div');
   menu.id='gantt-status-menu';
@@ -2825,7 +2839,7 @@ function renderGantt(){
       const statLabel = isDone?'Done':task.status==='delayed'?'Delayed':task.status==='at-risk'?'At Risk':'On Track';
       const statCol = isDone?'#3E9C5F':task.status==='delayed'?'#D9535F':task.status==='at-risk'?'#D19A2E':'#2C9BC4';
       progInner = `<div style="padding:0 8px;display:flex;align-items:center;justify-content:flex-end;">
-        <span title="Click to change status" onclick="event.stopPropagation();cycleGanttStatus('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')" style="font-size:9px;font-weight:700;color:${statCol};background:${statCol}18;border-radius:8px;padding:2px 7px;white-space:nowrap;cursor:pointer;user-select:none;">${statLabel}</span>
+        <span title="Click to change status" onclick="event.stopPropagation();cycleGanttStatus('${proj.id}','${ph.id}','${row.ws.id}','${task.id}')" style="font-size:9px;font-weight:800;color:${statCol};white-space:nowrap;cursor:pointer;user-select:none;">${statLabel}</span>
       </div>`;
     }
 
@@ -4082,7 +4096,7 @@ function openEditMember(idx){
 }
 function closeMemberModal(){ document.getElementById('member-modal').style.display='none'; _memberDelArmed=false; clearTimeout(window._memberDelTimer); }
 const MEMBER_COLOURS = ['#D5495A','#3F72B0','#3E9C74','#9B7ED9','#E0A83E','#E67FB0','#3FA9B5','#5C6B7A'];
-const WS_COLOURS = ['#E8933A','#2C9BC4','#D94F8C','#5B8C2A','#C0392B','#7A4FC7','#0E8C8C','#3F6FB0'];
+const WS_COLOURS = ['#E8933A','#7A4FC7','#D94F8C','#0E8C8C','#B5651D','#5C6B7A','#C4913A','#8E44AD'];
 function buildColourPicker(){
   const wrap=document.getElementById('colour-picker');
   if(!wrap) return;
@@ -4453,7 +4467,7 @@ function buildTemplateDropdown(selectedKey){
   if(selectedKey) sel.value = selectedKey;
 }
 
-const PHASE_COLOURS = ['#EFB94D','#C4D24E','#EF8B4E','#4EBEDE','#E8656F','#9B7ED9'];
+const PHASE_COLOURS = ['#E8933A','#9B7ED9','#0E8C8C','#D94F8C','#B5651D','#5C6B7A'];
 let phaseRowCount = 0;
 let wsRowCount = 0;
 
@@ -4471,37 +4485,8 @@ function openNewWorkplan(){
   phaseRowCount = 0;
   document.getElementById('phase-rows').innerHTML='';
   addPhaseRow();
-  _populateExistingPickers();
   setWpView('form');
   document.getElementById('workplan-modal').style.display='flex';
-}
-// Fill the "Add existing…" dropdowns from all current projects
-function _populateExistingPickers(){
-  const wsSel=document.getElementById('wp-existing-ws');
-  const phSel=document.getElementById('wp-existing-phase');
-  if(wsSel){
-    const names=[]; PROJECTS.forEach(p=>{ (p.workstreamDefs||[]).forEach(w=>{ if(!names.includes(w.name)) names.push(w.name); }); p.phases.forEach(ph=>ph.workstreams.forEach(w=>{ if(!names.includes(w.name)) names.push(w.name); })); });
-    wsSel.innerHTML='<option value="">Add existing…</option>'+names.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
-  }
-  if(phSel){
-    const seen=new Set(), opts=[];
-    PROJECTS.forEach(p=>p.phases.forEach(ph=>{ const key=ph.name.toLowerCase(); if(!seen.has(key)){ seen.add(key); opts.push({name:ph.name, wks:(ph.endWk-ph.startWk+1)}); } }));
-    phSel.innerHTML='<option value="">Add existing…</option>'+opts.map(o=>`<option value="${o.name.replace(/"/g,'&quot;')}|${o.wks}">${o.name} (${o.wks} wk${o.wks>1?'s':''})</option>`).join('');
-  }
-}
-// Add an existing workstream by name (skips duplicates already in the form)
-function addExistingWs(name){
-  if(!name) return;
-  const have=getDefinedWorkstreams().map(w=>w.name.toLowerCase());
-  if(have.includes(name.toLowerCase())) return;
-  addWsRow(name, []);
-  if(typeof refreshPhaseWsHints==='function') refreshPhaseWsHints();
-}
-// Add an existing phase by "name|weeks"
-function addExistingPhase(val){
-  if(!val) return;
-  const [name, wks] = val.split('|');
-  addPhaseRow(name, parseInt(wks)||4);
 }
 // Weeks <-> dates auto-calc for the project header
 function _wpWeeksChanged(){
@@ -4944,17 +4929,41 @@ function addWpTaskRow(btn){
 function _appendWpTaskRow(container, ws, name, sw, dur){
   const tr = document.createElement('div');
   tr.className = 'wp-task-row';
-  tr.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px;';
-  // Workstream options come from the project's defined workstreams (optional)
+  tr.style.cssText = 'display:flex;gap:5px;align-items:center;margin-bottom:4px;flex-wrap:wrap;';
   const wsList = getDefinedWorkstreams().map(w=>w.name);
   const wsOpts = wsList.map(n=>`<option value="${n}" ${ws===n?'selected':''}>${n}</option>`).join('');
+  // Resolve default start/end ISO dates from the project start + week/duration
+  const projStart = document.getElementById('wp-start') ? document.getElementById('wp-start').value : '';
+  const _todayISO = new Date().toISOString().slice(0,10);
+  let startISO=_todayISO, endISO=_todayISO;
+  if(projStart){
+    const swNum = sw?Math.max(1,parseInt(sw)):1;
+    const durNum = dur?Math.max(1,parseInt(dur)):1;
+    const sd=new Date(projStart); sd.setDate(sd.getDate()+(swNum-1)*7); startISO=sd.toISOString().slice(0,10);
+    const ed=new Date(sd); ed.setDate(ed.getDate()+durNum*7-1); endISO=ed.toISOString().slice(0,10);
+  }
   tr.innerHTML = `
-    <input class="fi wp-task-name" style="flex:1;font-size:12px;padding:5px 8px;" placeholder="Task name" value="${(name||'').replace(/"/g,'&quot;')}">
-    <select class="fs wp-task-ws" style="width:130px;font-size:12px;padding:5px 6px;"><option value="">(no workstream)</option>${wsOpts}</select>
-    <input class="fi wp-task-sw" type="number" min="1" style="width:56px;font-size:12px;padding:5px 6px;" placeholder="1" value="${sw||''}">
-    <input class="fi wp-task-dur" type="number" min="1" style="width:56px;font-size:12px;padding:5px 6px;" placeholder="1" value="${dur||''}">
+    <input class="fi wp-task-name" style="flex:1;min-width:120px;font-size:11px;padding:4px 7px;" placeholder="Task name" value="${(name||'').replace(/"/g,'&quot;')}">
+    <select class="fs wp-task-ws" style="width:110px;font-size:11px;padding:4px 5px;"><option value="">(no workstream)</option>${wsOpts}</select>
+    <input class="fi wp-task-start" type="date" style="width:120px;font-size:11px;padding:4px 4px;" title="Start date" value="${startISO}" onchange="_wpTaskSyncDur(this)">
+    <input class="fi wp-task-end" type="date" style="width:120px;font-size:11px;padding:4px 4px;" title="End date" value="${endISO}" onchange="_wpTaskSyncDur(this)">
+    <div style="display:flex;align-items:center;gap:3px;">
+      <input class="fi wp-task-dur" type="number" min="1" style="width:46px;font-size:11px;padding:4px 4px;" placeholder="1" value="${dur||1}" title="Duration in weeks" oninput="_wpTaskSyncEnd(this)">
+      <span style="font-size:10px;color:var(--muted);">wks</span>
+    </div>
     <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;">&#10005;</button>`;
   container.appendChild(tr);
+}
+// Keep a New-Workplan task row's end date and duration in sync (uses project start as week anchor)
+function _wpTaskSyncDur(el){
+  const row=el.closest('.wp-task-row'); if(!row) return;
+  const s=row.querySelector('.wp-task-start').value, e=row.querySelector('.wp-task-end').value;
+  if(s&&e){ const dur=Math.max(1, Math.round((new Date(e)-new Date(s))/(7*864e5))+1); row.querySelector('.wp-task-dur').value=dur; }
+}
+function _wpTaskSyncEnd(el){
+  const row=el.closest('.wp-task-row'); if(!row) return;
+  const s=row.querySelector('.wp-task-start').value; const dur=Math.max(1, parseInt(row.querySelector('.wp-task-dur').value)||1);
+  if(s){ const sd=new Date(s); sd.setDate(sd.getDate()+dur*7-1); row.querySelector('.wp-task-end').value=sd.toISOString().slice(0,10); }
 }
 
 
@@ -5005,10 +5014,17 @@ function saveNewWorkplan(){
       // Ensure the chosen workstream exists on this phase
       let ws = workstreams.find(w=>w.name===chosen);
       if(!ws){ ws = { id:'ws'+projId+'_'+i+'_x'+ti, name:chosen, members:[], tasks:[] }; workstreams.push(ws); }
-      // Per-task start week + duration (default to the phase start / 1 week)
-      const swEl=tr.querySelector('.wp-task-sw'), durEl=tr.querySelector('.wp-task-dur');
-      const tSw = swEl && swEl.value ? Math.max(1, parseInt(swEl.value)) : startWk;
-      const tDur = durEl && durEl.value ? Math.max(1, parseInt(durEl.value)) : 1;
+      // Per-task start week + duration derived from the row's start/end dates
+      const startEl=tr.querySelector('.wp-task-start'), endEl=tr.querySelector('.wp-task-end'), durEl=tr.querySelector('.wp-task-dur');
+      let tSw=startWk, tDur=1;
+      if(startEl && startEl.value){
+        tSw=Math.max(1, dateToWk(new Date(start), startEl.value));
+      }
+      if(endEl && endEl.value && startEl && startEl.value){
+        tDur=Math.max(1, dateToWk(new Date(start), endEl.value)-dateToWk(new Date(start), startEl.value)+1);
+      } else if(durEl && durEl.value){
+        tDur=Math.max(1, parseInt(durEl.value));
+      }
       const tid = 't'+projId+'_'+i+'_'+ti+'_'+Date.now();
       ws.tasks.push({ id:tid, name:tname, owner:'', due:'Wk '+tSw, durWk:tDur, status:'on-track', done:false, workstreams:[chosen] });
       taskDoneState[tid] = false;
@@ -5028,13 +5044,11 @@ function saveNewWorkplan(){
   APP.taskDoneState = taskDoneState;
   saveData();
   closeNewWorkplan();
-  showPage('tasks');
-  // Refresh the filter dropdowns FIRST so the new project's option exists,
-  // then select it and render (otherwise the filter falls back to empty and
-  // the page renders blank).
+  showPage('timeline');
   renderDashboardWidgets();
+  _setFilterSet('gantt-proj-set', [projId]);
   _setFilterSet('task-proj-set', [projId]);
-  renderTasks();
+  renderGantt();
 }
 
 // Re-render dashboard widgets that depend on project/task data
@@ -5180,6 +5194,58 @@ function _toggleEditMember(init){
   const wrap=document.getElementById('edit-members');
   if(wrap) wrap.innerHTML=_memberChips(_editMembers, _memberPool);
 }
+// Project member editor: removable chips for the members ON the project + an add picker
+function _renderProjMembers(){
+  const wrap=document.getElementById('edit-members'); if(!wrap) return;
+  const chips = _editMembers.length ? _editMembers.map(init=>{
+    const m=TEAM.find(x=>x.initials===init); const c=m?m.color:'#888'; const nm=m?m.name.split(' ')[0]:init;
+    return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 6px 3px 3px;border:1.5px solid ${c};background:${c}18;border-radius:20px;">
+      <span style="width:18px;height:18px;border-radius:50%;background:${c};color:#fff;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;">${init}</span>
+      <span style="font-size:10px;font-weight:600;color:${c};">${nm}</span>
+      <span onclick="_removeProjMember('${init}')" title="Remove from project" style="cursor:pointer;font-weight:800;color:${c};font-size:12px;line-height:1;padding:0 2px;">&times;</span>
+    </span>`;
+  }).join('') : '<span style="font-size:11px;color:var(--muted);">No members on this project yet.</span>';
+  // Add picker: members not yet on the project
+  const avail = TEAM.filter(m=>!_editMembers.includes(m.initials));
+  const opts = avail.map(m=>`<option value="${m.initials}">${m.name}</option>`).join('');
+  wrap.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${chips}</div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <select id="edit-member-add" class="fsel" style="flex:1;min-width:0;">${avail.length?'<option value="">+ Add existing member…</option>'+opts:'<option value="">All team members added</option>'}</select>
+      <button type="button" class="btn-ghost btn-sm" onclick="_addProjMemberFromSelect()">Add</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+      <input id="edit-member-new" class="fi" placeholder="Or type a new member's name" style="flex:1;font-size:12px;padding:6px 9px;" onkeydown="if(event.key==='Enter'){event.preventDefault();_addProjMemberNew();}">
+      <button type="button" class="btn-ghost btn-sm" onclick="_addProjMemberNew()">Add new</button>
+    </div>`;
+}
+function _addProjMemberFromSelect(){
+  const sel=document.getElementById('edit-member-add'); if(!sel||!sel.value) return;
+  if(!_editMembers.includes(sel.value)) _editMembers.push(sel.value);
+  _renderProjMembers();
+}
+function _addProjMemberNew(){
+  const el=document.getElementById('edit-member-new'); if(!el) return;
+  const name=(el.value||'').trim(); if(!name) return;
+  const init=_ensureTeamMember(name);
+  if(init && !_editMembers.includes(init)) _editMembers.push(init);
+  el.value=''; _renderProjMembers();
+}
+// Find or create a team member by name; returns their initials
+function _ensureTeamMember(name){
+  const existing=TEAM.find(m=>m.name.toLowerCase()===name.toLowerCase());
+  if(existing) return existing.initials;
+  const base=name.split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase() || name.slice(0,2).toUpperCase();
+  let uniq=base, n=1; while(TEAM.some(m=>m.initials===uniq)){ uniq=base+(++n); }
+  const color=MEMBER_COLOURS[TEAM.length % MEMBER_COLOURS.length];
+  TEAM.push({ name, initials:uniq, color, role:'' });
+  APP.team=TEAM; saveData();
+  if(typeof renderTeam==='function') renderTeam();
+  return uniq;
+}
+function _removeProjMember(init){
+  _editMembers = _editMembers.filter(x=>x!==init);
+  _renderProjMembers();
+}
 const _lbl='font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;';
 
 // ---- PROJECT ----
@@ -5199,7 +5265,7 @@ function openEditProject(projId){
         <input id="edit-f3" type="date" value="${p.startDate||''}" onchange="_projDatesChanged()">
         <input id="edit-f4" type="date" value="${p.endDate||''}" onchange="_projDatesChanged()"></div>
     </div>
-    <div><label style="${_lbl}">Team Members</label><div id="edit-members" style="display:flex;flex-wrap:wrap;gap:5px;">${_memberChips(_editMembers)}</div></div>
+    <div><label style="${_lbl}">Team Members</label><div id="edit-members"></div></div>
     <div style="border-top:1px dashed var(--border);padding-top:12px;margin-top:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="_toggleProjStructure()">
         <span style="${_lbl}margin-bottom:0;">Phases, workstreams &amp; tasks</span>
@@ -5209,6 +5275,7 @@ function openEditProject(projId){
     </div>`;
   const arch=document.getElementById('edit-archive-btn');
   if(arch){ arch.style.display='inline-flex'; arch.textContent = p.archived ? 'Unarchive' : 'Archive'; }
+  _renderProjMembers();
   document.getElementById('edit-modal').style.display='flex';
 }
 // Inline "phases, workstreams & tasks" editor inside Edit Project
@@ -5721,6 +5788,10 @@ function editModalSave(goBack){
     if(!newName||!newCode){ alert('Name and code are required.'); return; }
     p.name=newName; p.caseCode=newCode; p.startDate=val('edit-f3'); p.endDate=val('edit-f4');
     p.members=[..._editMembers];
+    // Members removed from the project are also removed from every workstream
+    const allowed=new Set(_editMembers);
+    (p.workstreamDefs||[]).forEach(w=>{ if(w.members) w.members=w.members.filter(mi=>allowed.has(mi)); });
+    p.phases.forEach(ph=>ph.workstreams.forEach(w=>{ if(w.members) w.members=w.members.filter(mi=>allowed.has(mi)); }));
     // keep WP_LIST label in sync
     const wp=WP_LIST.find(w=>w.code===editCtx.projId||w.code===newCode);
     if(wp){ wp.name=newName; wp.code=newCode; }
@@ -6369,18 +6440,40 @@ function openWpvAddItem(startWk, durWeeks){
   document.getElementById('wpv-item-dur').textContent = durWeeks+' week'+(durWeeks>1?'s':'');
   document.getElementById('wpv-item-name').value='';
   document.getElementById('wpv-kind-phase').checked = true;
+  // Seed editable date + duration from the project start + clicked week span
+  const projStart = document.getElementById('wp-start') ? document.getElementById('wp-start').value : '';
+  const sd = projStart ? new Date(projStart) : new Date();
+  if(projStart) sd.setDate(sd.getDate()+(startWk-1)*7);
+  const ed = new Date(sd); ed.setDate(ed.getDate()+durWeeks*7-1);
+  document.getElementById('wpv-item-startdate').value = sd.toISOString().slice(0,10);
+  document.getElementById('wpv-item-enddate').value = ed.toISOString().slice(0,10);
+  document.getElementById('wpv-item-durwks').value = durWeeks;
+  // Mount the members owner-field for the workstream option
+  if(typeof mountOwnerField==='function') mountOwnerField('wpv-item-members', [], {});
   _wpvUpdateKindFields();
   const wsSel = document.getElementById('wpv-item-ws');
   const defs = getDefinedWorkstreams();
   wsSel.innerHTML = defs.length ? defs.map(w=>`<option value="${w.name}">${w.name}</option>`).join('') : '<option value="">(define a workstream first)</option>';
   setTimeout(()=>document.getElementById('wpv-item-name').focus(), 50);
 }
+// Keep the wpv modal's end date and duration in sync (project start = week anchor)
+function _wpvSyncDur(){
+  const s=document.getElementById('wpv-item-startdate').value, e=document.getElementById('wpv-item-enddate').value;
+  if(s&&e){ const dur=Math.max(1, Math.round((new Date(e)-new Date(s))/(7*864e5))+1); document.getElementById('wpv-item-durwks').value=dur; }
+}
+function _wpvSyncEnd(){
+  const s=document.getElementById('wpv-item-startdate').value; const dur=Math.max(1, parseInt(document.getElementById('wpv-item-durwks').value)||1);
+  if(s){ const sd=new Date(s); sd.setDate(sd.getDate()+dur*7-1); document.getElementById('wpv-item-enddate').value=sd.toISOString().slice(0,10); }
+}
 let _wpvPending = null;
 function _wpvUpdateKindFields(){
   const isPhase = document.getElementById('wpv-kind-phase').checked;
   const isWs = document.getElementById('wpv-kind-ws').checked;
   document.getElementById('wpv-task-fields').style.display = (isPhase||isWs) ? 'none' : 'block';
+  document.getElementById('wpv-ws-fields').style.display = isWs ? 'block' : 'none';
   document.getElementById('wpv-ws-note').style.display = isWs ? 'block' : 'none';
+  // Workstreams span the whole project, so hide the per-item date fields for that kind
+  document.getElementById('wpv-date-fields').style.display = isWs ? 'none' : 'flex';
   const nameInput = document.getElementById('wpv-item-name');
   nameInput.placeholder = isPhase ? 'e.g. Diagnose' : isWs ? 'e.g. Commercial Diligence' : 'e.g. Draft analysis';
 }
@@ -6391,16 +6484,23 @@ function saveWpvItem(){
   if(!name){ alert('Enter a name.'); return; }
   const isPhase = document.getElementById('wpv-kind-phase').checked;
   const isWs = document.getElementById('wpv-kind-ws').checked;
-  const {startWk, durWeeks} = _wpvPending;
+  // Read the (possibly edited) dates + duration
+  const projStart = document.getElementById('wp-start') ? document.getElementById('wp-start').value : '';
+  const sVal = document.getElementById('wpv-item-startdate').value;
+  const durVal = Math.max(1, parseInt(document.getElementById('wpv-item-durwks').value)||_wpvPending.durWeeks||1);
+  let startWk = _wpvPending.startWk;
+  if(projStart && sVal){ startWk = Math.max(1, dateToWk(new Date(projStart), sVal)); }
+  const durWeeks = durVal;
 
   if(isWs){
-    // Add a new workstream to the workplan (available across all phases)
+    // Add a new workstream to the workplan (available across all phases) with its members
     const existing = getDefinedWorkstreams().map(w=>w.name.toLowerCase());
     if(existing.includes(name.toLowerCase())){ alert('That workstream already exists.'); return; }
-    addWsRow(name, []);
+    const members = (typeof getOwnerFieldValue==='function') ? getOwnerFieldValue('wpv-item-members') : [];
+    addWsRow(name, members);
     if(typeof refreshPhaseWsHints==='function') refreshPhaseWsHints();
   } else if(isPhase){
-    // Add a phase row to the form at the dragged start week (allows overlaps)
+    // Add a phase row to the form at the chosen start week (allows overlaps)
     addPhaseRow(name, durWeeks, startWk);
   } else {
     // Add as a task under a phase that contains startWk (or first phase)
@@ -6416,7 +6516,7 @@ function saveWpvItem(){
       const box = row.querySelector('.wp-phase-tasks');
       if(box.style.display==='none'){ togglePhaseTasks(btn); }
       const bucket = box.querySelector('.wp-task-bucket');
-      if(bucket){ _appendWpTaskRow(bucket, wsName||'', name); }
+      if(bucket){ _appendWpTaskRow(bucket, wsName||'', name, startWk, durWeeks); }
     }
   }
   closeWpvItem();
