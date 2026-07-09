@@ -2770,7 +2770,6 @@ function renderGantt(){
   const PROG_W = _mobile ? 56 : 70; // progress column width
 
   let tableRows = '';
-  let frozenRows = '';
   rows.forEach(row => {
     const rh = row.type==='project'?44:row.type==='phase'?36:row.type==='ws'?30:48;
     const bgLabel = row.type==='project'?'#4A4A4A':row.type==='phase'?'#E4E4E4':row.type==='ws'?'#F2F2F2':'#FFFFFF';
@@ -2937,12 +2936,10 @@ function renderGantt(){
     }).join('');
 
     const _labelW = LW - PROG_W - OWN_W;
-    frozenRows += `<tr style="height:${rh}px;">
-      ${ganttHideSidebar?'':`<td style="width:${_labelW}px;min-width:${_labelW}px;max-width:${_labelW}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;overflow:hidden;">${labelInner}</td>
-      ${OWN_W?`<td style="width:${OWN_W}px;min-width:${OWN_W}px;max-width:${OWN_W}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;overflow:hidden;">${ownerInner}</td>`:''}
-      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;overflow:hidden;">${progInner}</td>`}
-    </tr>`;
     tableRows += `<tr style="height:${rh}px;">
+      ${ganttHideSidebar?'':`<td style="width:${_labelW}px;min-width:${_labelW}px;max-width:${_labelW}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;overflow:hidden;position:sticky;left:0;z-index:4;">${labelInner}</td>
+      ${OWN_W?`<td style="width:${OWN_W}px;min-width:${OWN_W}px;max-width:${OWN_W}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:1px solid #e8e8e8;padding:0;vertical-align:middle;overflow:hidden;position:sticky;left:${_labelW}px;z-index:4;">${ownerInner}</td>`:''}
+      <td style="width:${PROG_W}px;min-width:${PROG_W}px;max-width:${PROG_W}px;height:${rh}px;box-sizing:border-box;background:${bgLabel};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};border-right:2px solid #ddd;padding:0;vertical-align:middle;overflow:hidden;position:sticky;left:${_labelW+OWN_W}px;z-index:4;">${progInner}</td>`}
       <td style="width:${weeks.length*WW}px;min-width:${weeks.length*WW}px;max-width:${weeks.length*WW}px;height:${rh}px;box-sizing:border-box;background:${bgChart};border-bottom:1px solid ${row.type==='project'?'#cfcfcf':'#eee'};padding:0;vertical-align:middle;position:relative;">
         <div style="display:flex;height:100%;position:relative;">${gridCells}${barHTML}
           ${todayInRange?`<div style="position:absolute;top:0;bottom:0;left:${todayOffset}px;width:2px;background:#CC0000;opacity:.7;pointer-events:none;z-index:3;"></div>`:''}
@@ -2970,52 +2967,39 @@ function renderGantt(){
 
   const _sideW = ganttHideSidebar ? 0 : LW;
   const _labelHdrW = LW - PROG_W - OWN_W;
-  const _H1 = 29, _H2 = 24; // fixed header-row heights, identical on both panels
+  const _H1 = 29, _H2 = 24; // fixed header-row heights
   document.getElementById('gantt-container').innerHTML=`
-    <div style="display:flex;align-items:flex-start;max-width:100%;position:relative;">
-      ${ganttHideSidebar?'':`<div id="gantt-frozen" style="flex-shrink:0;width:${_sideW}px;position:relative;z-index:6;">
-        <table style="border-collapse:collapse;table-layout:fixed;width:${_sideW}px;">
-          <thead>
-            <tr style="height:${_H1}px;">
-              <th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;height:${_H1}px;box-sizing:border-box;padding:6px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:left;overflow:hidden;">Project / Phase / Task<span onmousedown="_ganttStartColResize(event)" title="Drag to resize columns" style="position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;z-index:9;"></span></th>
-              ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;height:${_H1}px;box-sizing:border-box;padding:6px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:center;">Owners</th>`:''}
-              <th style="width:${PROG_W}px;min-width:${PROG_W}px;height:${_H1}px;box-sizing:border-box;padding:6px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;z-index:8;text-align:center;">Status</th>
-            </tr>
-            <tr style="height:${_H2}px;">
-              <th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:8;"></th>
-              ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:8;"></th>`:''}
-              <th style="width:${PROG_W}px;min-width:${PROG_W}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:8;"></th>
-            </tr>
-          </thead>
-          <tbody>${frozenRows}</tbody>
-        </table>
-      </div>`}
-      <div id="gantt-scroll" style="overflow-x:auto;overflow-y:visible;position:relative;flex:1;min-width:0;">
-        <table style="border-collapse:collapse;table-layout:fixed;width:${totalWeekW}px;max-width:${totalWeekW}px;margin:0;">
-          <thead>
-            <tr style="height:${_H1}px;">
-              <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;height:${_H1}px;box-sizing:border-box;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;position:sticky;top:0;z-index:7;">
-                <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;height:${_H1}px;"><tr style="height:${_H1}px;">${monthHdr}</tr></table>
-              </th>
-            </tr>
-            <tr style="height:${_H2}px;">
-              <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;height:${_H2}px;box-sizing:border-box;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:7;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;height:${_H2}px;"><tr style="height:${_H2}px;">${weekHdr}</tr></table>
-              </th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
-      </div>
+    <div id="gantt-scroll" style="overflow-x:auto;overflow-y:visible;position:relative;max-width:100%;">
+      <table style="border-collapse:collapse;table-layout:fixed;width:${_sideW+totalWeekW}px;max-width:${_sideW+totalWeekW}px;margin:0;">
+        <thead>
+          <tr style="height:${_H1}px;">
+            ${ganttHideSidebar?'':`<th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;height:${_H1}px;box-sizing:border-box;padding:6px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:0;z-index:9;text-align:left;overflow:hidden;">Project / Phase / Task<span onmousedown="_ganttStartColResize(event)" title="Drag to resize columns" style="position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;z-index:10;"></span></th>
+            ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;height:${_H1}px;box-sizing:border-box;padding:6px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:${_labelHdrW}px;z-index:9;text-align:center;">Owners</th>`:''}
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;height:${_H1}px;box-sizing:border-box;padding:6px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:#8A1A1A;border-right:2px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:${_labelHdrW+OWN_W}px;z-index:9;text-align:center;">Status</th>`}
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;height:${_H1}px;box-sizing:border-box;padding:0;border-bottom:1px solid #7A1515;background:#8A1A1A;position:sticky;top:0;z-index:7;">
+              <table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;height:${_H1}px;"><tr style="height:${_H1}px;">${monthHdr}</tr></table>
+            </th>
+          </tr>
+          <tr style="height:${_H2}px;">
+            ${ganttHideSidebar?'':`<th style="width:${_labelHdrW}px;min-width:${_labelHdrW}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;left:0;z-index:9;"></th>
+            ${OWN_W?`<th style="width:${OWN_W}px;min-width:${OWN_W}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:1px solid #7A1515;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;left:${_labelHdrW}px;z-index:9;"></th>`:''}
+            <th style="width:${PROG_W}px;min-width:${PROG_W}px;height:${_H2}px;box-sizing:border-box;background:#A32222;border-right:2px solid #6E1212;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;left:${_labelHdrW+OWN_W}px;z-index:9;"></th>`}
+            <th style="width:${totalWeekW}px;min-width:${totalWeekW}px;max-width:${totalWeekW}px;height:${_H2}px;box-sizing:border-box;padding:0;background:#A32222;border-bottom:2px solid #6E1212;position:sticky;top:${_H1}px;z-index:7;"><table style="border-collapse:collapse;width:${totalWeekW}px;table-layout:fixed;height:${_H2}px;"><tr style="height:${_H2}px;">${weekHdr}</tr></table>
+            </th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
     </div>`;
   _syncGanttToggleButtons();
 
   setTimeout(()=>{
     const sc = document.getElementById('gantt-scroll');
     if (sc){
-      // The grid panel scrolls independently of the frozen columns, so its
-      // scrollWidth is exactly the week grid — the scrollbar can't run past it.
-      const maxScroll = Math.max(0, totalWeekW - sc.clientWidth);
-      sc.scrollLeft = todayInRange ? Math.min(maxScroll, Math.max(0, todayOffset - sc.clientWidth/2)) : 0;
+      // Single freeze-pane table: sticky columns occupy the left _sideW; the today
+      // marker lives in grid coordinates, so offset the centering by _sideW.
+      const maxScroll = Math.max(0, (_sideW + totalWeekW) - sc.clientWidth);
+      sc.scrollLeft = todayInRange ? Math.min(maxScroll, Math.max(0, todayOffset - (sc.clientWidth - _sideW)/2)) : 0;
     }
   }, 80);
 }
