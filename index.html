@@ -171,8 +171,8 @@ main{max-width:1240px;margin:0 auto;padding:24px 28px 60px;}
 .wk-empty{font-size:11px;color:var(--muted);}
 /* CARD */
 .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
-.card-hd{padding:11px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.card-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--slate);}
+.card-hd{padding:8px 20px;background:#D8D8D8;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);}
 .card-action{font-size:11px;font-weight:600;color:var(--red);cursor:pointer;}
 .card-action:hover{text-decoration:underline;}
 .card-bd{padding:16px 20px;}
@@ -1803,7 +1803,7 @@ function buildWpProgress(){
     const ocol = overall>=70?'#1E6B3A':overall>=40?'#E08A1E':'#8E2434';
     // Case header — light grey bar
     let html = `<div class="wp-case-group" style="margin-bottom:14px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin:0 -20px 8px;background:#D8D8D8;padding:6px 20px;">
         <span style="font-size:11px;font-weight:800;color:#fff;background:${proj.color||'#5C6B7A'};padding:2px 8px;border-radius:10px;">${proj.caseCode}</span>
         <span style="font-size:13px;font-weight:700;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${proj.name}</span>
         <span style="font-size:13px;font-weight:800;color:${ocol};">${overall}%</span>
