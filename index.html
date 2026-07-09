@@ -1513,6 +1513,34 @@ function wkToDate(projStartStr, wkNum) {
   d.setDate(d.getDate() + (wkNum - 1) * 7);
   return d;
 }
+// ---- AUTO STATUS BY DEADLINE ----
+// For every open (not-done) task whose status has NOT been set manually:
+//   - deadline already passed            -> 'delayed'
+//   - deadline is today / within 1 day    -> 'at-risk'
+//   - otherwise                            -> 'on-track'
+// A manual pick (setGanttStatus / edit form) sets task.statusManual = true,
+// which locks the task out of this automation until it's cleared.
+function _applyAutoStatus(){
+  let changed = false;
+  const startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+  const inOneDay = new Date(startOfToday.getTime() + 24*60*60*1000); // end-of-today boundary (+1 day)
+  PROJECTS.filter(p=>!p.archived).forEach(p=>{
+    p.phases.forEach(ph=>ph.workstreams.forEach(ws=>ws.tasks.forEach(t=>{
+      if(taskDoneState[t.id]||t.done) return;   // completed tasks are never auto-changed
+      if(t.statusManual) return;                 // respect manual override
+      const r = taskDateRange(p, ph, t);
+      const end = new Date(r.endISO); if(!_validDate(end)) return;
+      end.setHours(23,59,59,999);                // deadline = end of the task's last day
+      let auto;
+      if(end < startOfToday) auto = 'delayed';           // deadline has passed
+      else if(end <= inOneDay) auto = 'at-risk';         // due today or within 1 day
+      else auto = 'on-track';
+      if(t.status !== auto){ t.status = auto; changed = true; }
+    })));
+  });
+  if(changed){ APP.projects = PROJECTS; saveData(); }
+  return changed;
+}
 const MON_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function _validDate(d){ return (d instanceof Date) && !isNaN(d.getTime()); }
 function fmtDate(d){ if(!_validDate(d)) return ''; return d.getDate()+' '+MON_SHORT[d.getMonth()]; }
@@ -1589,6 +1617,7 @@ function getLayout(){
 let editLayoutOn = false;
 
 function renderDashboard(){
+  _applyAutoStatus();
   updateHealthStrip();
   const grid = document.getElementById('dash-grid');
   if(!grid) return;
@@ -2130,6 +2159,7 @@ function _closeMiniModal(){ const m=document.getElementById('mini-modal'); if(m)
 function _miniModalOk(){ if(_miniOk && _miniOk()!==false) _closeMiniModal(); }
 
 function renderTasks(){
+  _applyAutoStatus();
   const projSet=_getFilterSet('task-proj-set');
   const sv=_getFilterSet('status-filter-set');
   const ov=_getFilterSet('owner-filter-set');
@@ -2585,6 +2615,7 @@ function setGanttStatus(projId, phaseId, wsId, taskId, choice){
     task.done = false; taskDoneState[task.id] = false;
     task.status = choice;
   }
+  task.statusManual = true; // user picked this explicitly — lock out deadline automation
   const _lbl = choice==='done'?'Completed':choice==='delayed'?'marked Delayed':choice==='at-risk'?'marked At Risk':'marked On Track';
   const _dot = choice==='done'?'#1A7F4E':choice==='delayed'?'#A52834':choice==='at-risk'?'#D69200':'#1A7F4E';
   pushFeed(`${task.name} — ${_lbl}`, _dot);
@@ -2621,6 +2652,7 @@ function openGanttStatusMenu(projId, phaseId, wsId, taskId){
 }
 
 function renderGantt(){
+  _applyAutoStatus();
   // Multi-select filter sets (empty = all)
   const projSet = _getFilterSet('gantt-proj-set');
   const wsSet   = _getFilterSet('gantt-ws-set');
@@ -5838,10 +5870,12 @@ function openEditTask(projId, phaseId, wsId, taskId){
     ${isOther?'':`<div id="task-phase-share" style="margin-bottom:14px;"></div>`}
     ${isOther?'':`<div style="margin-bottom:14px;"><label style="${_lbl}">Workstream(s)</label><div id="edit-ws-field"></div></div>`}
     <div style="margin-bottom:14px;"><label style="${_lbl}">Status</label><select id="edit-f4" class="fs">
-      <option value="on-track" ${task.status==='on-track'?'selected':''}>On Track</option>
-      <option value="at-risk" ${task.status==='at-risk'?'selected':''}>At Risk</option>
-      <option value="delayed" ${task.status==='delayed'?'selected':''}>Delayed</option>
-    </select></div>`;
+      <option value="__auto__" ${!task.statusManual?'selected':''}>Auto (by deadline)</option>
+      <option value="on-track" ${task.statusManual&&task.status==='on-track'?'selected':''}>On Track</option>
+      <option value="at-risk" ${task.statusManual&&task.status==='at-risk'?'selected':''}>At Risk</option>
+      <option value="delayed" ${task.statusManual&&task.status==='delayed'?'selected':''}>Delayed</option>
+    </select>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px;">Auto = On Track until the deadline nears (At Risk within 1 day, Delayed once passed). Pick a specific status to override.</div></div>`;
   document.getElementById('edit-modal').style.display='flex';
   if(!isOther){ mountWsField('edit-ws-field', taskWsNames(ph&&ph.workstreams.find(x=>x.id===wsId), task), projId); }
   if(!isOther){ _taskEditPhaseCtx={ projStart:p.startDate, phStartWk:ph?ph.startWk:1, phEndWk:ph?ph.endWk:1, phLen:_phLen }; _updateTaskPhaseShare(); }
@@ -5987,7 +6021,12 @@ function editModalSave(goBack){
       task.due='Wk '+startWk;
       task.durWk=Math.max(1,endWk-startWk+1);
     }
-    task.status=val('edit-f4');
+    const _chosenStatus=val('edit-f4');
+    if(_chosenStatus==='__auto__'){
+      task.statusManual=false;           // hand control back to deadline automation
+    } else {
+      task.status=_chosenStatus; task.statusManual=true;  // explicit override
+    }
     // Persist workstream assignment(s) from the multi-field
     if(!editCtx.isOther){
       let wsNames = getWsFieldValue('edit-ws-field').filter(Boolean);
