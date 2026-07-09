@@ -233,8 +233,8 @@ main{max-width:1240px;margin:0 auto;padding:24px 28px 60px;}
 .tasks-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
 .tasks-title{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.02em;flex:1;}
 select.fsel{border:1.5px solid var(--border);border-radius:6px;padding:7px 11px;font-size:12px;color:var(--ink);background:#fff;cursor:pointer;}
-/* Filter dropdown buttons (multi-select triggers) */
-button.fsel{border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);transition:all .15s;}
+/* Filter dropdown buttons (multi-select triggers) — styled like the View by / Show buttons but thinner */
+button.fsel{border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--ink);font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:8px;}
 button.fsel:hover{background:var(--surface);border-color:var(--mid);}
 select.fsel:hover{border-color:var(--mid);}
 /* Dropdown menu rows (export items + filter checkbox rows) hover in a light shade */
@@ -469,22 +469,22 @@ select.fsel:hover{border-color:var(--mid);}
   <div class="tasks-toolbar" style="position:sticky;top:52px;background:var(--surface);z-index:50;padding:12px 0;margin-bottom:10px;">
     <div class="tasks-title">Tasks</div>
     <div style="position:relative;display:inline-block;">
-      <button class="fsel" type="button" onclick="_toggleFilterMenu('task-proj-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="task-proj-set-label">All Projects</span> &#9662;</button>
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('task-proj-menu',event)" style="min-width:140px;justify-content:space-between;cursor:pointer;"><span id="task-proj-set-label">All Projects</span> &#9662;</button>
       <div class="filter-menu" id="task-proj-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
       <span id="task-proj-set" data-sel="[]" style="display:none;"></span>
     </div>
     <div style="position:relative;display:inline-block;">
-      <button class="fsel" type="button" onclick="_toggleFilterMenu('task-ws-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="task-ws-set-label">All Workstreams</span> &#9662;</button>
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('task-ws-menu',event)" style="min-width:140px;justify-content:space-between;cursor:pointer;"><span id="task-ws-set-label">All Workstreams</span> &#9662;</button>
       <div class="filter-menu" id="task-ws-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
       <span id="task-ws-set" data-sel="[]" style="display:none;"></span>
     </div>
     <div style="position:relative;display:inline-block;">
-      <button class="fsel" type="button" onclick="_toggleFilterMenu('status-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="status-filter-set-label">All Statuses</span> &#9662;</button>
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('status-menu',event)" style="min-width:140px;justify-content:space-between;cursor:pointer;"><span id="status-filter-set-label">All Statuses</span> &#9662;</button>
       <div class="filter-menu" id="status-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:160px;" onclick="event.stopPropagation();"></div>
       <span id="status-filter-set" data-sel="[]" style="display:none;"></span>
     </div>
     <div style="position:relative;display:inline-block;">
-      <button class="fsel" type="button" onclick="_toggleFilterMenu('owner-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="owner-filter-set-label">All Owners</span> &#9662;</button>
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('owner-menu',event)" style="min-width:140px;justify-content:space-between;cursor:pointer;"><span id="owner-filter-set-label">All Owners</span> &#9662;</button>
       <div class="filter-menu" id="owner-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
       <span id="owner-filter-set" data-sel="[]" style="display:none;"></span>
     </div>
@@ -542,22 +542,22 @@ select.fsel:hover{border-color:var(--mid);}
     <div class="gantt-legend" id="gantt-legend"></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
     <div style="position:relative;display:inline-block;">
-      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-proj-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-proj-set-label">All Projects</span> &#9662;</button>
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-proj-menu',event)" style="min-width:140px;justify-content:space-between;cursor:pointer;"><span id="gantt-proj-set-label">All Projects</span> &#9662;</button>
       <div class="filter-menu" id="gantt-proj-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
       <span id="gantt-proj-set" data-sel="[]" style="display:none;"></span>
     </div>
     <div style="position:relative;display:inline-block;">
-      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-ws-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-ws-set-label">All Workstreams</span> &#9662;</button>
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-ws-menu',event)" style="min-width:140px;justify-content:space-between;cursor:pointer;"><span id="gantt-ws-set-label">All Workstreams</span> &#9662;</button>
       <div class="filter-menu" id="gantt-ws-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
       <span id="gantt-ws-set" data-sel="[]" style="display:none;"></span>
     </div>
     <div style="position:relative;display:inline-block;">
-      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-status-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-status-set-label">All Statuses</span> &#9662;</button>
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-status-menu',event)" style="min-width:140px;justify-content:space-between;cursor:pointer;"><span id="gantt-status-set-label">All Statuses</span> &#9662;</button>
       <div class="filter-menu" id="gantt-status-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:160px;" onclick="event.stopPropagation();"></div>
       <span id="gantt-status-set" data-sel="[]" style="display:none;"></span>
     </div>
     <div style="position:relative;display:inline-block;">
-      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-owner-menu',event)" style="text-align:left;min-width:130px;cursor:pointer;"><span id="gantt-owner-set-label">All Owners</span> &#9662;</button>
+      <button class="fsel" type="button" onclick="_toggleFilterMenu('gantt-owner-menu',event)" style="min-width:140px;justify-content:space-between;cursor:pointer;"><span id="gantt-owner-set-label">All Owners</span> &#9662;</button>
       <div class="filter-menu" id="gantt-owner-menu" style="display:none;position:absolute;left:0;top:38px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);padding:6px;z-index:60;min-width:200px;max-height:260px;overflow-y:auto;" onclick="event.stopPropagation();"></div>
       <span id="gantt-owner-set" data-sel="[]" style="display:none;"></span>
     </div>
@@ -2126,7 +2126,7 @@ function renderTasks(){
   _fillFilterMenu('task-proj-menu','task-proj-set', PROJECTS.filter(p=>!p.archived).map(p=>({val:p.id,label:p.caseCode+' — '+p.name,dot:p.color})), 'renderTasks');
   _fillFilterMenu('task-ws-menu','task-ws-set', _allWorkstreamNames(projs).map(n=>({val:n,label:n})), 'renderTasks');
   _fillFilterMenu('status-menu','status-filter-set', _STATUS_OPTS, 'renderTasks');
-  _fillFilterMenu('owner-menu','owner-filter-set', TEAM.map(m=>({val:m.initials,label:m.name,dot:m.color,round:true})), 'renderTasks');
+  _fillFilterMenu('owner-menu','owner-filter-set', _activeOwners().map(m=>({val:m.initials,label:m.name,dot:m.color,round:true})), 'renderTasks');
 
   // Shared filter for a task (multi-status, multi-owner=workstream members, multi-workstream)
   const taskPass=(proj,ph,ws,t)=>{
@@ -2327,6 +2327,15 @@ function _taskOwners(proj, ws, task){
   names.forEach(nm=>{ (proj.phases.flatMap(pp=>pp.workstreams).filter(w=>w.name===nm)).forEach(w=>(w.members||[]).forEach(mi=>{ if(!mem.includes(mi)) mem.push(mi); })); });
   return mem;
 }
+// Team members actively involved in a non-archived project (as a project member or a workstream member)
+function _activeOwners(){
+  const set=new Set();
+  PROJECTS.filter(p=>!p.archived).forEach(p=>{
+    (p.members||[]).forEach(mi=>set.add(mi));
+    p.phases.forEach(ph=>ph.workstreams.forEach(w=>(w.members||[]).forEach(mi=>set.add(mi))));
+  });
+  return TEAM.filter(m=>set.has(m.initials));
+}
 function _taskOwnerAvatars(proj, ws, task){
   const mem=_taskOwners(proj, ws, task);
   if(!mem.length) return '';
@@ -2358,7 +2367,8 @@ function _filterLabel(setId, arr){
     const p=PROJECTS.find(x=>x.id===arr[0]); if(p) return p.caseCode;
     return arr[0];
   }
-  return arr.length+' selected';
+  const noun = setId.indexOf('owner')>=0?'owners' : setId.indexOf('proj')>=0?'projects' : setId.indexOf('ws')>=0?'workstreams' : 'statuses';
+  return arr.length+' '+noun;
 }
 function _toggleFilterMenu(menuId, e){
   if(e) e.stopPropagation();
@@ -2605,7 +2615,7 @@ function renderGantt(){
   _fillFilterMenu('gantt-proj-menu','gantt-proj-set', PROJECTS.filter(p=>!p.archived).map(p=>({val:p.id,label:p.caseCode+' — '+p.name,dot:p.color})), 'renderGantt');
   _fillFilterMenu('gantt-ws-menu','gantt-ws-set', _allWorkstreamNames(projects).map(n=>({val:n,label:n})), 'renderGantt');
   _fillFilterMenu('gantt-status-menu','gantt-status-set', _STATUS_OPTS, 'renderGantt');
-  _fillFilterMenu('gantt-owner-menu','gantt-owner-set', TEAM.map(m=>({val:m.initials,label:m.name,dot:m.color,round:true})), 'renderGantt');
+  _fillFilterMenu('gantt-owner-menu','gantt-owner-set', _activeOwners().map(m=>({val:m.initials,label:m.name,dot:m.color,round:true})), 'renderGantt');
 
   const legend=document.getElementById('gantt-legend');
   if(legend) legend.innerHTML=[
