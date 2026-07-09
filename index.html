@@ -728,6 +728,37 @@ select.fsel:hover{border-color:var(--mid);}
   </div>
 </div>
 
+<!-- ADD/EDIT UPCOMING ITEM MODAL -->
+<div id="meeting-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:210;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.13);width:100%;max-width:420px;">
+    <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:14px;font-weight:800;" id="meeting-modal-title">Add Item</div>
+      <button onclick="closeMeetingModal()" style="background:none;border:none;font-size:20px;color:var(--mid);cursor:pointer;">&#10005;</button>
+    </div>
+    <div style="padding:16px 20px;">
+      <div style="display:flex;gap:10px;margin-bottom:12px;">
+        <div style="width:90px;flex-shrink:0;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Day</label>
+          <input id="mtg-day" class="fi" placeholder="TUE" maxlength="3"></div>
+        <div style="width:70px;flex-shrink:0;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Date</label>
+          <input id="mtg-date" class="fi" placeholder="9"></div>
+      </div>
+      <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Title</label>
+        <input id="mtg-name" class="fi" placeholder="e.g. Client Steering Committee"></div>
+      <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Details</label>
+        <input id="mtg-meta" class="fi" placeholder="e.g. Apex Corp · 2:00 PM · 90min"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--slate);cursor:pointer;">
+        <input type="checkbox" id="mtg-prep" style="accent-color:var(--red);cursor:pointer;">Prep needed before this item</label>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <button id="mtg-delete-btn" class="btn-ghost" style="display:none;color:var(--red);font-size:12px;padding:6px 14px;" onclick="deleteMeeting()">Delete</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-ghost" style="font-size:12px;padding:6px 14px;" onclick="closeMeetingModal()">Cancel</button>
+        <button class="btn-red" style="font-size:12px;padding:6px 16px;" onclick="saveMeeting()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ADD/EDIT MEMBER MODAL -->
 <div id="member-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.13);width:100%;max-width:440px;">
@@ -1857,11 +1888,66 @@ function buildWpProgress(){
 }
 
 function buildUpcoming(){
-  return MEETINGS.map(m=>`
-    <div class="meeting-row">
+  const rows = MEETINGS.map(m=>{
+    const prepCtl = m.prep
+      ? `<label title="Prep done?" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:${m.prepDone?'var(--green)':'#E08A1E'};cursor:pointer;margin-top:3px;">
+           <input type="checkbox" ${m.prepDone?'checked':''} onchange="_toggleMeetingPrep('${m.id}')" style="accent-color:var(--green);cursor:pointer;">
+           ${m.prepDone?'&#10003; Prep done':'&#9888; Prep needed'}
+         </label>`
+      : '';
+    return `<div class="meeting-row" style="position:relative;">
       <div class="m-day-block"><div class="m-day">${m.day}</div><div class="m-date">${m.date}</div></div>
-      <div><div class="m-name">${m.name}</div><div class="m-meta">${m.meta}</div>${m.prep?'<div class="m-prep">&#9888; Prep needed</div>':''}</div>
-    </div>`).join('');
+      <div style="flex:1;min-width:0;"><div class="m-name">${m.name}</div><div class="m-meta">${m.meta}</div>${prepCtl}</div>
+      <button class="edit-btn" title="Edit item" onclick="event.stopPropagation();openMeetingEdit('${m.id}')" style="flex-shrink:0;align-self:flex-start;">&#9998;</button>
+    </div>`;
+  }).join('');
+  return (rows || '<div style="font-size:12px;color:var(--muted);padding:8px 0;">No upcoming items.</div>')
+    + `<div style="margin-top:8px;"><button class="btn-ghost btn-sm" onclick="openMeetingEdit()" style="width:100%;">+ Add item</button></div>`;
+}
+// Toggle the prep-done state of an upcoming item
+function _toggleMeetingPrep(id){
+  const m=MEETINGS.find(x=>x.id===id); if(!m) return;
+  m.prepDone=!m.prepDone;
+  APP.meetings=MEETINGS; saveData();
+  renderDashboard();
+}
+// Open the add/edit modal for an upcoming item (no id = add new)
+let _meetingEditId=null;
+function openMeetingEdit(id){
+  _meetingEditId = id || null;
+  const m = id ? MEETINGS.find(x=>x.id===id) : null;
+  document.getElementById('meeting-modal-title').textContent = m ? 'Edit Item' : 'Add Item';
+  document.getElementById('mtg-day').value  = m ? (m.day||'')  : '';
+  document.getElementById('mtg-date').value = m ? (m.date||'') : '';
+  document.getElementById('mtg-name').value = m ? (m.name||'') : '';
+  document.getElementById('mtg-meta').value = m ? (m.meta||'') : '';
+  document.getElementById('mtg-prep').checked = m ? !!m.prep : false;
+  document.getElementById('mtg-delete-btn').style.display = m ? 'inline-flex' : 'none';
+  document.getElementById('meeting-modal').style.display='flex';
+}
+function closeMeetingModal(){ document.getElementById('meeting-modal').style.display='none'; _meetingEditId=null; }
+function saveMeeting(){
+  const day=document.getElementById('mtg-day').value.trim().toUpperCase().slice(0,3);
+  const date=document.getElementById('mtg-date').value.trim();
+  const name=document.getElementById('mtg-name').value.trim();
+  const meta=document.getElementById('mtg-meta').value.trim();
+  const prep=document.getElementById('mtg-prep').checked;
+  if(!name){ alert('Enter a title for the item.'); return; }
+  if(_meetingEditId){
+    const m=MEETINGS.find(x=>x.id===_meetingEditId);
+    if(m){ m.day=day; m.date=date; m.name=name; m.meta=meta; m.prep=prep; if(!prep) m.prepDone=false; }
+  } else {
+    MEETINGS.push({ id:'m'+Date.now(), day, date, name, meta, prep, prepDone:false });
+  }
+  APP.meetings=MEETINGS; saveData();
+  closeMeetingModal(); renderDashboard();
+}
+function deleteMeeting(){
+  if(!_meetingEditId) return;
+  const i=MEETINGS.findIndex(x=>x.id===_meetingEditId);
+  if(i>=0) MEETINGS.splice(i,1);
+  APP.meetings=MEETINGS; saveData();
+  closeMeetingModal(); renderDashboard();
 }
 
 // ---- EDIT LAYOUT ----
@@ -3197,7 +3283,7 @@ function _openRangeCalendar(startEl,endEl,disp,refresh){
   _renderRangeCalendar();
   setTimeout(()=>document.addEventListener('click', _rcOutside),0);
 }
-function _rcOutside(e){ const p=document.getElementById('rc-pop'); if(p && !p.contains(e.target)) _closeRangeCalendar(); }
+function _rcOutside(e){ const p=document.getElementById('rc-pop'); if(!p) return; if(!document.body.contains(e.target)) return; /* target was re-rendered away — ignore */ if(!p.contains(e.target)) _closeRangeCalendar(); }
 function _closeRangeCalendar(){ const p=document.getElementById('rc-pop'); if(p) p.remove(); document.removeEventListener('click', _rcOutside); _rcState=null; }
 function _rcMonthLabel(d){ return d.toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
 function _renderRangeCalendar(){
@@ -3218,9 +3304,9 @@ function _renderRangeCalendar(){
   }
   pop.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <button type="button" onclick="_rcNav(-1)" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--slate);padding:2px 8px;">&#8249;</button>
+      <button type="button" onclick="event.stopPropagation();_rcNav(-1)" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--slate);padding:2px 8px;">&#8249;</button>
       <div style="font-size:13px;font-weight:700;color:var(--ink);">${_rcMonthLabel(view)}</div>
-      <button type="button" onclick="_rcNav(1)" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--slate);padding:2px 8px;">&#8250;</button>
+      <button type="button" onclick="event.stopPropagation();_rcNav(1)" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--slate);padding:2px 8px;">&#8250;</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;">
       ${['M','T','W','T','F','S','S'].map(d=>`<div style="text-align:center;font-size:9px;font-weight:700;color:var(--muted);padding:2px 0;">${d}</div>`).join('')}
@@ -3842,9 +3928,22 @@ function renderTeam() {
   if (!el) return;
   const allActs = allFlatTasks();
 
+  // A member "owns" a task if they're a member of that task's workstream
+  // (matches the Workplan/Tasks ownership model), OR the legacy owner field matches
+  // (used by non-casework "Other" tasks that still carry a text owner).
+  const _ownsTask = (m, a) => {
+    if(a.owner === m.initials) return true;
+    const proj = PROJECTS.find(p=>p.id===a.projectId);
+    if(!proj) return false;
+    const ph = proj.phases.find(x=>x.name===a.phaseName);
+    const ws = ph && ph.workstreams.find(x=>x.name===a.wsName);
+    if(!ws) return false;
+    return _taskOwners(proj, ws, a).includes(m.initials);
+  };
+
   // Build per-member per-case task breakdown
   const memberCard = m => {
-    const mine = allActs.filter(a => a.owner === m.initials);
+    const mine = allActs.filter(a => _ownsTask(m, a));
     const done = mine.filter(a => taskDoneState[a.id] || a.done).length;
     const pct  = mine.length ? Math.round(done / mine.length * 100) : 0;
     const col  = pct>=70?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
@@ -5599,7 +5698,9 @@ function _updatePhaseProjShare(){
   const sw=parseInt(document.getElementById('edit-f2').value)||1;
   const ew=parseInt(document.getElementById('edit-f3').value)||sw;
   const span=Math.max(1, ew-sw+1);
-  const projLen=Math.max(span, ...p.phases.map(x=>x.endWk), 1);
+  // Project length = furthest phase end, but use THIS phase's live-edited end
+  // (not its saved value) so the % updates as you change the duration/dates.
+  const projLen = Math.max(1, span, ...p.phases.map(x=> x.id===editCtx.phaseId ? ew : x.endWk));
   el.innerHTML=spanBarHTML(sw, span, projLen, (ph&&ph.color)||'#1A4F8F', 'This phase within the project');
 }
 function _phaseWkToDate(which){
