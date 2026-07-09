@@ -2934,9 +2934,14 @@ function renderGantt(){
   }).join('');
 
   const _sideW = ganttHideSidebar ? 0 : LW;
+  // Outer table width counts ONLY the week grid. The frozen label/owner/status
+  // columns are position:sticky and overlay the left edge, so they must NOT add
+  // to the scrollable width — otherwise the scrollbar overshoots past the last week.
+  const _tableW = totalWeekW + _sideW;
   document.getElementById('gantt-container').innerHTML=`
     <div id="gantt-scroll" style="overflow-x:auto;overflow-y:visible;position:relative;max-width:100%;">
-      <table style="border-collapse:collapse;table-layout:fixed;width:${_sideW+totalWeekW}px;max-width:${_sideW+totalWeekW}px;margin:0;">
+      <div id="gantt-scroll-inner" style="width:${totalWeekW}px;padding-left:${_sideW}px;box-sizing:content-box;">
+      <table style="border-collapse:collapse;table-layout:fixed;width:${_tableW}px;max-width:${_tableW}px;margin:0 0 0 -${_sideW}px;">
         <thead>
           <tr>
             ${ganttHideSidebar?'':`<th style="width:${LW-PROG_W-OWN_W}px;min-width:${LW-PROG_W-OWN_W}px;padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fff;background:#8A1A1A;border-right:1px solid #7A1515;border-bottom:1px solid #7A1515;position:sticky;top:0;left:0;z-index:8;text-align:left;">Project / Phase / Task<span onmousedown="_ganttStartColResize(event)" title="Drag to resize columns" style="position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;z-index:9;"></span></th>
@@ -2956,18 +2961,17 @@ function renderGantt(){
         </thead>
         <tbody>${tableRows}</tbody>
       </table>
+      </div>
     </div>`;
   _syncGanttToggleButtons();
 
   setTimeout(()=>{
     const sc = document.getElementById('gantt-scroll');
     if (sc){
-      // Clamp horizontal scroll so it stops exactly where the week grid ends
-      // (can't scroll into the space "behind" the frozen label columns).
-      const maxScroll = Math.max(0, totalWeekW - (sc.clientWidth - _sideW));
-      const clamp = ()=>{ if(sc.scrollLeft > maxScroll) sc.scrollLeft = maxScroll; };
-      sc.onscroll = clamp;
-      sc.scrollLeft = todayInRange ? Math.min(maxScroll, Math.max(0, todayOffset - sc.clientWidth/2 + _sideW)) : 0;
+      // Scrollable width now equals the week grid exactly (frozen columns live in
+      // the wrapper's padding), so no clamp is needed — just set the initial view.
+      const maxScroll = Math.max(0, sc.scrollWidth - sc.clientWidth);
+      sc.scrollLeft = todayInRange ? Math.min(maxScroll, Math.max(0, todayOffset - (sc.clientWidth - _sideW)/2)) : 0;
     }
   }, 80);
 }
